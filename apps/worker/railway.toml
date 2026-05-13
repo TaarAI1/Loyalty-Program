@@ -1,12 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install --frozen-lockfile && pnpm build"
 
 [deploy]
 startCommand = "node dist/main"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-[[deploy.environmentVariables]]
-name = "NODE_ENV"
-value = "production"
