@@ -1,0 +1,66 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-PK', {
+    style: 'currency',
+    currency: 'PKR',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat('en').format(n);
+}
+
+export function formatDate(date: string | Date): string {
+  return new Intl.DateTimeFormat('en-PK', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(date));
+}
+
+export function formatDateTime(date: string | Date): string {
+  return new Intl.DateTimeFormat('en-PK', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(date));
+}
+
+export function tierColor(tier: string): string {
+  switch (tier?.toLowerCase()) {
+    case 'classic':
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+    case 'silver':
+      return 'bg-slate-100 text-slate-700 border-slate-300';
+    case 'gold':
+      return 'bg-yellow-50 text-yellow-800 border-yellow-300';
+    case 'platinum':
+      return 'bg-purple-50 text-purple-800 border-purple-300';
+    default:
+      return 'bg-gray-100 text-gray-600 border-gray-200';
+  }
+}
+
+export function statusColor(status: string): string {
+  switch (status?.toLowerCase()) {
+    case 'sent':
+      return 'bg-green-50 text-green-700 border-green-200';
+    case 'failed':
+      return 'bg-red-50 text-red-700 border-red-200';
+    case 'pending':
+      return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    case 'skipped':
+      return 'bg-gray-50 text-gray-500 border-gray-200';
+    default:
+      return 'bg-gray-50 text-gray-600 border-gray-200';
+  }
+}

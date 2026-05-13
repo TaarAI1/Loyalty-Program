@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LoyaltyTier {
+  id                Int       @id @default(autoincrement())
+  name              String    @unique @db.VarChar(50)
+  pointsFrom        Int       @map("points_from")
+  pointsTo          Int?      @map("points_to")
+  spendFrom         Decimal   @map("spend_from") @db.Decimal(10, 2)
+  spendTo           Decimal?  @map("spend_to") @db.Decimal(10, 2)
+  rewardPercentage  Decimal   @map("reward_percentage") @db.Decimal(5, 2)
+  benefits          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  customers         Customer[]
+
+  @@map("loyalty_tiers")
+}
+
+model Customer {
+  id              String    @id @default(uuid()) @db.Uuid
+  retailproId     String?   @unique @map("retailpro_id") @db.VarChar(100)
+  name            String    @db.VarChar(255)
+  mobileNumber    String    @map("mobile_number") @db.VarChar(20)
+  countryCode     String    @default("92") @map("country_code") @db.VarChar(5)
+  email           String?   @db.VarChar(255)
+  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
+  gender          String?   @db.VarChar(20)
+  region          String?   @db.VarChar(100)
+  store           String?   @db.VarChar(100)
+  tierId          Int?      @map("tier_id")
+  totalPoints     Int       @default(0) @map("total_points")
+  lifetimePoints  Int       @default(0) @map("lifetime_points")
+  lifetimeSale    Decimal   @default(0) @map("lifetime_sale") @db.Decimal(10, 2)
+  lastVisitDate   DateTime? @map("last_visit_date")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tier              LoyaltyTier?        @relation(fields: [tierId], references: [id])
+  transactions      Transaction[]
+  pointsLedger      PointsLedger[]
+  pointsExpiry      PointsExpiry[]
+  notificationLogs  NotificationLog[]
+
+  @@unique([mobileNumber, countryCode])
+  @@index([tierId])
+  @@map("customers")
+}
+
+model Transaction {
+  id                      String    @id @default(uuid()) @db.Uuid
+  retailproTransactionId  String    @unique @map("retailpro_transaction_id") @db.VarChar(100)
+  customerId              String    @map("customer_id") @db.Uuid
+  transactionDate         DateTime  @map("transaction_date")
+  saleAmount              Decimal   @map("sale_amount") @db.Decimal(10, 2)
+  pointsEarned            Int       @map("points_earned")
+  pointsRedeemed          Int       @default(0) @map("points_redeemed")
+  redemptionAmount        Decimal   @default(0) @map("redemption_amount") @db.Decimal(10, 2)
+  receiptNo               String?   @map("receipt_no") @db.VarChar(100)
+  store                   String?   @db.VarChar(100)
+  region                  String?   @db.VarChar(100)
+  outlet                  String?   @db.VarChar(100)
+  status                  String    @default("completed") @db.VarChar(20)
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  pointsLedger  PointsLedger[]
+
+  @@index([customerId, transactionDate], name: "idx_customer_date")
+  @@index([retailproTransactionId], name: "idx_retailpro_id")
+  @@map("transactions")
+}
+
+model PointsLedger {
+  id              BigInt    @id @default(autoincrement())
+  customerId      String    @map("customer_id") @db.Uuid
+  transactionId   String?   @map("transaction_id") @db.Uuid
+  pointsChange    Int       @map("points_change")
+  runningBalance  Int       @map("running_balance")
+  reason          String?   @db.VarChar(100)
+  referenceId     String?   @map("reference_id") @db.VarChar(255)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  transaction Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([customerId, createdAt], name: "idx_ledger_customer_created")
+  @@map("points_ledger")
+}
+
+model PointsExpiry {
+  id                    BigInt    @id @default(autoincrement())
+  customerId            String    @map("customer_id") @db.Uuid
+  pointsAmount          Int       @map("points_amount")
+  earningDate           DateTime  @map("earning_date") @db.Date
+  expiryDate            DateTime  @map("expiry_date") @db.Date
+  isExpired             Boolean   @default(false) @map("is_expired")
+  notificationSent7d    Boolean   @default(false) @map("notification_sent_7d")
+  notificationSent3d    Boolean   @default(false) @map("notification_sent_3d")
+  notificationSent1d    Boolean   @default(false) @map("notification_sent_1d")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  customer  Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([expiryDate, isExpired])
+  @@map("points_expiry")
+}
+
+model WhatsappConfig {
+  id                    Int       @id @default(1)
+  apiProvider           String    @default("meta") @map("api_provider") @db.VarChar(50)
+  accessToken           String?   @map("access_token")
+  phoneNumberId         String?   @map("phone_number_id") @db.VarChar(100)
+  businessAccountId     String?   @map("business_account_id") @db.VarChar(100)
+  templateExpiry        String?   @map("template_expiry") @db.VarChar(100)
+  templateBirthday      String?   @map("template_birthday") @db.VarChar(100)
+  templatePointsEarned  String?   @map("template_points_earned") @db.VarChar(100)
+  templateTierUpgrade   String?   @map("template_tier_upgrade") @db.VarChar(100)
+  isActive              Boolean   @default(true) @map("is_active")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@map("whatsapp_config")
+}
+
+model SmsConfig {
+  id            Int       @id @default(1)
+  provider      String    @default("twilio") @db.VarChar(50)
+  accountSid    String?   @map("account_sid")
+  authToken     String?   @map("auth_token")
+  fromNumber    String?   @map("from_number") @db.VarChar(20)
+  isActive      Boolean   @default(true) @map("is_active")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("sms_config")
+}
+
+model EmailConfig {
+  id          Int       @id @default(1)
+  provider    String    @default("sendgrid") @db.VarChar(50)
+  apiKey      String?   @map("api_key")
+  fromEmail   String?   @map("from_email") @db.VarChar(255)
+  fromName    String?   @map("from_name") @db.VarChar(255)
+  alertEmail  String?   @map("alert_email") @db.VarChar(255)
+  isActive    Boolean   @default(true) @map("is_active")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("email_config")
+}
+
+model NotificationLog {
+  id            BigInt    @id @default(autoincrement())
+  customerId    String?   @map("customer_id") @db.Uuid
+  type          String?   @db.VarChar(50)
+  channel       String?   @db.VarChar(20)
+  recipient     String?   @db.VarChar(255)
+  content       String?
+  status        String?   @db.VarChar(20)
+  errorMessage  String?   @map("error_message")
+  sentAt        DateTime  @default(now()) @map("sent_at")
+
+  customer  Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([status])
+  @@index([channel])
+  @@map("notification_logs")
+}
+
+model ForensicAlert {
+  id                    BigInt    @id @default(autoincrement())
+  mobileNumber          String    @map("mobile_number") @db.VarChar(20)
+  transactionCount      Int       @map("transaction_count")
+  firstTransactionDate  DateTime  @map("first_transaction_date")
+  lastTransactionDate   DateTime  @map("last_transaction_date")
+  stores                String[]
+  totalAmount           Decimal   @map("total_amount") @db.Decimal(10, 2)
+  emailSent             Boolean   @default(false) @map("email_sent")
+  alertDate             DateTime  @default(now()) @map("alert_date")
+
+  @@map("forensic_alerts")
+}
+
+model AuditLog {
+  id          BigInt    @id @default(autoincrement())
+  entity      String    @db.VarChar(100)
+  entityId    String?   @map("entity_id") @db.VarChar(255)
+  action      String    @db.VarChar(50)
+  changedBy   String?   @map("changed_by") @db.VarChar(255)
+  field       String?   @db.VarChar(100)
+  oldValue    String?   @map("old_value")
+  newValue    String?   @map("new_value")
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@map("audit_log")
+}
