@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm install -g pnpm@9 && pnpm install --frozen-lockfile"]
+cmds = ["npx --yes pnpm@9 install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["pnpm db:generate && pnpm build"]
+cmds = ["npx pnpm@9 db:generate && npx pnpm@9 build"]
 
 [start]
 cmd = "node dist/main"
