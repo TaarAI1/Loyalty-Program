@@ -43,8 +43,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-      },
-      colors: {
         navy: {
           950: '#00071a',
           900: '#00112c',
