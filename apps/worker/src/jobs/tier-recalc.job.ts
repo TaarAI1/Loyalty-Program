@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { LoyaltyTier } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsAppService } from '../services/whatsapp.service';
 import { formatPhoneNumber } from '@loyalty/shared';
@@ -39,14 +40,14 @@ export class TierRecalcJob {
           .slice()
           .reverse()
           .find(
-            (t) =>
+            (t: LoyaltyTier) =>
               lifetimeSale >= Number(t.spendFrom) &&
               (t.spendTo === null || lifetimeSale <= Number(t.spendTo)),
           );
 
         if (!correctTier || correctTier.id === customer.tierId) continue;
 
-        const oldTier = tiers.find((t) => t.id === customer.tierId);
+        const oldTier = tiers.find((t: LoyaltyTier) => t.id === customer.tierId);
         const isUpgrade =
           Number(correctTier.spendFrom) > Number(oldTier?.spendFrom ?? 0);
 

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsAppService } from '../services/whatsapp.service';
 import { formatPhoneNumber } from '@loyalty/shared';
@@ -112,7 +113,7 @@ export class PointsExpiryJob {
 
     for (const row of expiredRows) {
       try {
-        await this.prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const customer = await tx.customer.findUniqueOrThrow({ where: { id: row.customerId } });
           const newBalance = Math.max(0, customer.totalPoints - row.pointsAmount);
 
