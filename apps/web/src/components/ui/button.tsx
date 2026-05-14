@@ -15,13 +15,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:pointer-events-none disabled:opacity-50',
+          'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0052ff] disabled:pointer-events-none disabled:opacity-50',
           {
-            'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm': variant === 'default',
-            'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50': variant === 'outline',
-            'text-slate-600 hover:bg-slate-100 hover:text-slate-900': variant === 'ghost',
+            'bg-[#0052ff] text-white hover:bg-[#003ecc] shadow-sm': variant === 'default',
+            'border-2 border-slate-200 bg-white text-[#00112c] hover:bg-[#f0f2f8] hover:border-[#0052ff]': variant === 'outline',
+            'text-slate-600 hover:bg-[#f0f2f8] hover:text-[#00112c]': variant === 'ghost',
             'bg-red-500 text-white hover:bg-red-600': variant === 'destructive',
-            'bg-slate-100 text-slate-700 hover:bg-slate-200': variant === 'secondary',
+            'bg-[#f0f2f8] text-[#00112c] hover:bg-slate-200': variant === 'secondary',
           },
           {
             'h-9 px-4 text-sm': size === 'default',

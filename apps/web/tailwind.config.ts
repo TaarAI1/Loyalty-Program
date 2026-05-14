@@ -44,6 +44,19 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
       },
+      colors: {
+        navy: {
+          950: '#00071a',
+          900: '#00112c',
+          800: '#001a3e',
+          700: '#002455',
+        },
+        brand: {
+          DEFAULT: '#0052ff',
+          light: '#3d7eff',
+          dark: '#003ecc',
+        },
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

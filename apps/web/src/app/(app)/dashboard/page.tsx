@@ -65,16 +65,16 @@ export default function DashboardPage() {
       value: metrics ? formatNumber(metrics.totalCustomers) : '—',
       change: '+12%',
       icon: Users,
-      gradient: 'from-blue-500 to-blue-600',
-      bg: 'bg-blue-50',
-      color: 'text-blue-600',
+      accent: '#0052ff',
+      bg: 'bg-[#eef3ff]',
+      color: 'text-[#0052ff]',
     },
     {
       label: 'Points Issued',
       value: metrics ? formatNumber(metrics.totalPointsIssued) : '—',
       change: '+8%',
       icon: Star,
-      gradient: 'from-amber-500 to-orange-500',
+      accent: '#f59e0b',
       bg: 'bg-amber-50',
       color: 'text-amber-600',
     },
@@ -83,7 +83,7 @@ export default function DashboardPage() {
       value: metrics ? `${metrics.redemptionRate}%` : '—',
       change: '+3%',
       icon: TrendingUp,
-      gradient: 'from-emerald-500 to-green-500',
+      accent: '#10b981',
       bg: 'bg-emerald-50',
       color: 'text-emerald-600',
     },
@@ -92,7 +92,7 @@ export default function DashboardPage() {
       value: metrics ? formatNumber(metrics.activeTiers) : '—',
       change: '',
       icon: Layers,
-      gradient: 'from-violet-500 to-purple-600',
+      accent: '#8b5cf6',
       bg: 'bg-violet-50',
       color: 'text-violet-600',
     },
@@ -101,18 +101,18 @@ export default function DashboardPage() {
       value: metrics ? formatCurrency(metrics.revenueToday) : '—',
       change: '+5%',
       icon: ShoppingBag,
-      gradient: 'from-indigo-500 to-indigo-600',
-      bg: 'bg-indigo-50',
-      color: 'text-indigo-600',
+      accent: '#06b6d4',
+      bg: 'bg-cyan-50',
+      color: 'text-cyan-600',
     },
     {
       label: "Today's Transactions",
       value: metrics ? formatNumber(metrics.transactionsToday) : '—',
       change: '+2%',
       icon: Zap,
-      gradient: 'from-rose-500 to-pink-500',
+      accent: '#f43f5e',
       bg: 'bg-rose-50',
-      color: 'text-rose-600',
+      color: 'text-rose-500',
     },
   ];
 
@@ -121,7 +121,9 @@ export default function DashboardPage() {
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="hover:shadow-md transition-shadow">
+          <Card key={kpi.label} className="hover:shadow-lg transition-all hover:-translate-y-0.5 overflow-hidden">
+            {/* Top accent line per card */}
+            <div className="h-0.5 w-full" style={{ background: kpi.accent }} />
             <CardContent className="p-5">
               {metricsLoading ? (
                 <div className="space-y-3">
@@ -132,14 +134,14 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center`}>
-                    <kpi.icon className={`w-4.5 h-4.5 ${kpi.color}`} />
+                    <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900 tabular-nums">{kpi.value}</p>
+                    <p className="text-[22px] font-black text-[#00112c] tabular-nums tracking-tight">{kpi.value}</p>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <p className="text-xs text-slate-500">{kpi.label}</p>
+                      <p className="text-[11px] font-medium text-slate-500">{kpi.label}</p>
                       {kpi.change && (
-                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                           {kpi.change}
                         </span>
                       )}
@@ -159,7 +161,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Points Activity</CardTitle>
-              <span className="text-xs text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">Last 30 days</span>
+              <span className="text-[11px] font-bold text-[#0052ff] bg-[#eef3ff] px-2.5 py-1 rounded-full border border-[#dce8ff]">Last 30 days</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -170,8 +172,8 @@ export default function DashboardPage() {
                 <AreaChart data={trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#0052ff" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#0052ff" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="redeemGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
@@ -197,8 +199,8 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="pointsEarned"
-                    stroke="#6366f1"
-                    strokeWidth={2}
+                    stroke="#0052ff"
+                    strokeWidth={2.5}
                     fill="url(#earnGrad)"
                     dot={false}
                   />
@@ -214,8 +216,8 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             )}
             <div className="flex items-center gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> Earned
+              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#0052ff] inline-block" /> Earned
               </span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Redeemed
