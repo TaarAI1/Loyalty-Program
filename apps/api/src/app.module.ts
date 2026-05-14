@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
@@ -6,6 +7,8 @@ import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CustomersModule } from './customers/customers.module';
 import { ConfigurationModule } from './configuration/configuration.module';
@@ -14,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -66,6 +70,7 @@ import { HealthModule } from './health/health.module';
     PrismaModule,
     QueueModule,
     AuthModule,
+    UsersModule,
     WebhooksModule,
     CustomersModule,
     ConfigurationModule,
@@ -73,6 +78,10 @@ import { HealthModule } from './health/health.module';
     NotificationsModule,
     DashboardModule,
     HealthModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-xl border border-border bg-card text-card-foreground shadow-sm', className)}
+      className={cn('rounded-2xl border border-slate-100 bg-white shadow-sm', className)}
       {...props}
     >
       {children}
@@ -13,7 +13,7 @@ export function Card({ className, children, ...props }: React.HTMLAttributes<HTM
 
 export function CardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-col space-y-1.5 p-6', className)} {...props}>
+    <div className={cn('flex flex-col space-y-1.5 px-6 pt-5 pb-4', className)} {...props}>
       {children}
     </div>
   );
@@ -21,7 +21,7 @@ export function CardHeader({ className, children, ...props }: React.HTMLAttribut
 
 export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('font-semibold leading-none tracking-tight text-sm text-muted-foreground uppercase', className)} {...props}>
+    <h3 className={cn('font-semibold text-slate-800 text-sm', className)} {...props}>
       {children}
     </h3>
   );
@@ -29,7 +29,7 @@ export function CardTitle({ className, children, ...props }: React.HTMLAttribute
 
 export function CardContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('p-6 pt-0', className)} {...props}>
+    <div className={cn('px-6 pb-5', className)} {...props}>
       {children}
     </div>
   );

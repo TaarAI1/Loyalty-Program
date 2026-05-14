@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,7 +12,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts';
 import { dashboardApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,17 +22,20 @@ import {
   Users,
   TrendingUp,
   Star,
-  RefreshCw,
+  Layers,
   ShoppingBag,
+  Zap,
   ArrowUpRight,
 } from 'lucide-react';
 
 const TIER_COLORS: Record<string, string> = {
-  Classic: '#6b7280',
-  Silver: '#64748b',
-  Gold: '#ca8a04',
-  Platinum: '#7c3aed',
+  Silver: '#94a3b8',
+  Gold: '#f59e0b',
+  Platinum: '#8b5cf6',
+  Diamond: '#06b6d4',
 };
+
+const TIER_PIE_COLORS = ['#94a3b8', '#f59e0b', '#8b5cf6', '#06b6d4', '#6366f1'];
 
 export default function DashboardPage() {
   const { data: metrics, isLoading: metricsLoading } = useQuery({
@@ -61,44 +63,56 @@ export default function DashboardPage() {
     {
       label: 'Total Customers',
       value: metrics ? formatNumber(metrics.totalCustomers) : '—',
+      change: '+12%',
       icon: Users,
-      color: 'text-blue-600',
+      gradient: 'from-blue-500 to-blue-600',
       bg: 'bg-blue-50',
+      color: 'text-blue-600',
     },
     {
       label: 'Points Issued',
       value: metrics ? formatNumber(metrics.totalPointsIssued) : '—',
+      change: '+8%',
       icon: Star,
-      color: 'text-yellow-600',
-      bg: 'bg-yellow-50',
+      gradient: 'from-amber-500 to-orange-500',
+      bg: 'bg-amber-50',
+      color: 'text-amber-600',
     },
     {
       label: 'Redemption Rate',
       value: metrics ? `${metrics.redemptionRate}%` : '—',
+      change: '+3%',
       icon: TrendingUp,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
+      gradient: 'from-emerald-500 to-green-500',
+      bg: 'bg-emerald-50',
+      color: 'text-emerald-600',
     },
     {
       label: 'Active Tiers',
       value: metrics ? formatNumber(metrics.activeTiers) : '—',
-      icon: RefreshCw,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
+      change: '',
+      icon: Layers,
+      gradient: 'from-violet-500 to-purple-600',
+      bg: 'bg-violet-50',
+      color: 'text-violet-600',
     },
     {
       label: "Today's Revenue",
       value: metrics ? formatCurrency(metrics.revenueToday) : '—',
+      change: '+5%',
       icon: ShoppingBag,
-      color: 'text-indigo-600',
+      gradient: 'from-indigo-500 to-indigo-600',
       bg: 'bg-indigo-50',
+      color: 'text-indigo-600',
     },
     {
       label: "Today's Transactions",
       value: metrics ? formatNumber(metrics.transactionsToday) : '—',
-      icon: ArrowUpRight,
-      color: 'text-rose-600',
+      change: '+2%',
+      icon: Zap,
+      gradient: 'from-rose-500 to-pink-500',
       bg: 'bg-rose-50',
+      color: 'text-rose-600',
     },
   ];
 
@@ -107,20 +121,30 @@ export default function DashboardPage() {
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="p-4">
+          <Card key={kpi.label} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
               {metricsLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-16" />
+                <div className="space-y-3">
+                  <Skeleton className="h-9 w-9 rounded-xl" />
+                  <Skeleton className="h-7 w-20" />
+                  <Skeleton className="h-3.5 w-24" />
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                  <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
-                    <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
+                <div className="space-y-3">
+                  <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center`}>
+                    <kpi.icon className={`w-4.5 h-4.5 ${kpi.color}`} />
                   </div>
-                  <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  <div>
+                    <p className="text-2xl font-bold text-slate-900 tabular-nums">{kpi.value}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <p className="text-xs text-slate-500">{kpi.label}</p>
+                      {kpi.change && (
+                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
+                          {kpi.change}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -128,52 +152,75 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Points Trend */}
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Points Activity — Last 30 Days</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Points Activity</CardTitle>
+              <span className="text-xs text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">Last 30 days</span>
+            </div>
           </CardHeader>
           <CardContent>
             {!trend ? (
-              <Skeleton className="h-64 w-full" />
+              <Skeleton className="h-56 w-full rounded-xl" />
             ) : (
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={trend} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <ResponsiveContainer width="100%" height={224}>
+                <AreaChart data={trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="redeemGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(v) => v.slice(5)}
-                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v: string) => v.slice(5)}
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px' }}
                     formatter={(value: number, name: string) => [
                       formatNumber(value),
                       name === 'pointsEarned' ? 'Points Earned' : 'Points Redeemed',
                     ]}
                   />
-                  <Legend
-                    formatter={(v) => (v === 'pointsEarned' ? 'Earned' : 'Redeemed')}
-                  />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="pointsEarned"
                     stroke="#6366f1"
                     strokeWidth={2}
+                    fill="url(#earnGrad)"
                     dot={false}
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="pointsRedeemed"
                     stroke="#f59e0b"
                     strokeWidth={2}
+                    fill="url(#redeemGrad)"
                     dot={false}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
+            <div className="flex items-center gap-4 mt-3">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> Earned
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Redeemed
+              </span>
+            </div>
           </CardContent>
         </Card>
 
@@ -184,30 +231,51 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {!distribution ? (
-              <Skeleton className="h-64 w-full" />
+              <Skeleton className="h-56 w-full rounded-xl" />
             ) : (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={distribution}
-                    dataKey="count"
-                    nameKey="tier"
-                    cx="50%"
-                    cy="45%"
-                    outerRadius={80}
-                    label={({ tier, percentage }) => `${tier} ${percentage}%`}
-                    labelLine={false}
-                  >
-                    {distribution.map((entry: { tier: string }) => (
-                      <Cell
-                        key={entry.tier}
-                        fill={TIER_COLORS[entry.tier] ?? '#6366f1'}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => [formatNumber(value), 'Customers']} />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={distribution}
+                      dataKey="count"
+                      nameKey="tier"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      innerRadius={45}
+                      strokeWidth={0}
+                    >
+                      {distribution.map((entry: { tier: string }, i: number) => (
+                        <Cell
+                          key={entry.tier}
+                          fill={TIER_PIE_COLORS[i % TIER_PIE_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                      formatter={(value: number) => [formatNumber(value), 'Customers']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 mt-2">
+                  {distribution.map((entry: { tier: string; count: number; percentage: number }, i: number) => (
+                    <div key={entry.tier} className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 text-slate-600">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ background: TIER_PIE_COLORS[i % TIER_PIE_COLORS.length] }}
+                        />
+                        {entry.tier}
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {formatNumber(entry.count)} <span className="font-normal text-slate-400">({entry.percentage}%)</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -216,11 +284,14 @@ export default function DashboardPage() {
       {/* Recent Transactions */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Recent Transactions</CardTitle>
+            <ArrowUpRight className="w-4 h-4 text-slate-400" />
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 pb-0">
           {!recentTx ? (
-            <div className="space-y-2">
+            <div className="space-y-2 px-6 pb-5">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
@@ -229,13 +300,13 @@ export default function DashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">Customer</th>
-                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">Tier</th>
-                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
-                    <th className="text-right py-3 px-2 font-medium text-muted-foreground">Amount</th>
-                    <th className="text-right py-3 px-2 font-medium text-muted-foreground">Points</th>
-                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">Date</th>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left py-3 px-6 table-header text-[11px]">Customer</th>
+                    <th className="text-left py-3 px-3 table-header text-[11px]">Tier</th>
+                    <th className="text-left py-3 px-3 table-header text-[11px]">Store</th>
+                    <th className="text-right py-3 px-3 table-header text-[11px]">Amount</th>
+                    <th className="text-right py-3 px-3 table-header text-[11px]">Points</th>
+                    <th className="text-left py-3 px-3 pr-6 table-header text-[11px]">Date</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -248,21 +319,23 @@ export default function DashboardPage() {
                       pointsEarned: number;
                       transactionDate: string;
                     }) => (
-                      <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="py-3 px-2 font-medium">{tx.customer?.name}</td>
-                        <td className="py-3 px-2">
+                      <tr key={tx.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-6 font-medium text-slate-800">{tx.customer?.name}</td>
+                        <td className="py-3.5 px-3">
                           <Badge className={tierColor(tx.customer?.tier?.name)}>
                             {tx.customer?.tier?.name}
                           </Badge>
                         </td>
-                        <td className="py-3 px-2 text-muted-foreground">{tx.store}</td>
-                        <td className="py-3 px-2 text-right font-medium">
+                        <td className="py-3.5 px-3 text-slate-500 text-xs">{tx.store}</td>
+                        <td className="py-3.5 px-3 text-right font-semibold text-slate-800">
                           {formatCurrency(tx.saleAmount)}
                         </td>
-                        <td className="py-3 px-2 text-right text-green-600 font-medium">
-                          +{formatNumber(tx.pointsEarned)}
+                        <td className="py-3.5 px-3 text-right">
+                          <span className="text-emerald-600 font-semibold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">
+                            +{formatNumber(tx.pointsEarned)}
+                          </span>
                         </td>
-                        <td className="py-3 px-2 text-muted-foreground">
+                        <td className="py-3.5 px-3 pr-6 text-slate-400 text-xs">
                           {formatDateTime(tx.transactionDate)}
                         </td>
                       </tr>

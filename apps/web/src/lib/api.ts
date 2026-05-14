@@ -1,14 +1,10 @@
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? '';
 
 export const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'x-api-key': API_KEY,
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.response.use(
@@ -16,6 +12,11 @@ api.interceptors.response.use(
   (err) => {
     const message =
       err.response?.data?.message ?? err.response?.data?.error ?? err.message ?? 'Request failed';
+    if (err.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('loyalty_token');
+      localStorage.removeItem('loyalty_user');
+      window.location.href = '/login';
+    }
     return Promise.reject(new Error(Array.isArray(message) ? message.join(', ') : message));
   },
 );
@@ -84,4 +85,14 @@ export const notificationsApi = {
     api.get('/notifications', { params }).then((r) => r.data),
   getStats: () => api.get('/notifications/stats').then((r) => r.data),
   resend: (id: string | number) => api.post(`/notifications/${id}/resend`).then((r) => r.data),
+};
+
+// Users
+export const usersApi = {
+  getAll: () => api.get('/users').then((r) => r.data),
+  create: (data: { username: string; password: string; role: string }) =>
+    api.post('/users', data).then((r) => r.data),
+  update: (id: number, data: { password?: string; role?: string; isActive?: boolean }) =>
+    api.patch(`/users/${id}`, data).then((r) => r.data),
+  remove: (id: number) => api.delete(`/users/${id}`).then((r) => r.data),
 };

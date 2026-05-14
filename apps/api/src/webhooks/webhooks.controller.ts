@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { WebhookTransactionDto, WebhookCustomerDto } from '@loyalty/shared';
-import { Public } from '../auth/api-key.guard';
+import { Public } from '../auth/public.decorator';
 
 @Controller('webhooks')
 export class WebhooksController {

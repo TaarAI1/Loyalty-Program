@@ -5,6 +5,7 @@ import { Logger } from 'nestjs-pino';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCors from '@fastify/cors';
 import { AppModule } from './app.module';
+import { AuthService } from './auth/auth.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -40,6 +41,10 @@ async function bootstrap() {
 
   const port = parseInt(process.env.PORT ?? '3001', 10);
   await app.listen(port, '0.0.0.0');
+
+  // Seed default admin user if not present
+  const authService = app.get(AuthService);
+  await authService.seedDefaultAdmin();
 
   const logger = app.get(Logger);
   logger.log(`🚀 API running on port ${port}`, 'Bootstrap');
