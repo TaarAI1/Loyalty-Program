@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { SmsService } from '../services/sms.service';
 import { SMSJobPayload } from '@loyalty/shared';
-import { QUEUE_SMS } from './notification-processors.module';
+import { QUEUE_SMS } from './queue.constants';
 
 @Processor(QUEUE_SMS)
 export class SmsProcessor {

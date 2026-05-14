@@ -6,10 +6,9 @@ import { EmailProcessor } from './email.processor';
 import { WhatsAppService } from '../services/whatsapp.service';
 import { SmsService } from '../services/sms.service';
 import { EmailService } from '../services/email.service';
+import { QUEUE_WHATSAPP, QUEUE_SMS, QUEUE_EMAIL } from './queue.constants';
 
-export const QUEUE_WHATSAPP = 'notifications.whatsapp';
-export const QUEUE_SMS = 'notifications.sms';
-export const QUEUE_EMAIL = 'notifications.email';
+export { QUEUE_WHATSAPP, QUEUE_SMS, QUEUE_EMAIL };
 
 @Module({
   imports: [

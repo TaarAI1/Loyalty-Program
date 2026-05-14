@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { EmailService } from '../services/email.service';
 import { EmailJobPayload } from '@loyalty/shared';
-import { QUEUE_EMAIL } from './notification-processors.module';
+import { QUEUE_EMAIL } from './queue.constants';
 
 @Processor(QUEUE_EMAIL)
 export class EmailProcessor {

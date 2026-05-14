@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { WhatsAppService } from '../services/whatsapp.service';
 import { WhatsAppJobPayload } from '@loyalty/shared';
-import { QUEUE_WHATSAPP } from './notification-processors.module';
+import { QUEUE_WHATSAPP } from './queue.constants';
 
 @Processor(QUEUE_WHATSAPP)
 export class WhatsAppProcessor {
