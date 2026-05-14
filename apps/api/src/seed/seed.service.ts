@@ -93,7 +93,7 @@ export class SeedService {
           store: c.store,
           tierId: finalTier.id,
           totalPoints,
-          lifetimePoints: lifetimePts,
+          lifetimePoints: totalPoints,
           lifetimeSale: lifetimeSale,
           lastVisitDate: this.daysAgo(3),
           isActive: true,
