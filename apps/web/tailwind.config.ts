@@ -43,16 +43,15 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        navy: {
-          950: '#00071a',
-          900: '#00112c',
-          800: '#001a3e',
-          700: '#002455',
-        },
         brand: {
-          DEFAULT: '#0052ff',
-          light: '#3d7eff',
-          dark: '#003ecc',
+          DEFAULT: '#FFD000',
+          light: '#ffe047',
+          dark: '#e6bb00',
+        },
+        ink: {
+          DEFAULT: '#111111',
+          soft: '#444444',
+          muted: '#999999',
         },
       },
       borderRadius: {

@@ -35,7 +35,7 @@ const TIER_COLORS: Record<string, string> = {
   Diamond: '#06b6d4',
 };
 
-const TIER_PIE_COLORS = ['#94a3b8', '#f59e0b', '#8b5cf6', '#06b6d4', '#6366f1'];
+const TIER_PIE_COLORS = ['#FFD000', '#111111', '#e6bb00', '#444444', '#f5c518'];
 
 export default function DashboardPage() {
   const { data: metrics, isLoading: metricsLoading } = useQuery({
@@ -60,60 +60,12 @@ export default function DashboardPage() {
   });
 
   const kpis = [
-    {
-      label: 'Total Customers',
-      value: metrics ? formatNumber(metrics.totalCustomers) : '—',
-      change: '+12%',
-      icon: Users,
-      accent: '#0052ff',
-      bg: 'bg-[#eef3ff]',
-      color: 'text-[#0052ff]',
-    },
-    {
-      label: 'Points Issued',
-      value: metrics ? formatNumber(metrics.totalPointsIssued) : '—',
-      change: '+8%',
-      icon: Star,
-      accent: '#f59e0b',
-      bg: 'bg-amber-50',
-      color: 'text-amber-600',
-    },
-    {
-      label: 'Redemption Rate',
-      value: metrics ? `${metrics.redemptionRate}%` : '—',
-      change: '+3%',
-      icon: TrendingUp,
-      accent: '#10b981',
-      bg: 'bg-emerald-50',
-      color: 'text-emerald-600',
-    },
-    {
-      label: 'Active Tiers',
-      value: metrics ? formatNumber(metrics.activeTiers) : '—',
-      change: '',
-      icon: Layers,
-      accent: '#8b5cf6',
-      bg: 'bg-violet-50',
-      color: 'text-violet-600',
-    },
-    {
-      label: "Today's Revenue",
-      value: metrics ? formatCurrency(metrics.revenueToday) : '—',
-      change: '+5%',
-      icon: ShoppingBag,
-      accent: '#06b6d4',
-      bg: 'bg-cyan-50',
-      color: 'text-cyan-600',
-    },
-    {
-      label: "Today's Transactions",
-      value: metrics ? formatNumber(metrics.transactionsToday) : '—',
-      change: '+2%',
-      icon: Zap,
-      accent: '#f43f5e',
-      bg: 'bg-rose-50',
-      color: 'text-rose-500',
-    },
+    { label: 'Total Customers',       value: metrics ? formatNumber(metrics.totalCustomers)    : '—', change: '+12%', icon: Users,       accent: '#FFD000', bg: 'bg-[#fffde8]', color: 'text-[#a07800]' },
+    { label: 'Points Issued',         value: metrics ? formatNumber(metrics.totalPointsIssued) : '—', change: '+8%',  icon: Star,        accent: '#111111', bg: 'bg-[#f5f5f5]', color: 'text-[#111111]' },
+    { label: 'Redemption Rate',       value: metrics ? `${metrics.redemptionRate}%`            : '—', change: '+3%',  icon: TrendingUp,  accent: '#FFD000', bg: 'bg-[#fffde8]', color: 'text-[#a07800]' },
+    { label: 'Active Tiers',          value: metrics ? formatNumber(metrics.activeTiers)       : '—', change: '',     icon: Layers,      accent: '#111111', bg: 'bg-[#f5f5f5]', color: 'text-[#111111]' },
+    { label: "Today's Revenue",       value: metrics ? formatCurrency(metrics.revenueToday)    : '—', change: '+5%',  icon: ShoppingBag, accent: '#FFD000', bg: 'bg-[#fffde8]', color: 'text-[#a07800]' },
+    { label: "Today's Transactions",  value: metrics ? formatNumber(metrics.transactionsToday) : '—', change: '+2%',  icon: Zap,         accent: '#111111', bg: 'bg-[#f5f5f5]', color: 'text-[#111111]' },
   ];
 
   return (
@@ -161,7 +113,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Points Activity</CardTitle>
-              <span className="text-[11px] font-bold text-[#0052ff] bg-[#eef3ff] px-2.5 py-1 rounded-full border border-[#dce8ff]">Last 30 days</span>
+              <span className="text-[11px] font-black text-[#111111] bg-[#fffde8] px-2.5 py-1 rounded-full border border-[#FFD000]/40">Last 30 days</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -172,8 +124,8 @@ export default function DashboardPage() {
                 <AreaChart data={trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0052ff" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#0052ff" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#FFD000" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#FFD000" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="redeemGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
@@ -199,7 +151,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="pointsEarned"
-                    stroke="#0052ff"
+                    stroke="#FFD000"
                     strokeWidth={2.5}
                     fill="url(#earnGrad)"
                     dot={false}
@@ -216,8 +168,8 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             )}
             <div className="flex items-center gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0052ff] inline-block" /> Earned
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#666]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FFD000] inline-block" /> Earned
               </span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Redeemed

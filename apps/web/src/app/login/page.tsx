@@ -9,10 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername]       = useState('');
+  const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]         = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,115 +22,94 @@ export default function LoginPage() {
       await login(username.trim(), password);
       router.push('/dashboard');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Login failed';
-      toast.error(msg);
+      toast.error(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex bg-[#00071a]">
-      {/* Left hero panel */}
-      <div className="hidden lg:flex lg:w-[55%] relative flex-col justify-between p-14 overflow-hidden">
-        {/* Background geometry — Nayax diagonal style */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#00112c] via-[#001a3e] to-[#00071a]" />
-          {/* Diagonal blue stripe */}
-          <div
-            className="absolute -left-20 top-0 bottom-0 w-[60%]"
-            style={{
-              background: 'linear-gradient(160deg, #0052ff18 0%, #0052ff08 50%, transparent 100%)',
-            }}
-          />
-          {/* Glowing orbs */}
-          <div className="absolute top-1/4 left-1/3 w-72 h-72 rounded-full bg-[#0052ff] opacity-10 blur-[80px]" />
-          <div className="absolute bottom-1/4 left-1/4 w-48 h-48 rounded-full bg-[#3d7eff] opacity-8 blur-[60px]" />
-          {/* Grid lines */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)',
-              backgroundSize: '60px 60px',
-            }}
-          />
-        </div>
+    <div className="min-h-screen flex bg-white">
+      {/* Left — black hero */}
+      <div className="hidden lg:flex lg:w-[55%] flex-col justify-between p-14 bg-[#111111] relative overflow-hidden">
+        {/* Yellow top bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#FFD000]" />
+
+        {/* Background pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #FFD000 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+        {/* Yellow glow */}
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#FFD000] opacity-5 blur-[100px]" />
 
         {/* Logo */}
         <div className="relative flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-xl bg-[#0052ff] flex items-center justify-center shadow-xl shadow-blue-900/50">
-            <Gift className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-[#FFD000] flex items-center justify-center">
+            <Gift className="w-5 h-5 text-[#111111]" />
           </div>
           <div>
-            <p className="text-white font-bold text-lg leading-none tracking-tight">LoyaltyPro</p>
-            <p className="text-[#4d7aaa] text-xs font-medium mt-0.5">Management System</p>
+            <p className="text-white font-black text-lg leading-none tracking-tight">LoyaltyPro</p>
+            <p className="text-[#555] text-xs font-medium mt-0.5">Management System</p>
           </div>
         </div>
 
-        {/* Hero text */}
+        {/* Hero */}
         <div className="relative z-10">
-          {/* Diagonal accent bar */}
-          <div className="w-12 h-1 bg-[#0052ff] rounded-full mb-6" />
-          <h1 className="text-5xl font-extrabold text-white leading-tight tracking-tight mb-5">
-            Grow loyalty,<br />
-            <span className="text-[#0052ff]">grow revenue.</span>
+          <div className="w-10 h-1 bg-[#FFD000] rounded-full mb-6" />
+          <h1 className="text-5xl font-black text-white leading-tight tracking-tight mb-5">
+            Loyalty that<br />
+            <span className="text-[#FFD000]">pays off.</span>
           </h1>
-          <p className="text-[#4d7aaa] text-base leading-relaxed max-w-sm font-medium">
-            A unified platform to manage customer tiers, track points, and drive retention through smart loyalty programs.
+          <p className="text-[#666] text-base leading-relaxed max-w-sm">
+            Manage tiers, track points, and drive customer retention with a unified loyalty management platform.
           </p>
 
-          {/* Stats grid — Nayax style cards */}
+          {/* Stats */}
           <div className="mt-10 grid grid-cols-3 gap-3">
             {[
-              { label: 'Active Members', value: '10K+', icon: '👥' },
-              { label: 'Points Issued', value: '2.4M', icon: '⭐' },
-              { label: 'Retention Rate', value: '68%', icon: '📈' },
+              { label: 'Active Members', value: '10K+' },
+              { label: 'Points Issued',  value: '2.4M' },
+              { label: 'Retention Rate', value: '68%'  },
             ].map((s) => (
-              <div
-                key={s.label}
-                className="relative overflow-hidden rounded-2xl p-4 border border-white/5"
-                style={{ background: 'rgba(0,82,255,0.07)' }}
-              >
-                <div
-                  className="absolute top-0 left-0 right-0 h-0.5"
-                  style={{ background: 'linear-gradient(90deg, #0052ff, transparent)' }}
-                />
+              <div key={s.label} className="rounded-2xl p-4 bg-white/5 border border-white/5">
+                <div className="w-5 h-0.5 bg-[#FFD000] rounded mb-2" />
                 <p className="text-2xl font-black text-white">{s.value}</p>
-                <p className="text-[#4d7aaa] text-[11px] font-medium mt-1">{s.label}</p>
+                <p className="text-[#555] text-[11px] font-medium mt-1">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative z-10 text-[#2a4a6e] text-xs font-medium">
-          © {new Date().getFullYear()} LoyaltyPro · Powered by precision loyalty
+        <p className="relative z-10 text-[#444] text-xs font-medium">
+          © {new Date().getFullYear()} LoyaltyPro · All rights reserved
         </p>
       </div>
 
-      {/* Right — login form */}
-      <div className="flex-1 flex items-center justify-center bg-white px-6 relative">
-        {/* Top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#0052ff] via-[#3d7eff] to-[#0052ff]" />
-
+      {/* Right — white form */}
+      <div className="flex-1 flex items-center justify-center bg-white px-6">
         <div className="w-full max-w-[380px]">
+
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-[#0052ff] flex items-center justify-center">
-              <Gift className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-[#FFD000] flex items-center justify-center">
+              <Gift className="w-4 h-4 text-[#111111]" />
             </div>
-            <p className="font-bold text-[#00112c] text-lg tracking-tight">LoyaltyPro</p>
+            <p className="font-black text-[#111111] text-lg tracking-tight">LoyaltyPro</p>
           </div>
 
-          <h2 className="text-2xl font-extrabold text-[#00112c] mb-1 tracking-tight">
-            Sign in
-          </h2>
-          <p className="text-slate-400 text-sm mb-8 font-medium">
-            Enter your credentials to access the portal
-          </p>
+          {/* Yellow accent */}
+          <div className="w-8 h-1 bg-[#FFD000] rounded-full mb-6" />
+
+          <h2 className="text-2xl font-black text-[#111111] mb-1 tracking-tight">Welcome back</h2>
+          <p className="text-[#999] text-sm mb-8">Sign in to your account to continue</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-[#00112c] mb-2 uppercase tracking-wide">
+              <label className="block text-[11px] font-black text-[#111111] mb-2 uppercase tracking-widest">
                 Username
               </label>
               <input
@@ -138,14 +117,14 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
-                className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 bg-[#f8faff] text-[#00112c] placeholder-slate-300 text-sm font-medium focus:outline-none focus:border-[#0052ff] focus:bg-white transition-all"
+                className="w-full h-11 px-4 rounded-xl border-2 border-[#e8e8e8] bg-[#f9f9f9] text-[#111111] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#FFD000] focus:bg-white transition-all"
                 autoFocus
                 autoComplete="username"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#00112c] mb-2 uppercase tracking-wide">
+              <label className="block text-[11px] font-black text-[#111111] mb-2 uppercase tracking-widest">
                 Password
               </label>
               <div className="relative">
@@ -154,13 +133,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full h-11 px-4 pr-11 rounded-xl border-2 border-slate-100 bg-[#f8faff] text-[#00112c] placeholder-slate-300 text-sm font-medium focus:outline-none focus:border-[#0052ff] focus:bg-white transition-all"
+                  className="w-full h-11 px-4 pr-11 rounded-xl border-2 border-[#e8e8e8] bg-[#f9f9f9] text-[#111111] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#FFD000] focus:bg-white transition-all"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#bbb] hover:text-[#888] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -170,30 +149,25 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !username || !password}
-              className="w-full h-11 bg-[#0052ff] hover:bg-[#003ecc] disabled:bg-[#99b8ff] text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200 mt-2"
+              className="w-full h-11 bg-[#FFD000] hover:bg-[#e6bb00] disabled:bg-[#ffe47a] text-[#111111] font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in…
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" />Signing in…</>
               ) : (
-                <>
-                  Sign in
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                <>Sign in <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
 
-          <div className="mt-8 p-3.5 rounded-xl bg-[#f0f4ff] border border-[#dce8ff]">
-            <p className="text-[11px] font-bold text-[#0052ff] uppercase tracking-wide mb-1">
-              Default credentials
-            </p>
-            <p className="text-xs text-slate-600 font-medium">
-              Username: <span className="font-mono text-[#00112c] font-bold">admin</span>
+          <div className="mt-8 p-3.5 rounded-xl bg-[#f9f9f9] border border-[#e8e8e8]">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-[#FFD000]" />
+              <p className="text-[11px] font-black text-[#111111] uppercase tracking-widest">Default credentials</p>
+            </div>
+            <p className="text-xs text-[#666] font-medium">
+              Username: <span className="font-mono font-black text-[#111111]">admin</span>
               &nbsp;·&nbsp;
-              Password: <span className="font-mono text-[#00112c] font-bold">admin123</span>
+              Password: <span className="font-mono font-black text-[#111111]">admin123</span>
             </p>
           </div>
         </div>

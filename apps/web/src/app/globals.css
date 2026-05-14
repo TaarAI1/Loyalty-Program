@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,32 +6,23 @@
 
 @layer base {
   :root {
-    /* Nayax-inspired: deep navy primary, electric blue accent */
-    --navy-950: #00071a;
-    --navy-900: #00112c;
-    --navy-800: #001a3e;
-    --navy-700: #002455;
-    --blue-accent: #0052ff;
-    --blue-light: #3d7eff;
-    --blue-glow: rgba(0, 82, 255, 0.15);
-
     --background: 0 0% 97%;
-    --foreground: 222 47% 8%;
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 8%;
-    --primary: 221 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 96%;
-    --secondary-foreground: 222 47% 8%;
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 50%;
-    --accent: 221 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --primary: 47 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 47 100% 50%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 221 100% 50%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 47 100% 50%;
     --radius: 0.75rem;
   }
 }
@@ -39,36 +30,11 @@
 @layer base {
   * { @apply border-border; }
   html { font-family: 'Inter', -apple-system, sans-serif; }
-  body { @apply bg-[#f0f2f8] text-foreground antialiased; }
+  body { @apply bg-[#f5f5f5] text-[#111111] antialiased; }
 }
 
 @layer components {
-  /* Nayax-style diagonal accent stripe */
-  .nayax-stripe {
-    background: linear-gradient(135deg, #0052ff 0%, #3d7eff 50%, #6b9eff 100%);
-  }
-
-  .card-nayax {
-    @apply bg-white rounded-2xl border border-white/60 shadow-[0_2px_12px_rgba(0,18,44,0.06)];
-  }
-
-  .page-title {
-    @apply text-xl font-bold text-[#00112c] tracking-tight;
-  }
-
-  .section-label {
-    @apply text-[11px] font-bold text-slate-400 uppercase tracking-widest;
-  }
-
-  .table-header {
-    @apply text-[11px] font-bold text-slate-400 uppercase tracking-wider;
-  }
-
-  .btn-primary {
-    @apply bg-[#0052ff] hover:bg-[#003ecc] text-white font-semibold rounded-xl transition-all shadow-sm;
-  }
-
-  .badge-tier {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border;
-  }
+  .page-title   { @apply text-xl font-black text-[#111111] tracking-tight; }
+  .section-label{ @apply text-[11px] font-black text-[#999] uppercase tracking-widest; }
+  .table-header { @apply text-[11px] font-black text-[#999] uppercase tracking-wider; }
 }
