@@ -4,8 +4,8 @@ import { AuthService } from './auth.service';
 import { Public } from './public.decorator';
 
 class LoginDto {
-  @IsString() username: string;
-  @IsString() @MinLength(6) password: string;
+  @IsString() username!: string;
+  @IsString() @MinLength(6) password!: string;
 }
 
 @Controller('auth')

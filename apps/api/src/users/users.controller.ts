@@ -7,9 +7,9 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 
 class CreateUserDto {
-  @IsString() username: string;
-  @IsString() @MinLength(6) password: string;
-  @IsIn(['admin', 'user']) role: string;
+  @IsString() username!: string;
+  @IsString() @MinLength(6) password!: string;
+  @IsIn(['admin', 'user']) role!: string;
 }
 
 class UpdateUserDto {
