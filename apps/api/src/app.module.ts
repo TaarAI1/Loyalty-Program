@@ -18,6 +18,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { UsersModule } from './users/users.module';
     QueueModule,
     AuthModule,
     UsersModule,
+    SeedModule,
     WebhooksModule,
     CustomersModule,
     ConfigurationModule,

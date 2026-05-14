@@ -6,6 +6,7 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyCors from '@fastify/cors';
 import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
+import { SeedService } from './seed/seed.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -45,6 +46,10 @@ async function bootstrap() {
   // Seed default admin user if not present
   const authService = app.get(AuthService);
   await authService.seedDefaultAdmin();
+
+  // Seed test customers & transactions if DB is empty
+  const seedService = app.get(SeedService);
+  await seedService.seedIfEmpty();
 
   const logger = app.get(Logger);
   logger.log(`🚀 API running on port ${port}`, 'Bootstrap');
