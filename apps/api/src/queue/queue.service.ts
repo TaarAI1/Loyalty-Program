@@ -6,7 +6,7 @@ import {
   SMSJobPayload,
   EmailJobPayload,
 } from '@loyalty/shared';
-import { QUEUE_WHATSAPP, QUEUE_SMS, QUEUE_EMAIL } from './queue.module';
+import { QUEUE_WHATSAPP, QUEUE_SMS, QUEUE_EMAIL } from './queue.constants';
 
 @Injectable()
 export class QueueService {
