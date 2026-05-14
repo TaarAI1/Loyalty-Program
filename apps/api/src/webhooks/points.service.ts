@@ -72,9 +72,9 @@ export class PointsService {
 
       const currentTierName = customer.tier?.name ?? null;
 
-      // Determine reward percentage based on current tier
-      const rewardPct = Number(customer.tier?.rewardPercentage ?? 4);
-      const pointsEarned = calculatePoints(saleAmount, rewardPct);
+      // Determine reward percentage based on current tier (rewardPercentage stored as e.g. 4.00 = 4%)
+      const rewardPct = Number(customer.tier?.rewardPercentage ?? 0);
+      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
 
       // Calculate new lifetime values
       const newLifetimeSale = Number(customer.lifetimeSale) + saleAmount;
@@ -237,8 +237,9 @@ export class PointsService {
   }
 
   private async getDefaultTier(tx: typeof this.prisma): Promise<LoyaltyTier> {
-    const tier = await tx.loyaltyTier.findFirst({ where: { name: 'Classic' } });
-    if (!tier) throw new Error('Default tier "Classic" not found — run db:seed');
+    // Use lowest tier by spend threshold (spendFrom = 0)
+    const tier = await tx.loyaltyTier.findFirst({ orderBy: { spendFrom: 'asc' } });
+    if (!tier) throw new Error('No loyalty tiers configured — add tiers in Configuration');
     return tier;
   }
 

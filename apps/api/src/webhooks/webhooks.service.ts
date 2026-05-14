@@ -77,8 +77,8 @@ export class WebhooksService {
       return { success: true, action: 'updated', customer_id: existing.id };
     }
 
-    // New customer — find default tier
-    const tier = await this.prisma.loyaltyTier.findFirst({ where: { name: 'Classic' } });
+    // New customer — find lowest tier by spend threshold
+    const tier = await this.prisma.loyaltyTier.findFirst({ orderBy: { spendFrom: 'asc' } });
     const customer = await this.prisma.customer.create({
       data: {
         retailproId: dto.customer_id,

@@ -30,42 +30,55 @@ export class SeedService {
   constructor(private readonly prisma: PrismaService) {}
 
   async seedIfEmpty() {
+    // If seeded data exists but was created with old logic, clear and reseed
+    const seedTx = await this.prisma.transaction.findFirst({
+      where: { retailproTransactionId: { startsWith: 'TXN-' } },
+    });
+    if (seedTx) {
+      this.logger.log('Clearing old seed data for reseed with corrected point calculation…');
+      await this.prisma.pointsExpiry.deleteMany({});
+      await this.prisma.pointsLedger.deleteMany({});
+      await this.prisma.transaction.deleteMany({ where: { retailproTransactionId: { startsWith: 'TXN-' } } });
+      await this.prisma.customer.deleteMany({ where: { retailproId: { startsWith: 'RP-' } } });
+    }
+
     const count = await this.prisma.customer.count();
     if (count > 0) return;
 
     this.logger.log('Seeding test data…');
 
-    const tiers = await this.prisma.loyaltyTier.findMany({ orderBy: { pointsFrom: 'asc' } });
+    const tiers = await this.prisma.loyaltyTier.findMany({ orderBy: { spendFrom: 'asc' } });
     if (tiers.length === 0) {
       this.logger.warn('No tiers found, skipping customer seed');
       return;
     }
 
-    const getTier = (points: number) =>
-      [...tiers].reverse().find((t) => points >= t.pointsFrom) ?? tiers[0];
+    // Match real system: tier determined by lifetime spend (spendFrom/spendTo)
+    const getTierBySpend = (spend: number) =>
+      [...tiers]
+        .reverse()
+        .find((t) => Number(t.spendFrom) <= spend) ?? tiers[0];
 
+    // rewardPercentage stored as e.g. 4.00 meaning 4% → use as-is in formula /100
     const getRewardPct = (tier: { rewardPercentage: unknown }) =>
-      Number(tier.rewardPercentage) / 100;
+      Number(tier.rewardPercentage);
 
     for (let i = 0; i < CUSTOMERS.length; i++) {
       const c = CUSTOMERS[i];
-      // Use a subset of transactions per customer based on index
       const txSlice = TX_TEMPLATES.slice(0, 5 + (i % 5));
 
       let totalPoints = 0;
-      let lifetimePts = 0;
       let lifetimeSale = 0;
 
-      // Calculate totals first
+      // Calculate totals using spend-based tier (matching real webhook logic)
       for (const [amount] of txSlice) {
-        const tentativeTier = getTier(totalPoints);
-        const pts = Math.floor(Number(amount) * getRewardPct(tentativeTier));
+        const tierAtTime = getTierBySpend(lifetimeSale);
+        const pts = Math.round((Number(amount) * getRewardPct(tierAtTime)) / 100);
         totalPoints += pts;
-        lifetimePts += pts;
         lifetimeSale += Number(amount);
       }
 
-      const finalTier = getTier(lifetimePts);
+      const finalTier = getTierBySpend(lifetimeSale);
 
       const customer = await this.prisma.customer.create({
         data: {
@@ -88,11 +101,13 @@ export class SeedService {
       });
 
       let runningBalance = 0;
+      let runningSpend = 0;
       for (let j = 0; j < txSlice.length; j++) {
         const [amount, daysAgo] = txSlice[j];
-        const tierAtTime = getTier(runningBalance);
-        const pts = Math.floor(Number(amount) * getRewardPct(tierAtTime));
+        const tierAtTime = getTierBySpend(runningSpend);
+        const pts = Math.round((Number(amount) * getRewardPct(tierAtTime)) / 100);
         runningBalance += pts;
+        runningSpend += Number(amount);
 
         const txDate = this.daysAgo(daysAgo as number);
         const tx = await this.prisma.transaction.create({
