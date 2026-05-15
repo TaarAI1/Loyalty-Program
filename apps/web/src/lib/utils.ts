@@ -38,15 +38,17 @@ export function formatDateTime(date: string | Date): string {
 export function tierColor(tier: string): string {
   switch (tier?.toLowerCase()) {
     case 'classic':
-      return 'bg-gray-100 text-gray-800 border-gray-300';
+      return 'bg-stone-200 text-stone-800 border-stone-400 font-semibold';
     case 'silver':
-      return 'bg-slate-100 text-slate-700 border-slate-300';
+      return 'bg-slate-300 text-slate-800 border-slate-400 font-semibold';
     case 'gold':
-      return 'bg-yellow-50 text-yellow-800 border-yellow-300';
+      return 'bg-yellow-400 text-yellow-900 border-yellow-500 font-semibold';
     case 'platinum':
-      return 'bg-purple-50 text-purple-800 border-purple-300';
+      return 'bg-violet-200 text-violet-900 border-violet-400 font-semibold';
+    case 'diamond':
+      return 'bg-cyan-200 text-cyan-900 border-cyan-400 font-semibold';
     default:
-      return 'bg-gray-100 text-gray-600 border-gray-200';
+      return 'bg-gray-200 text-gray-700 border-gray-400 font-semibold';
   }
 }
 

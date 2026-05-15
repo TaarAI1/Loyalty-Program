@@ -336,24 +336,30 @@ export default function CustomerDetailPage() {
             {/* Tier benefits */}
             {tiers && (
               <div className="grid grid-cols-2 gap-3">
-                {(tiers as Array<{ id: number; name: string; rewardPercentage: number; spendFrom: number; spendTo: number }>).map((t) => (
-                  <div
-                    key={t.id}
-                    className={`p-3 rounded-lg border text-sm ${
-                      customer.tier?.name === t.name
-                        ? 'border-[#FFD000] bg-[#fffde8]'
-                        : 'border-border bg-muted/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <Badge className={tierColor(t.name)}>{t.name}</Badge>
-                      <span className="font-bold text-[#a07800]">{Number(t.rewardPercentage)}%</span>
+                {(tiers as Array<{ id: number; name: string; rewardPercentage: number; spendFrom: number; spendTo: number }>).map((t) => {
+                  const isActive = customer.tier?.name === t.name;
+                  return (
+                    <div
+                      key={t.id}
+                      className={`p-3 rounded-lg border text-sm transition-all ${
+                        isActive ? 'border-[#FFD000] bg-[#fffde8] shadow-sm' : 'border-border bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Badge className={tierColor(t.name)}>{t.name}</Badge>
+                        <span className={`font-black text-sm ${isActive ? 'text-[#a07800]' : 'text-slate-500'}`}>
+                          {Number(t.rewardPercentage)}%
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground mt-1.5 text-xs">
+                        {formatCurrency(t.spendFrom)} – {t.spendTo ? formatCurrency(t.spendTo) : '∞'}
+                      </p>
+                      {isActive && (
+                        <p className="text-[10px] font-bold text-[#a07800] mt-1">◉ Current Tier</p>
+                      )}
                     </div>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {formatCurrency(t.spendFrom)} – {t.spendTo ? formatCurrency(t.spendTo) : '∞'}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
