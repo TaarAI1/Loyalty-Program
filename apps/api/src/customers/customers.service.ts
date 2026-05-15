@@ -161,6 +161,35 @@ export class CustomersService {
     return { success: true };
   }
 
+  async awardPoints(id: string, points: number, reason: string, awardedBy: string) {
+    const customer = await this.prisma.customer.findUnique({ where: { id }, select: { id: true, totalPoints: true, lifetimePoints: true, name: true } });
+    if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+
+    const newBalance = customer.totalPoints + points;
+    const newLifetime = customer.lifetimePoints + points;
+
+    await this.prisma.$transaction([
+      this.prisma.customer.update({
+        where: { id },
+        data: { totalPoints: newBalance, lifetimePoints: newLifetime },
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.prisma.pointsLedger.create as any)({
+        data: {
+          customerId: id,
+          pointsChange: points,
+          runningBalance: newBalance,
+          reason: 'MANUAL_AWARD',
+          referenceId: `MANUAL-${Date.now()}-${awardedBy}`,
+          notes: reason,
+        },
+      }),
+    ]);
+
+    this.logger.log({ customerId: id, points, reason, awardedBy }, 'Manual points award');
+    return { success: true, newBalance };
+  }
+
   private async assertExists(id: string) {
     const exists = await this.prisma.customer.findUnique({ where: { id }, select: { id: true } });
     if (!exists) throw new NotFoundException(`Customer ${id} not found`);

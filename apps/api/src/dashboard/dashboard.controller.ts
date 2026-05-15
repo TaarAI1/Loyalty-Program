@@ -28,4 +28,16 @@ export class DashboardController {
   ) {
     return this.dashboardService.getRecentTransactions(limit);
   }
+
+  @Get('customer-segments')
+  getCustomerSegments() {
+    return this.dashboardService.getCustomerSegments();
+  }
+
+  @Get('top-customers')
+  getTopCustomers(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
+  ) {
+    return this.dashboardService.getTopCustomers(limit);
+  }
 }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Settings, BarChart3, Bell,
-  Gift, UserCog, LogOut, ChevronLeft, ChevronRight,
+  Gift, UserCog, LogOut, ChevronLeft, ChevronRight, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const baseNavItems = [
   { href: '/dashboard',      label: 'Dashboard',   icon: LayoutDashboard },
   { href: '/customers',      label: 'Customers',   icon: Users },
+  { href: '/campaigns',      label: 'Campaigns',   icon: Zap },
   { href: '/reports',        label: 'Reports',     icon: BarChart3 },
   { href: '/notifications',  label: 'Notifications', icon: Bell },
 ];

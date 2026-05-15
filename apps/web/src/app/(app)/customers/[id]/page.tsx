@@ -18,8 +18,10 @@ import {
   formatDate,
   formatDateTime,
   tierColor,
+  segmentColor,
+  segmentLabel,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerDetailPage() {
@@ -84,6 +86,20 @@ export default function CustomerDetailPage() {
     onError: (err) => toast.error(String(err)),
   });
 
+  const [awardOpen, setAwardOpen] = useState(false);
+  const [awardForm, setAwardForm] = useState({ points: '', reason: '' });
+  const awardMutation = useMutation({
+    mutationFn: () => customersApi.awardPoints(id, { points: Number(awardForm.points), reason: awardForm.reason }),
+    onSuccess: (data) => {
+      toast.success(`${awardForm.points} points awarded. New balance: ${formatNumber(data.newBalance)}`);
+      qc.invalidateQueries({ queryKey: ['customer', id] });
+      qc.invalidateQueries({ queryKey: ['customer-ledger', id] });
+      setAwardOpen(false);
+      setAwardForm({ points: '', reason: '' });
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+
   const openEdit = () => {
     if (customer) {
       setEditForm({
@@ -126,6 +142,10 @@ export default function CustomerDetailPage() {
             <Edit2 className="w-4 h-4" />
             Edit
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setAwardOpen(true)}>
+            <Gift className="w-4 h-4" />
+            Award Points
+          </Button>
           <Button size="sm" onClick={() => setNotifyOpen(true)}>
             <MessageCircle className="w-4 h-4" />
             Send WhatsApp
@@ -141,35 +161,57 @@ export default function CustomerDetailPage() {
               <div>
                 <h2 className="text-xl font-bold">{customer.name}</h2>
                 <p className="text-muted-foreground text-sm">{customer.mobileNumber}</p>
-                {customer.email && (
-                  <p className="text-muted-foreground text-sm">{customer.email}</p>
+                {customer.email && <p className="text-muted-foreground text-sm">{customer.email}</p>}
+              </div>
+              <div className="flex flex-col items-end gap-1.5">
+                <Badge className={tierColor(customer.tier?.name)}>{customer.tier?.name}</Badge>
+                {customer.segment && (
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(customer.segment)}`}>
+                    {segmentLabel(customer.segment)}
+                  </span>
                 )}
               </div>
-              <Badge className={tierColor(customer.tier?.name)}>
-                {customer.tier?.name}
-              </Badge>
+            </div>
+
+            {/* Engagement score bar */}
+            {customer.engagementScore !== undefined && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground flex items-center gap-1"><Zap className="w-3 h-3" /> Engagement</span>
+                  <span className="font-bold">{customer.engagementScore}/100</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${customer.engagementScore}%`,
+                      background: customer.engagementScore >= 70 ? '#22c55e' : customer.engagementScore >= 40 ? '#FFD000' : '#ef4444',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Points highlight */}
+            <div className="bg-[#fffde8] border border-[#FFD000]/30 rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#a07800] font-medium">Available Points</p>
+                <p className="text-2xl font-black text-[#111]">{formatNumber(customer.totalPoints)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Lifetime Earned</p>
+                <p className="font-bold text-slate-700">{formatNumber(customer.lifetimePoints)}</p>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Total Points</p>
-                <p className="font-bold text-indigo-600 text-lg">
-                  {formatNumber(customer.totalPoints)}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Lifetime Points</p>
-                <p className="font-bold">{formatNumber(customer.lifetimePoints)}</p>
-              </div>
               <div>
                 <p className="text-muted-foreground">Lifetime Sale</p>
                 <p className="font-bold">{formatCurrency(Number(customer.lifetimeSale))}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Last Visit</p>
-                <p className="font-bold">
-                  {customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—'}
-                </p>
+                <p className="font-bold">{customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—'}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Gender</p>
@@ -185,9 +227,7 @@ export default function CustomerDetailPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">DOB</p>
-                <p className="font-medium">
-                  {customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—'}
-                </p>
+                <p className="font-medium">{customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—'}</p>
               </div>
             </div>
           </CardContent>
@@ -212,8 +252,8 @@ export default function CustomerDetailPage() {
               </div>
               <div className="w-full bg-muted rounded-full h-3">
                 <div
-                  className="bg-indigo-500 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${tierProgressPct}%` }}
+                  className="h-3 rounded-full transition-all duration-700"
+                  style={{ width: `${tierProgressPct}%`, background: '#FFD000' }}
                 />
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -230,13 +270,13 @@ export default function CustomerDetailPage() {
                     key={t.id}
                     className={`p-3 rounded-lg border text-sm ${
                       customer.tier?.name === t.name
-                        ? 'border-indigo-300 bg-indigo-50'
+                        ? 'border-[#FFD000] bg-[#fffde8]'
                         : 'border-border bg-muted/30'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <Badge className={tierColor(t.name)}>{t.name}</Badge>
-                      <span className="font-bold text-indigo-600">{Number(t.rewardPercentage)}%</span>
+                      <span className="font-bold text-[#a07800]">{Number(t.rewardPercentage)}%</span>
                     </div>
                     <p className="text-muted-foreground mt-1 text-xs">
                       {formatCurrency(t.spendFrom)} – {t.spendTo ? formatCurrency(t.spendTo) : '∞'}
@@ -447,6 +487,41 @@ export default function CustomerDetailPage() {
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Award Points Dialog */}
+      <Dialog open={awardOpen} onClose={() => setAwardOpen(false)} title="Award Bonus Points">
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>Points to Award</Label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="e.g. 500"
+              value={awardForm.points}
+              onChange={(e) => setAwardForm((f) => ({ ...f, points: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Reason</Label>
+            <Input
+              placeholder="e.g. Birthday gift, Complaint resolution..."
+              value={awardForm.reason}
+              onChange={(e) => setAwardForm((f) => ({ ...f, reason: e.target.value }))}
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              className="flex-1"
+              loading={awardMutation.isPending}
+              onClick={() => awardMutation.mutate()}
+              disabled={!awardForm.points || !awardForm.reason || Number(awardForm.points) <= 0}
+            >
+              <Gift className="w-4 h-4" /> Award Points
+            </Button>
+            <Button variant="outline" onClick={() => setAwardOpen(false)}>Cancel</Button>
           </div>
         </div>
       </Dialog>

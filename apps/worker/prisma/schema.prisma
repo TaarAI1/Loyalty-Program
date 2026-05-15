@@ -39,6 +39,8 @@ model Customer {
   lifetimePoints  Int       @default(0) @map("lifetime_points")
   lifetimeSale    Decimal   @default(0) @map("lifetime_sale") @db.Decimal(10, 2)
   lastVisitDate   DateTime? @map("last_visit_date")
+  segment         String?   @default("new") @db.VarChar(30)
+  engagementScore Int       @default(0) @map("engagement_score")
   isActive        Boolean   @default(true) @map("is_active")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -86,6 +88,7 @@ model PointsLedger {
   runningBalance  Int       @map("running_balance")
   reason          String?   @db.VarChar(100)
   referenceId     String?   @map("reference_id") @db.VarChar(255)
+  notes           String?
   createdAt       DateTime  @default(now()) @map("created_at")
 
   customer    Customer     @relation(fields: [customerId], references: [id])

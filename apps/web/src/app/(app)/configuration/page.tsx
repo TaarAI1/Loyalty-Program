@@ -608,6 +608,188 @@ function EmailTab() {
   );
 }
 
+// ── Points Rules Tab ──────────────────────────────────────────────────────────
+
+type RuleForm = {
+  id?: number;
+  type: string;
+  name: string;
+  value: string;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+};
+
+const emptyRuleForm: RuleForm = {
+  type: 'welcome_bonus',
+  name: '',
+  value: '',
+  isActive: true,
+  startDate: '',
+  endDate: '',
+};
+
+const RULE_TYPES = [
+  { value: 'welcome_bonus', label: 'Welcome Bonus (pts)' },
+  { value: 'birthday_multiplier', label: 'Birthday Multiplier (×)' },
+  { value: 'first_purchase_bonus', label: 'First Purchase Bonus (pts)' },
+  { value: 'global_multiplier', label: 'Global Multiplier (×)' },
+];
+
+function PointsRulesTab() {
+  const qc = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<RuleForm>(emptyRuleForm);
+
+  const { data: rules, isLoading } = useQuery({
+    queryKey: ['points-rules'],
+    queryFn: configApi.getPointsRules,
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: () =>
+      configApi.upsertPointsRule({
+        id: form.id,
+        type: form.type,
+        name: form.name,
+        value: Number(form.value),
+        isActive: form.isActive,
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
+      }),
+    onSuccess: () => {
+      toast.success(form.id ? 'Rule updated' : 'Rule created');
+      qc.invalidateQueries({ queryKey: ['points-rules'] });
+      setDialogOpen(false);
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => configApi.deletePointsRule(id),
+    onSuccess: () => {
+      toast.success('Rule deleted');
+      qc.invalidateQueries({ queryKey: ['points-rules'] });
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+
+  const typeLabel = (type: string) => RULE_TYPES.find((t) => t.value === type)?.label ?? type;
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Points Rules</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure bonus points awarded for welcome, birthdays, and first purchases.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => { setForm(emptyRuleForm); setDialogOpen(true); }}>
+              <Plus className="w-4 h-4" /> Add Rule
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          {isLoading ? (
+            <div className="px-6 pb-5 space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left py-3 px-6 table-header text-[11px]">Name</th>
+                  <th className="text-left py-3 px-3 table-header text-[11px]">Type</th>
+                  <th className="text-right py-3 px-3 table-header text-[11px]">Value</th>
+                  <th className="text-left py-3 px-3 table-header text-[11px]">Active From</th>
+                  <th className="text-left py-3 px-3 table-header text-[11px]">Status</th>
+                  <th className="py-3 px-6" />
+                </tr>
+              </thead>
+              <tbody>
+                {(rules ?? []).map((r: { id: number; type: string; name: string; value: number; isActive: boolean; startDate: string; endDate: string }) => (
+                  <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/70">
+                    <td className="py-3 px-6 font-medium">{r.name}</td>
+                    <td className="py-3 px-3 text-slate-500 text-xs">{typeLabel(r.type)}</td>
+                    <td className="py-3 px-3 text-right font-bold text-[#a07800]">
+                      {r.type.includes('multiplier') ? `×${Number(r.value)}` : `+${Number(r.value)} pts`}
+                    </td>
+                    <td className="py-3 px-3 text-xs text-slate-500">
+                      {r.startDate ? r.startDate.slice(0, 10) : '—'}{r.endDate ? ` → ${r.endDate.slice(0, 10)}` : ''}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${r.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                        {r.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6">
+                      <div className="flex gap-1 justify-end">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setForm({ id: r.id, type: r.type, name: r.name, value: String(r.value), isActive: r.isActive, startDate: r.startDate?.slice(0,10) ?? '', endDate: r.endDate?.slice(0,10) ?? '' });
+                          setDialogOpen(true);
+                        }}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(r.id)}>
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title={form.id ? 'Edit Rule' : 'New Points Rule'}>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>Rule Name</Label>
+            <Input placeholder="e.g. Welcome Bonus" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          </div>
+          <div className="space-y-1">
+            <Label>Type</Label>
+            <select
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              value={form.type}
+              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+            >
+              {RULE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>{form.type.includes('multiplier') ? 'Multiplier (e.g. 2 = double points)' : 'Bonus Points'}</Label>
+            <Input type="number" min="0" step="0.5" placeholder="e.g. 500" value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Start Date (optional)</Label>
+              <Input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>End Date (optional)</Label>
+              <Input type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 accent-[#FFD000]" />
+            Active
+          </label>
+          <div className="flex gap-2 pt-2">
+            <Button className="flex-1" loading={upsertMutation.isPending} onClick={() => upsertMutation.mutate()} disabled={!form.name || !form.value}>
+              {form.id ? 'Save Changes' : 'Create Rule'}
+            </Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ConfigurationPage() {
@@ -615,6 +797,7 @@ export default function ConfigurationPage() {
     <Tabs defaultValue="tiers">
       <TabsList>
         <TabsTrigger value="tiers">Loyalty Tiers</TabsTrigger>
+        <TabsTrigger value="rules">Points Rules</TabsTrigger>
         <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         <TabsTrigger value="sms">SMS</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
@@ -622,6 +805,9 @@ export default function ConfigurationPage() {
 
       <TabsContent value="tiers">
         <TiersTab />
+      </TabsContent>
+      <TabsContent value="rules">
+        <PointsRulesTab />
       </TabsContent>
       <TabsContent value="whatsapp">
         <WhatsAppTab />

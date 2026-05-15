@@ -19,6 +19,7 @@ model LoyaltyTier {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   customers         Customer[]
+  campaigns         Campaign[]
 
   @@map("loyalty_tiers")
 }
@@ -39,6 +40,8 @@ model Customer {
   lifetimePoints  Int       @default(0) @map("lifetime_points")
   lifetimeSale    Decimal   @default(0) @map("lifetime_sale") @db.Decimal(10, 2)
   lastVisitDate   DateTime? @map("last_visit_date")
+  segment         String?   @default("new") @db.VarChar(30)
+  engagementScore Int       @default(0) @map("engagement_score")
   isActive        Boolean   @default(true) @map("is_active")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -86,6 +89,7 @@ model PointsLedger {
   runningBalance  Int       @map("running_balance")
   reason          String?   @db.VarChar(100)
   referenceId     String?   @map("reference_id") @db.VarChar(255)
+  notes           String?
   createdAt       DateTime  @default(now()) @map("created_at")
 
   customer    Customer     @relation(fields: [customerId], references: [id])
@@ -185,6 +189,37 @@ model ForensicAlert {
   alertDate             DateTime  @default(now()) @map("alert_date")
 
   @@map("forensic_alerts")
+}
+
+model PointsRule {
+  id          Int      @id @default(autoincrement())
+  type        String   @db.VarChar(50)   // welcome_bonus | birthday_multiplier | first_purchase_bonus | global_multiplier
+  name        String   @db.VarChar(100)
+  value       Decimal  @db.Decimal(8, 2) // bonus pts or multiplier factor
+  isActive    Boolean  @default(true) @map("is_active")
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("points_rules")
+}
+
+model Campaign {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(150)
+  description  String?
+  multiplier   Decimal  @default(2) @db.Decimal(4, 2)
+  startDate    DateTime @map("start_date")
+  endDate      DateTime @map("end_date")
+  targetTierId Int?     @map("target_tier_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  targetTier LoyaltyTier? @relation(fields: [targetTierId], references: [id])
+
+  @@map("campaigns")
 }
 
 model User {

@@ -73,4 +73,12 @@ export class CustomersController {
   ) {
     return this.customersService.sendManualWhatsApp(id, body.template_name, body.message);
   }
+
+  @Post(':id/award-points')
+  awardPoints(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { points: number; reason: string; awardedBy?: string },
+  ) {
+    return this.customersService.awardPoints(id, body.points, body.reason, body.awardedBy ?? 'admin');
+  }
 }

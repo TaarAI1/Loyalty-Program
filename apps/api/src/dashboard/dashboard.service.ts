@@ -20,6 +20,8 @@ export class DashboardService {
       pointsRedeemedResult,
       activeTiers,
       todayTransactions,
+      pointsBalanceResult,
+      avgTransactionResult,
     ] = await this.prisma.$transaction([
       this.prisma.customer.count(),
       this.prisma.customer.count({ where: { isActive: true } }),
@@ -31,12 +33,15 @@ export class DashboardService {
         _count: { id: true },
         _sum: { saleAmount: true },
       }),
+      this.prisma.customer.aggregate({ _sum: { totalPoints: true } }),
+      this.prisma.transaction.aggregate({ _avg: { saleAmount: true } }),
     ]);
 
     const totalPointsIssued = pointsIssuedResult._sum.pointsEarned ?? 0;
     const totalPointsRedeemed = pointsRedeemedResult._sum.pointsRedeemed ?? 0;
     const redemptionRate =
       totalPointsIssued > 0 ? Math.round((totalPointsRedeemed / totalPointsIssued) * 10000) / 100 : 0;
+    const pointsLiability = pointsBalanceResult._sum.totalPoints ?? 0;
 
     return {
       totalCustomers,
@@ -47,7 +52,54 @@ export class DashboardService {
       activeTiers,
       transactionsToday: todayTransactions._count.id,
       revenueToday: Number(todayTransactions._sum.saleAmount ?? 0),
+      pointsLiability,
+      avgTransactionValue: Number(avgTransactionResult._avg.saleAmount ?? 0),
     };
+  }
+
+  async getCustomerSegments() {
+    const rows = await this.prisma.$queryRaw<Array<{ segment: string; count: number }>>`
+      SELECT COALESCE(segment, 'new') as segment, COUNT(*)::int as count
+      FROM customers
+      WHERE is_active = true
+      GROUP BY segment
+      ORDER BY count DESC
+    `;
+
+    const segmentMeta: Record<string, { label: string; color: string }> = {
+      champion: { label: 'Champions', color: '#FFD000' },
+      loyal: { label: 'Loyal', color: '#22c55e' },
+      potential: { label: 'Potential', color: '#3b82f6' },
+      new: { label: 'New', color: '#8b5cf6' },
+      at_risk: { label: 'At Risk', color: '#f97316' },
+      dormant: { label: 'Dormant', color: '#ef4444' },
+    };
+
+    const total = rows.reduce((s, r) => s + r.count, 0);
+    return rows.map((r) => {
+      const seg = r.segment ?? 'new';
+      const meta = segmentMeta[seg] ?? { label: seg, color: '#999' };
+      return {
+        segment: seg,
+        label: meta.label,
+        color: meta.color,
+        count: r.count,
+        percentage: total > 0 ? Math.round((r.count / total) * 1000) / 10 : 0,
+      };
+    });
+  }
+
+  async getTopCustomers(limit = 10) {
+    const customers = await this.prisma.customer.findMany({
+      where: { isActive: true },
+      orderBy: { lifetimeSale: 'desc' },
+      take: limit,
+      include: { tier: { select: { name: true } } },
+    });
+    return customers.map((c) => ({
+      ...c,
+      lifetimeSale: Number(c.lifetimeSale),
+    }));
   }
 
   async getPointsTrend(days = 30) {

@@ -28,6 +28,9 @@ export const dashboardApi = {
   getTierDistribution: () => api.get('/dashboard/tier-distribution').then((r) => r.data),
   getRecentTransactions: (limit = 10) =>
     api.get(`/dashboard/recent-transactions?limit=${limit}`).then((r) => r.data),
+  getCustomerSegments: () => api.get('/dashboard/customer-segments').then((r) => r.data),
+  getTopCustomers: (limit = 10) =>
+    api.get(`/dashboard/top-customers?limit=${limit}`).then((r) => r.data),
 };
 
 // Customers
@@ -43,6 +46,8 @@ export const customersApi = {
     api.put(`/customers/${id}`, data).then((r) => r.data),
   sendNotification: (id: string, data: { template_name: string; message?: string }) =>
     api.post(`/customers/${id}/notify`, data).then((r) => r.data),
+  awardPoints: (id: string, data: { points: number; reason: string }) =>
+    api.post(`/customers/${id}/award-points`, data).then((r) => r.data),
 };
 
 // Configuration
@@ -62,6 +67,16 @@ export const configApi = {
   getEmail: () => api.get('/configuration/email').then((r) => r.data),
   updateEmail: (data: Record<string, unknown>) =>
     api.put('/configuration/email', data).then((r) => r.data),
+  getPointsRules: () => api.get('/configuration/points-rules').then((r) => r.data),
+  upsertPointsRule: (data: Record<string, unknown>) =>
+    api.put('/configuration/points-rules', data).then((r) => r.data),
+  deletePointsRule: (id: number) => api.delete(`/configuration/points-rules/${id}`).then((r) => r.data),
+  getCampaigns: () => api.get('/configuration/campaigns').then((r) => r.data),
+  createCampaign: (data: Record<string, unknown>) =>
+    api.post('/configuration/campaigns', data).then((r) => r.data),
+  updateCampaign: (id: number, data: Record<string, unknown>) =>
+    api.put(`/configuration/campaigns/${id}`, data).then((r) => r.data),
+  deleteCampaign: (id: number) => api.delete(`/configuration/campaigns/${id}`).then((r) => r.data),
 };
 
 // Reports

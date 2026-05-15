@@ -1,6 +1,8 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
+import { PointsRulesService } from '../configuration/points-rules.service';
+import { CampaignsService } from '../configuration/campaigns.service';
 import { calculatePoints, getExpiryDate, formatPhoneNumber } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
@@ -20,6 +22,8 @@ export class PointsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
+    private readonly pointsRules: PointsRulesService,
+    private readonly campaigns: CampaignsService,
   ) {}
 
   /**
@@ -51,9 +55,12 @@ export class PointsService {
         include: { tier: true },
       });
 
+      const isNewCustomer = !customer;
+
       if (!customer) {
         const tier = await this.getDefaultTier(tx as typeof this.prisma);
-        customer = await tx.customer.create({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        customer = await (tx.customer.create as any)({
           data: {
             name: customerName,
             mobileNumber: customerMobile,
@@ -61,25 +68,57 @@ export class PointsService {
             tierId: tier.id,
             store: params.store,
             region: params.region,
+            segment: 'new',
           },
           include: { tier: true },
         });
         this.logger.log(
-          { customerId: customer.id, mobile: customerMobile },
+          { customerId: customer!.id, mobile: customerMobile },
           'New customer created via webhook',
         );
       }
 
-      const currentTierName = customer.tier?.name ?? null;
+      // Non-null assertion: customer is guaranteed assigned at this point
+      const c = customer!;
+
+      const currentTierName = c.tier?.name ?? null;
 
       // Determine reward percentage based on current tier (rewardPercentage stored as e.g. 4.00 = 4%)
-      const rewardPct = Number(customer.tier?.rewardPercentage ?? 0);
-      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
+      const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
+      let pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
+
+      // Apply campaign multiplier (active time-limited campaigns)
+      const campaignMultiplier = await this.campaigns.getActiveMultiplier(c.tierId);
+      if (campaignMultiplier > 1) pointsEarned = Math.round(pointsEarned * campaignMultiplier);
+
+      // Apply welcome bonus for brand-new customers on their first transaction
+      if (isNewCustomer) {
+        const welcomeBonus = await this.pointsRules.getActiveValue('welcome_bonus');
+        if (welcomeBonus) pointsEarned += welcomeBonus;
+      }
+
+      // Apply birthday multiplier (if today is customer's birthday month+day)
+      if (c.dateOfBirth) {
+        const now = params.transactionDate;
+        const dob = new Date(c.dateOfBirth);
+        if (dob.getMonth() === now.getMonth() && dob.getDate() === now.getDate()) {
+          const birthdayMultiplier = await this.pointsRules.getActiveValue('birthday_multiplier');
+          if (birthdayMultiplier && birthdayMultiplier > 1)
+            pointsEarned = Math.round(pointsEarned * birthdayMultiplier);
+        }
+      }
+
+      // Apply first-purchase bonus (customer has no prior transactions)
+      const txCount = await tx.transaction.count({ where: { customerId: c.id } });
+      if (txCount === 0 && !isNewCustomer) {
+        const firstPurchaseBonus = await this.pointsRules.getActiveValue('first_purchase_bonus');
+        if (firstPurchaseBonus) pointsEarned += firstPurchaseBonus;
+      }
 
       // Calculate new lifetime values
-      const newLifetimeSale = Number(customer.lifetimeSale) + saleAmount;
-      const newLifetimePoints = customer.lifetimePoints + pointsEarned;
-      const newTotalPoints = customer.totalPoints + pointsEarned;
+      const newLifetimeSale = Number(c.lifetimeSale) + saleAmount;
+      const newLifetimePoints = c.lifetimePoints + pointsEarned;
+      const newTotalPoints = c.totalPoints + pointsEarned;
 
       // Find the correct tier for new lifetime sale
       const newTier = await this.determineTier(tx as typeof this.prisma, newLifetimeSale);
@@ -88,7 +127,7 @@ export class PointsService {
       const transaction = await tx.transaction.create({
         data: {
           retailproTransactionId,
-          customerId: customer.id,
+          customerId: c.id,
           transactionDate: params.transactionDate,
           saleAmount,
           pointsEarned,
@@ -100,23 +139,36 @@ export class PointsService {
         },
       });
 
-      // Update customer
-      await tx.customer.update({
-        where: { id: customer.id },
+      // Compute engagement score (simple: 1–100 based on recency + frequency)
+      const daysSinceLast = c.lastVisitDate
+        ? Math.floor((params.transactionDate.getTime() - c.lastVisitDate.getTime()) / 86400000)
+        : 999;
+      const recencyScore = Math.max(0, 100 - daysSinceLast);
+      const newEngagementScore = Math.min(100, Math.round(recencyScore * 0.7 + Math.min(txCount + 1, 30) * 1));
+
+      // Determine segment
+      const segment = this.computeSegment(txCount + 1, daysSinceLast, newLifetimeSale);
+
+      // Update customer (use any cast for new fields until Prisma regenerates)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (tx.customer.update as any)({
+        where: { id: c.id },
         data: {
           lifetimeSale: newLifetimeSale,
           lifetimePoints: newLifetimePoints,
           totalPoints: newTotalPoints,
           tierId: newTier.id,
           lastVisitDate: params.transactionDate,
-          name: customerName, // keep name in sync
+          name: customerName,
+          engagementScore: newEngagementScore,
+          segment,
         },
       });
 
       // Points ledger entry
       await tx.pointsLedger.create({
         data: {
-          customerId: customer.id,
+          customerId: c.id,
           transactionId: transaction.id,
           pointsChange: pointsEarned,
           runningBalance: newTotalPoints,
@@ -130,7 +182,7 @@ export class PointsService {
       const expiryDate = getExpiryDate(today);
       await tx.pointsExpiry.create({
         data: {
-          customerId: customer.id,
+          customerId: c.id,
           pointsAmount: pointsEarned,
           earningDate: today,
           expiryDate,
@@ -139,7 +191,7 @@ export class PointsService {
 
       this.logger.log(
         {
-          customerId: customer.id,
+          customerId: c.id,
           transactionId: transaction.id,
           pointsEarned,
           runningBalance: newTotalPoints,
@@ -151,7 +203,7 @@ export class PointsService {
       );
 
       return {
-        customer,
+        customer: c,
         transaction,
         pointsEarned,
         newTier,
@@ -234,6 +286,17 @@ export class PointsService {
     });
 
     return { success: true, newBalance: result };
+  }
+
+  /** RFM-based segmentation */
+  private computeSegment(txCount: number, daysSinceLast: number, lifetimeSale: number): string {
+    if (txCount >= 8 && daysSinceLast <= 30 && lifetimeSale >= 50000) return 'champion';
+    if (txCount >= 4 && daysSinceLast <= 60) return 'loyal';
+    if (txCount >= 2 && daysSinceLast <= 30) return 'potential';
+    if (txCount === 1 || daysSinceLast <= 30) return 'new';
+    if (daysSinceLast > 180) return 'dormant';
+    if (daysSinceLast > 90) return 'at_risk';
+    return 'new';
   }
 
   private async getDefaultTier(tx: typeof this.prisma): Promise<LoyaltyTier> {

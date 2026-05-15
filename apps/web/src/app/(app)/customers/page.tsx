@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatNumber, formatDate, tierColor } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatDate, tierColor, segmentColor, segmentLabel } from '@/lib/utils';
 import { exportToCsv } from '@/lib/export';
 import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -31,7 +31,7 @@ export default function CustomersPage() {
     queryFn: configApi.getTiers,
   });
 
-  type CustomerRow = { id: string; name: string; mobileNumber: string; tier: { name: string }; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; };
+  type CustomerRow = { id: string; name: string; mobileNumber: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; };
   type CustomerListResult = { data: CustomerRow[]; meta: { total: number; page: number; pageSize: number; totalPages: number } };
 
   const { data, isLoading } = useQuery<CustomerListResult>({
@@ -135,6 +135,7 @@ export default function CustomersPage() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Mobile</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tier</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Segment</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Points</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Lifetime Sale</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Store</th>
@@ -145,7 +146,7 @@ export default function CustomersPage() {
                 {isLoading
                   ? [...Array(8)].map((_, i) => (
                       <tr key={i} className="border-b border-border/50">
-                        {[...Array(7)].map((__, j) => (
+                        {[...Array(8)].map((__, j) => (
                           <td key={j} className="py-3 px-4">
                             <Skeleton className="h-4 w-full" />
                           </td>
@@ -153,16 +154,7 @@ export default function CustomersPage() {
                       </tr>
                     ))
                   : (data?.data ?? []).map(
-                      (c: {
-                        id: string;
-                        name: string;
-                        mobileNumber: string;
-                        tier: { name: string };
-                        totalPoints: number;
-                        lifetimeSale: number;
-                        store: string;
-                        lastVisitDate: string;
-                      }) => (
+                      (c: CustomerRow) => (
                         <tr
                           key={c.id}
                           className="border-b border-border/50 hover:bg-muted/40 cursor-pointer transition-colors"
@@ -175,7 +167,14 @@ export default function CustomersPage() {
                               {c.tier?.name ?? '—'}
                             </Badge>
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-indigo-600">
+                          <td className="py-3 px-4">
+                            {c.segment && (
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(c.segment)}`}>
+                                {segmentLabel(c.segment)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-[#a07800]">
                             {formatNumber(c.totalPoints)}
                           </td>
                           <td className="py-3 px-4 text-right">
