@@ -1,7 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { configApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,8 +38,16 @@ const emptyCampaignForm: CampaignForm = {
 };
 
 export default function CampaignsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') router.replace('/dashboard');
+  }, [user, router]);
+
+  if (user?.role !== 'admin') return null;
   const [form, setForm] = useState<CampaignForm>(emptyCampaignForm);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 

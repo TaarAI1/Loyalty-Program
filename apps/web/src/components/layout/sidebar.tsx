@@ -11,13 +11,13 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const baseNavItems = [
-  { href: '/dashboard',      label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/customers',      label: 'Customers',   icon: Users },
-  { href: '/campaigns',      label: 'Campaigns',   icon: Zap },
-  { href: '/reports',        label: 'Reports',     icon: BarChart3 },
-  { href: '/notifications',  label: 'Notifications', icon: Bell },
+  { href: '/dashboard',  label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/customers',  label: 'Customers', icon: Users },
+  { href: '/reports',    label: 'Reports',   icon: BarChart3 },
 ];
 const adminNavItems = [
+  { href: '/campaigns',      label: 'Campaigns',       icon: Zap },
+  { href: '/notifications',  label: 'Notifications',   icon: Bell },
   { href: '/configuration',  label: 'Configuration',   icon: Settings },
   { href: '/users',          label: 'User Management', icon: UserCog },
 ];

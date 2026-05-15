@@ -1,7 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { notificationsApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,11 +37,19 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [channel, setChannel] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 50;
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') router.replace('/dashboard');
+  }, [user, router]);
+
+  if (user?.role !== 'admin') return null;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['notifications', channel, status, page],
