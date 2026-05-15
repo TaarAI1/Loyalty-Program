@@ -33,6 +33,7 @@ export class WebhooksService {
       receiptNo: dto.receipt_no,
       outlet: dto.outlet,
       countryCode: dto.country_code ?? '92',
+      items: dto.items,
     });
 
     const response = {

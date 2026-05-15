@@ -21,7 +21,7 @@ import {
   segmentColor,
   segmentLabel,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerDetailPage() {
@@ -33,6 +33,7 @@ export default function CustomerDetailPage() {
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
   const [ledgerPage, setLedgerPage] = useState(1);
+  const [expandedTx, setExpandedTx] = useState<string | null>(null);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
@@ -383,12 +384,13 @@ export default function CustomerDetailPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
+                      <th className="w-8 py-3 px-2" />
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Date</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Receipt</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Amount</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Points Earned</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Points Redeemed</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Earned</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Redeemed</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
                     </tr>
                   </thead>
@@ -403,26 +405,79 @@ export default function CustomerDetailPage() {
                         pointsEarned: number;
                         pointsRedeemed: number;
                         status: string;
+                        items?: { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[];
                       }) => (
-                        <tr key={tx.id} className="border-b border-border/50">
-                          <td className="py-2 px-2">{formatDateTime(tx.transactionDate)}</td>
-                          <td className="py-2 px-2 text-muted-foreground">{tx.receiptNo ?? '—'}</td>
-                          <td className="py-2 px-2 text-muted-foreground">{tx.store}</td>
-                          <td className="py-2 px-2 text-right font-medium">
-                            {formatCurrency(Number(tx.saleAmount))}
-                          </td>
-                          <td className="py-2 px-2 text-right text-green-600">
-                            +{formatNumber(tx.pointsEarned)}
-                          </td>
-                          <td className="py-2 px-2 text-right text-orange-600">
-                            {tx.pointsRedeemed > 0 ? `-${formatNumber(tx.pointsRedeemed)}` : '—'}
-                          </td>
-                          <td className="py-2 px-2">
-                            <Badge className="bg-green-50 text-green-700 border-green-200">
-                              {tx.status}
-                            </Badge>
-                          </td>
-                        </tr>
+                        <>
+                          <tr
+                            key={tx.id}
+                            className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                          >
+                            <td className="py-2 px-2">
+                              {tx.items && tx.items.length > 0 && (
+                                <button
+                                  onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)}
+                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-muted transition-colors"
+                                  title="View items"
+                                >
+                                  {expandedTx === tx.id
+                                    ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                                    : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+                                </button>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 text-xs">{formatDateTime(tx.transactionDate)}</td>
+                            <td className="py-2 px-2 text-muted-foreground text-xs">{tx.receiptNo ?? '—'}</td>
+                            <td className="py-2 px-2 text-muted-foreground text-xs">{tx.store}</td>
+                            <td className="py-2 px-2 text-right font-medium text-sm">
+                              {formatCurrency(Number(tx.saleAmount))}
+                            </td>
+                            <td className="py-2 px-2 text-right text-green-600 text-sm font-semibold">
+                              +{formatNumber(tx.pointsEarned)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-orange-600 text-sm">
+                              {tx.pointsRedeemed > 0 ? `-${formatNumber(tx.pointsRedeemed)}` : '—'}
+                            </td>
+                            <td className="py-2 px-2">
+                              <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+                                {tx.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                          {expandedTx === tx.id && tx.items && tx.items.length > 0 && (
+                            <tr key={`${tx.id}-items`} className="bg-[#fffde8]/60 border-b border-[#FFD000]/20">
+                              <td colSpan={8} className="px-4 py-3">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <Package className="w-3.5 h-3.5 text-[#a07800]" />
+                                  <span className="text-[11px] font-black text-[#a07800] uppercase tracking-wide">
+                                    {tx.items.length} Item{tx.items.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="border-b border-[#FFD000]/30">
+                                      <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">SKU</th>
+                                      <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">Description</th>
+                                      <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Qty</th>
+                                      <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Unit Price</th>
+                                      <th className="text-right py-1.5 font-semibold text-slate-500">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {tx.items.map((item, idx) => (
+                                      <tr key={idx} className="border-b border-[#FFD000]/10 last:border-0">
+                                        <td className="py-1.5 pr-3 font-mono text-slate-500">{item.sku || '—'}</td>
+                                        <td className="py-1.5 pr-3 text-slate-700">{item.description || '—'}</td>
+                                        <td className="py-1.5 pr-3 text-right tabular-nums">{Number(item.qty)}</td>
+                                        <td className="py-1.5 pr-3 text-right tabular-nums">{formatCurrency(Number(item.unitPrice))}</td>
+                                        <td className="py-1.5 text-right font-semibold tabular-nums">{formatCurrency(Number(item.totalPrice))}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ),
                     )}
                   </tbody>

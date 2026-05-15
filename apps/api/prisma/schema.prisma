@@ -74,12 +74,29 @@ model Transaction {
   status                  String    @default("completed") @db.VarChar(20)
   createdAt               DateTime  @default(now()) @map("created_at")
 
-  customer      Customer       @relation(fields: [customerId], references: [id])
+  customer      Customer         @relation(fields: [customerId], references: [id])
   pointsLedger  PointsLedger[]
+  items         TransactionItem[]
 
   @@index([customerId, transactionDate], name: "idx_customer_date")
   @@index([retailproTransactionId], name: "idx_retailpro_id")
   @@map("transactions")
+}
+
+model TransactionItem {
+  id            BigInt   @id @default(autoincrement())
+  transactionId String   @map("transaction_id") @db.Uuid
+  sku           String?  @db.VarChar(100)
+  description   String?  @db.VarChar(500)
+  qty           Decimal  @db.Decimal(10, 3)
+  unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId], name: "idx_item_transaction")
+  @@map("transaction_items")
 }
 
 model PointsLedger {

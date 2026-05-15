@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { PointsRulesService } from '../configuration/points-rules.service';
 import { CampaignsService } from '../configuration/campaigns.service';
-import { calculatePoints, getExpiryDate, formatPhoneNumber } from '@loyalty/shared';
+import { calculatePoints, getExpiryDate, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
 export interface ProcessTransactionResult {
@@ -45,6 +45,7 @@ export class PointsService {
     receiptNo?: string;
     outlet?: string;
     countryCode?: string;
+    items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
     const { retailproTransactionId, customerMobile, customerName, saleAmount, countryCode = '92' } = params;
 
@@ -164,6 +165,21 @@ export class PointsService {
           segment,
         },
       });
+
+      // Save line items if provided
+      if (params.items && params.items.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (tx as any).transactionItem.createMany({
+          data: params.items.map((item) => ({
+            transactionId: transaction.id,
+            sku: item.sku ?? null,
+            description: item.description ?? null,
+            qty: item.qty,
+            unitPrice: item.unit_price,
+            totalPrice: item.total_price,
+          })),
+        });
+      }
 
       // Points ledger entry
       await tx.pointsLedger.create({

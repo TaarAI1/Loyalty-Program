@@ -130,11 +130,13 @@ export class CustomersService {
 
     const [total, transactions] = await this.prisma.$transaction([
       this.prisma.transaction.count({ where: { customerId } }),
-      this.prisma.transaction.findMany({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.prisma.transaction.findMany as any)({
         where: { customerId },
         orderBy: { transactionDate: 'desc' },
         skip,
         take: params.pageSize,
+        include: { items: true },
       }),
     ]);
 

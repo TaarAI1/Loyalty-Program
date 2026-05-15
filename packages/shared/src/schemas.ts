@@ -1,17 +1,28 @@
 import { z } from 'zod';
 
+// ── Webhook: Transaction Item ──────────────────────────────────────────────────
+export const TransactionItemSchema = z.object({
+  sku:         z.string().max(100).optional(),
+  description: z.string().max(500).optional(),
+  qty:         z.number().positive(),
+  unit_price:  z.number().nonnegative(),
+  total_price: z.number().nonnegative(),
+});
+export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
+
 // ── Webhook: Inbound Transaction ──────────────────────────────────────────────
 export const WebhookTransactionSchema = z.object({
-  transaction_id: z.string().min(1),
+  transaction_id:  z.string().min(1),
   customer_mobile: z.string().min(7).max(20),
-  customer_name: z.string().min(1).max(255),
-  sale_amount: z.number().positive(),
+  customer_name:   z.string().min(1).max(255),
+  sale_amount:     z.number().positive(),
   transaction_date: z.string().datetime(),
-  store: z.string().min(1).max(100),
-  region: z.string().min(1).max(100),
-  receipt_no: z.string().max(100).optional(),
-  outlet: z.string().max(100).optional(),
-  country_code: z.string().max(5).default('92'),
+  store:           z.string().min(1).max(100),
+  region:          z.string().min(1).max(100),
+  receipt_no:      z.string().max(100).optional(),
+  outlet:          z.string().max(100).optional(),
+  country_code:    z.string().max(5).default('92'),
+  items:           z.array(TransactionItemSchema).optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
 
