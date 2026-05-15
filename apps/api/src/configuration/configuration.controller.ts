@@ -39,6 +39,7 @@ export class ConfigurationController {
       spendFrom: number;
       spendTo?: number | null;
       rewardPercentage: number;
+      redeemValue?: number;
       benefits?: Record<string, unknown>;
     },
     @Headers('x-changed-by') changedBy?: string,

@@ -35,6 +35,7 @@ export class ConfigurationService {
       spendFrom: number;
       spendTo?: number | null;
       rewardPercentage: number;
+      redeemValue?: number;
       benefits?: Record<string, unknown>;
     },
     changedBy?: string,

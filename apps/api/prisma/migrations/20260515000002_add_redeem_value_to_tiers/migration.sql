@@ -1,0 +1,1 @@
+ALTER TABLE "loyalty_tiers" ADD COLUMN IF NOT EXISTS "redeem_value" DECIMAL(8,2) NOT NULL DEFAULT 1;

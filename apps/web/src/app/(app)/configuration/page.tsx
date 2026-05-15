@@ -25,6 +25,7 @@ type TierForm = {
   spendFrom: string;
   spendTo: string;
   rewardPercentage: string;
+  redeemValue: string;
 };
 
 const emptyTierForm: TierForm = {
@@ -34,6 +35,7 @@ const emptyTierForm: TierForm = {
   spendFrom: '0',
   spendTo: '',
   rewardPercentage: '4',
+  redeemValue: '1',
 };
 
 function TiersTab() {
@@ -57,6 +59,7 @@ function TiersTab() {
         spendFrom: Number(form.spendFrom),
         spendTo: form.spendTo ? Number(form.spendTo) : null,
         rewardPercentage: Number(form.rewardPercentage),
+        redeemValue: Number(form.redeemValue) || 1,
       }),
     onSuccess: () => {
       toast.success(form.id ? 'Tier updated' : 'Tier created');
@@ -85,6 +88,7 @@ function TiersTab() {
       spendFrom: String(tier.spendFrom),
       spendTo: tier.spendTo != null ? String(tier.spendTo) : '',
       rewardPercentage: String(tier.rewardPercentage),
+      redeemValue: tier.redeemValue != null ? String(tier.redeemValue) : '1',
     });
     setDialogOpen(true);
   };
@@ -113,15 +117,19 @@ function TiersTab() {
               <Card key={tier.id as number} className="border-l-4" style={{ borderLeftColor: tierBorderColor(String(tier.name)) }}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Badge className={tierColor(String(tier.name))}>{String(tier.name)}</Badge>
-                      <div className="text-sm">
-                        <span className="font-bold text-indigo-600">{Number(tier.rewardPercentage)}% reward</span>
-                        <span className="text-muted-foreground mx-2">·</span>
+                      <div className="text-sm flex items-center flex-wrap gap-x-1">
+                        <span className="font-bold text-[#a07800]">{Number(tier.rewardPercentage)}% reward</span>
+                        <span className="text-muted-foreground mx-1">·</span>
+                        <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-xs border border-emerald-200">
+                          1 pt = PKR {Number(tier.redeemValue ?? 1)}
+                        </span>
+                        <span className="text-muted-foreground mx-1">·</span>
                         <span className="text-muted-foreground">
                           {formatCurrency(Number(tier.spendFrom))} – {tier.spendTo ? formatCurrency(Number(tier.spendTo)) : '∞'}
                         </span>
-                        <span className="text-muted-foreground mx-2">·</span>
+                        <span className="text-muted-foreground mx-1">·</span>
                         <span className="text-muted-foreground">
                           {Number(tier.pointsFrom).toLocaleString()} – {tier.pointsTo ? Number(tier.pointsTo).toLocaleString() : '∞'} pts
                         </span>
@@ -220,12 +228,31 @@ function TiersTab() {
                 step="0.5"
                 value={form.rewardPercentage}
                 onChange={(e) => setForm((f) => ({ ...f, rewardPercentage: e.target.value }))}
-                className="w-full accent-indigo-600"
+                className="w-full accent-[#FFD000]"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1%</span>
                 <span>20%</span>
               </div>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label>Point Redemption Value</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">1 point  =</span>
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.5"
+                  placeholder="e.g. 2"
+                  value={form.redeemValue}
+                  onChange={(e) => setForm((f) => ({ ...f, redeemValue: e.target.value }))}
+                  className="w-28"
+                />
+                <span className="text-sm font-semibold text-muted-foreground whitespace-nowrap">PKR</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                How much cash value 1 point is worth when redeeming.
+              </p>
             </div>
           </div>
           <div className="flex gap-2 pt-2">

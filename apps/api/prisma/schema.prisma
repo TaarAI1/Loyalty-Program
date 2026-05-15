@@ -15,6 +15,7 @@ model LoyaltyTier {
   spendFrom         Decimal   @map("spend_from") @db.Decimal(10, 2)
   spendTo           Decimal?  @map("spend_to") @db.Decimal(10, 2)
   rewardPercentage  Decimal   @map("reward_percentage") @db.Decimal(5, 2)
+  redeemValue       Decimal   @default(1) @map("redeem_value") @db.Decimal(8, 2)
   benefits          Json?
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")

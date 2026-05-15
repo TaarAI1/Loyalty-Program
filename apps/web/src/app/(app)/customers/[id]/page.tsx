@@ -336,7 +336,7 @@ export default function CustomerDetailPage() {
             {/* Tier benefits */}
             {tiers && (
               <div className="grid grid-cols-2 gap-3">
-                {(tiers as Array<{ id: number; name: string; rewardPercentage: number; spendFrom: number; spendTo: number }>).map((t) => {
+                {(tiers as Array<{ id: number; name: string; rewardPercentage: number; redeemValue?: number; spendFrom: number; spendTo: number }>).map((t) => {
                   const isActive = customer.tier?.name === t.name;
                   return (
                     <div
@@ -353,6 +353,9 @@ export default function CustomerDetailPage() {
                       </div>
                       <p className="text-muted-foreground mt-1.5 text-xs">
                         {formatCurrency(t.spendFrom)} – {t.spendTo ? formatCurrency(t.spendTo) : '∞'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        1 pt = PKR {Number(t.redeemValue ?? 1)}
                       </p>
                       {isActive && (
                         <p className="text-[10px] font-bold text-[#a07800] mt-1">◉ Current Tier</p>
