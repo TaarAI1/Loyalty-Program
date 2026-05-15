@@ -79,7 +79,46 @@ export class CustomersService {
         )
       : 100;
 
-    return { ...customer, tierProgress, nextTier };
+    // Aggregate stats for summary cards
+    const [txAgg, redemptionAgg, txCount] = await this.prisma.$transaction([
+      this.prisma.transaction.aggregate({
+        where: { customerId: id },
+        _sum: { saleAmount: true, pointsEarned: true },
+        _avg: { saleAmount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { customerId: id },
+        _sum: { pointsRedeemed: true },
+      }),
+      this.prisma.transaction.count({ where: { customerId: id } }),
+    ]);
+
+    // Avg visits per month (based on days since first transaction)
+    const firstTx = await this.prisma.transaction.findFirst({
+      where: { customerId: id },
+      orderBy: { transactionDate: 'asc' },
+      select: { transactionDate: true },
+    });
+
+    let avgVisitsPerMonth = 0;
+    if (firstTx && txCount > 0) {
+      const monthsActive = Math.max(
+        1,
+        (Date.now() - firstTx.transactionDate.getTime()) / (1000 * 60 * 60 * 24 * 30),
+      );
+      avgVisitsPerMonth = Math.round((txCount / monthsActive) * 10) / 10;
+    }
+
+    const stats = {
+      totalSpent: Number(txAgg._sum.saleAmount ?? 0),
+      totalPointsEarned: txAgg._sum.pointsEarned ?? 0,
+      totalPointsRedeemed: redemptionAgg._sum.pointsRedeemed ?? 0,
+      avgOrderValue: Number(txAgg._avg.saleAmount ?? 0),
+      totalTransactions: txCount,
+      avgVisitsPerMonth,
+    };
+
+    return { ...customer, tierProgress, nextTier, stats };
   }
 
   async getTransactionHistory(

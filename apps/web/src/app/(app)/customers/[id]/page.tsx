@@ -21,7 +21,7 @@ import {
   segmentColor,
   segmentLabel,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerDetailPage() {
@@ -118,6 +118,9 @@ export default function CustomerDetailPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+        </div>
         <Skeleton className="h-40 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -128,6 +131,55 @@ export default function CustomerDetailPage() {
 
   const nextTier = customer.nextTier;
   const tierProgressPct = customer.tierProgress ?? 0;
+  const stats = customer.stats ?? {};
+
+  const statCards = [
+    {
+      label: 'Total Spent',
+      value: formatCurrency(stats.totalSpent ?? 0),
+      icon: ShoppingBag,
+      accent: '#FFD000',
+      bg: 'bg-[#fffde8]',
+      iconColor: 'text-[#a07800]',
+      sub: `${formatNumber(stats.totalTransactions ?? 0)} transactions`,
+    },
+    {
+      label: 'Points Earned',
+      value: formatNumber(stats.totalPointsEarned ?? 0),
+      icon: Star,
+      accent: '#22c55e',
+      bg: 'bg-green-50',
+      iconColor: 'text-green-600',
+      sub: 'Lifetime total',
+    },
+    {
+      label: 'Points Redeemed',
+      value: formatNumber(stats.totalPointsRedeemed ?? 0),
+      icon: RotateCcw,
+      accent: '#f97316',
+      bg: 'bg-orange-50',
+      iconColor: 'text-orange-600',
+      sub: `${stats.totalPointsEarned > 0 ? Math.round((stats.totalPointsRedeemed / stats.totalPointsEarned) * 100) : 0}% redemption rate`,
+    },
+    {
+      label: 'Avg Order Value',
+      value: formatCurrency(stats.avgOrderValue ?? 0),
+      icon: BarChart2,
+      accent: '#8b5cf6',
+      bg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      sub: 'Per transaction',
+    },
+    {
+      label: 'Avg Visits / Month',
+      value: String(stats.avgVisitsPerMonth ?? 0),
+      icon: Calendar,
+      accent: '#111111',
+      bg: 'bg-[#f5f5f5]',
+      iconColor: 'text-[#444]',
+      sub: 'Visit frequency',
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -151,6 +203,25 @@ export default function CustomerDetailPage() {
             Send WhatsApp
           </Button>
         </div>
+      </div>
+
+      {/* Summary Stat Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+        {statCards.map((card) => (
+          <Card key={card.label} className="overflow-hidden hover:shadow-md transition-all">
+            <div className="h-0.5 w-full" style={{ background: card.accent }} />
+            <CardContent className="p-4 space-y-2.5">
+              <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+              </div>
+              <div>
+                <p className="text-[19px] font-black text-[#111] tabular-nums leading-tight">{card.value}</p>
+                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{card.label}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{card.sub}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Profile Card */}
