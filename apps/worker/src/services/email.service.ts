@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as nodemailer from 'nodemailer';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailJobPayload } from '@loyalty/shared';
 
@@ -14,23 +15,30 @@ export class EmailService {
   async send(payload: EmailJobPayload): Promise<void> {
     const config = await this.prisma.emailConfig.findFirst({ where: { id: 1, isActive: true } });
 
-    if (!config?.apiKey || !config.fromEmail) {
-      this.logger.warn('Email not configured or disabled — skipping send');
-      await this.logNotification(payload, 'skipped', 'Email not configured');
+    if (!config?.smtpHost || !config.smtpUser || !config.smtpPass || !config.fromEmail) {
+      this.logger.warn('SMTP not configured or disabled — skipping send');
+      await this.logNotification(payload, 'skipped', 'SMTP not configured');
       return;
     }
 
-    const apiKey = this.decryptToken(config.apiKey);
+    const password = this.decryptToken(config.smtpPass);
+    const port = config.smtpPort ?? 587;
+    const secure = config.smtpSecure === 'ssl';
+
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port,
+      secure,
+      auth: { user: config.smtpUser, pass: password },
+      ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
+    });
+
     const startMs = Date.now();
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const sgMail = require('@sendgrid/mail');
-      sgMail.setApiKey(apiKey);
-
-      await sgMail.send({
+      await transporter.sendMail({
+        from: `"${config.fromName ?? 'LoyaltyPro'}" <${config.fromEmail}>`,
         to: payload.to,
-        from: { email: config.fromEmail, name: config.fromName ?? 'Loyalty Program' },
         subject: payload.subject,
         html: payload.html,
       });
@@ -38,7 +46,7 @@ export class EmailService {
       const duration = Date.now() - startMs;
       this.logger.log(
         { channel: 'email', to: payload.to, subject: payload.subject, durationMs: duration, status: 'sent' },
-        'Email sent',
+        'Email sent via SMTP',
       );
 
       await this.logNotification(payload, 'sent');
