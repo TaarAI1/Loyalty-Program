@@ -1,6 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { IdempotencyService } from './idempotency.service';
 import { PointsService } from './points.service';
 import { WebhookTransactionDto, WebhookCustomerDto } from '@loyalty/shared';
 
@@ -10,16 +9,21 @@ export class WebhooksService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly idempotency: IdempotencyService,
     private readonly points: PointsService,
   ) {}
 
-  async handleTransaction(dto: WebhookTransactionDto, idempotencyKey: string) {
-    // Return cached response for duplicate requests
-    const cached = await this.idempotency.get<unknown>(idempotencyKey);
-    if (cached) {
-      this.logger.log({ idempotencyKey }, 'Idempotent replay – returning cached response');
-      return cached;
+  async handleTransaction(dto: WebhookTransactionDto) {
+    // Check for duplicate transaction_id directly in the database — transparent and reliable
+    const existing = await this.prisma.transaction.findFirst({
+      where: { retailproTransactionId: dto.transaction_id },
+      select: { id: true, customerId: true, pointsEarned: true, saleAmount: true },
+    });
+
+    if (existing) {
+      this.logger.warn({ transaction_id: dto.transaction_id }, 'Duplicate transaction_id rejected');
+      throw new ConflictException(
+        `Transaction ID "${dto.transaction_id}" already exists. Each transaction must have a unique ID.`,
+      );
     }
 
     const result = await this.points.processTransaction({
@@ -37,17 +41,13 @@ export class WebhooksService {
       items: dto.items,
     });
 
-    const response = {
+    return {
       success: true,
       points_earned: result.pointsEarned,
       new_tier: result.newTier,
       tier_upgraded: result.tierUpgraded,
       customer_id: result.customerId,
     };
-
-    // Cache result for 24h
-    await this.idempotency.set(idempotencyKey, response);
-    return response;
   }
 
   async handleCustomerUpsert(dto: WebhookCustomerDto) {

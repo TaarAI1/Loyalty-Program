@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  Headers,
   HttpCode,
   Logger,
 } from '@nestjs/common';
@@ -17,16 +16,9 @@ export class WebhooksController {
 
   @Post('transaction')
   @HttpCode(200)
-  async processTransaction(
-    @Body() body: Record<string, unknown>,
-    @Headers('x-idempotency-key') idempotencyKey: string,
-  ) {
-    if (!idempotencyKey) {
-      idempotencyKey = `retailpro_${body['transaction_id'] as string}`;
-    }
-
-    this.logger.log({ idempotencyKey, store: body['store'] }, 'Webhook transaction received');
-    return this.webhooksService.handleTransaction(body as WebhookTransactionDto, idempotencyKey);
+  async processTransaction(@Body() body: Record<string, unknown>) {
+    this.logger.log({ transaction_id: body['transaction_id'], store: body['store'] }, 'Webhook transaction received');
+    return this.webhooksService.handleTransaction(body as WebhookTransactionDto);
   }
 
   @Post('customer')
