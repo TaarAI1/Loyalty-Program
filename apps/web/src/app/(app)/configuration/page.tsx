@@ -557,7 +557,11 @@ function EmailTab() {
   });
 
   const [form, setForm] = useState({
-    apiKey: '',
+    smtpHost: '',
+    smtpPort: '',
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: 'tls',
     fromEmail: '',
     fromName: '',
     alertEmail: '',
@@ -565,7 +569,19 @@ function EmailTab() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => configApi.updateEmail(Object.fromEntries(Object.entries(form).filter(([, v]) => v !== ''))),
+    mutationFn: () => {
+      const payload: Record<string, unknown> = {};
+      if (form.smtpHost)   payload.smtpHost   = form.smtpHost;
+      if (form.smtpPort)   payload.smtpPort   = Number(form.smtpPort);
+      if (form.smtpUser)   payload.smtpUser   = form.smtpUser;
+      if (form.smtpPass)   payload.smtpPass   = form.smtpPass;
+      if (form.smtpSecure) payload.smtpSecure = form.smtpSecure;
+      if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
+      if (form.fromName)   payload.fromName   = form.fromName;
+      if (form.alertEmail) payload.alertEmail = form.alertEmail;
+      payload.isActive = form.isActive;
+      return configApi.updateEmail(payload);
+    },
     onSuccess: () => {
       toast.success('Email config saved');
       qc.invalidateQueries({ queryKey: ['email-config'] });
@@ -575,58 +591,119 @@ function EmailTab() {
 
   if (isLoading) return <Skeleton className="h-40 w-full" />;
 
+  const c = config as Record<string, unknown> | null | undefined;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>SendGrid Email Settings</CardTitle>
+        <CardTitle>SMTP Email Settings</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>SendGrid API Key</Label>
-            <Input
-              type="password"
-              placeholder={config?.apiKey ?? 'SG.xxxx'}
-              value={form.apiKey}
-              onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
-            />
+      <CardContent className="space-y-6">
+
+        {/* SMTP Server */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">SMTP Server</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2 space-y-1">
+              <Label>SMTP Host</Label>
+              <Input
+                placeholder={String(c?.smtpHost ?? 'smtp.gmail.com')}
+                value={form.smtpHost}
+                onChange={(e) => setForm((f) => ({ ...f, smtpHost: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Port</Label>
+              <Input
+                type="number"
+                placeholder={String(c?.smtpPort ?? '587')}
+                value={form.smtpPort}
+                onChange={(e) => setForm((f) => ({ ...f, smtpPort: e.target.value }))}
+              />
+            </div>
           </div>
-          <div className="space-y-1">
-            <Label>From Email</Label>
-            <Input
-              type="email"
-              placeholder={config?.fromEmail ?? 'loyalty@yourbrand.com'}
-              value={form.fromEmail}
-              onChange={(e) => setForm((f) => ({ ...f, fromEmail: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>From Name</Label>
-            <Input
-              placeholder={config?.fromName ?? 'Loyalty Program'}
-              value={form.fromName}
-              onChange={(e) => setForm((f) => ({ ...f, fromName: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Forensic Alert Email</Label>
-            <Input
-              type="email"
-              placeholder={config?.alertEmail ?? 'security@yourbrand.com'}
-              value={form.alertEmail}
-              onChange={(e) => setForm((f) => ({ ...f, alertEmail: e.target.value }))}
-            />
+          <div className="mt-3 space-y-1">
+            <Label>Encryption</Label>
+            <select
+              className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-brand"
+              value={form.smtpSecure}
+              onChange={(e) => setForm((f) => ({ ...f, smtpSecure: e.target.value }))}
+            >
+              <option value="tls">STARTTLS (port 587)</option>
+              <option value="ssl">SSL / TLS (port 465)</option>
+              <option value="none">None (port 25)</option>
+            </select>
           </div>
         </div>
+
+        {/* SMTP Credentials */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Credentials</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label>Username / Email</Label>
+              <Input
+                placeholder={String(c?.smtpUser ?? 'you@gmail.com')}
+                value={form.smtpUser}
+                onChange={(e) => setForm((f) => ({ ...f, smtpUser: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Password / App Password</Label>
+              <Input
+                type="password"
+                placeholder={c?.smtpPass ? '••••••••' : 'Enter SMTP password'}
+                value={form.smtpPass}
+                onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Sender Identity */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sender Identity</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label>From Email</Label>
+              <Input
+                type="email"
+                placeholder={String(c?.fromEmail ?? 'loyalty@yourbrand.com')}
+                value={form.fromEmail}
+                onChange={(e) => setForm((f) => ({ ...f, fromEmail: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>From Name</Label>
+              <Input
+                placeholder={String(c?.fromName ?? 'LoyaltyPro')}
+                value={form.fromName}
+                onChange={(e) => setForm((f) => ({ ...f, fromName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <Label>Forensic Alert Email</Label>
+              <Input
+                type="email"
+                placeholder={String(c?.alertEmail ?? 'security@yourbrand.com')}
+                value={form.alertEmail}
+                onChange={(e) => setForm((f) => ({ ...f, alertEmail: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">Receives automated fraud / forensic alert emails.</p>
+            </div>
+          </div>
+        </div>
+
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input
             type="checkbox"
             checked={form.isActive}
             onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-            className="w-4 h-4 accent-indigo-600"
+            className="w-4 h-4 accent-brand"
           />
           Enable email notifications
         </label>
+
         <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
           <Save className="w-4 h-4" />
           Save Configuration

@@ -164,8 +164,12 @@ model SmsConfig {
 
 model EmailConfig {
   id          Int       @id @default(1)
-  provider    String    @default("sendgrid") @db.VarChar(50)
-  apiKey      String?   @map("api_key")
+  provider    String    @default("smtp") @db.VarChar(50)
+  smtpHost    String?   @map("smtp_host") @db.VarChar(255)
+  smtpPort    Int?      @map("smtp_port")
+  smtpUser    String?   @map("smtp_user") @db.VarChar(255)
+  smtpPass    String?   @map("smtp_pass")
+  smtpSecure  String?   @default("tls") @map("smtp_secure") @db.VarChar(10)
   fromEmail   String?   @map("from_email") @db.VarChar(255)
   fromName    String?   @map("from_name") @db.VarChar(255)
   alertEmail  String?   @map("alert_email") @db.VarChar(255)

@@ -158,23 +158,37 @@ export class ConfigurationService {
   async getEmailConfig() {
     const config = await this.prisma.emailConfig.findFirst({ where: { id: 1 } });
     if (!config) return null;
-    return { ...config, apiKey: config.apiKey ? '***ENCRYPTED***' : null };
+    const c = config as Record<string, unknown>;
+    return {
+      ...c,
+      smtpPass: c['smtpPass'] ? '***' : null,
+    };
   }
 
   async updateEmailConfig(
-    data: { apiKey?: string; fromEmail?: string; fromName?: string; alertEmail?: string; isActive?: boolean },
+    data: {
+      smtpHost?: string;
+      smtpPort?: number;
+      smtpUser?: string;
+      smtpPass?: string;
+      smtpSecure?: string;
+      fromEmail?: string;
+      fromName?: string;
+      alertEmail?: string;
+      isActive?: boolean;
+    },
     changedBy?: string,
   ) {
     const updateData: Record<string, unknown> = { ...data };
-    if (data.apiKey) {
-      updateData['apiKey'] = this.encryption.encrypt(data.apiKey);
+    if (data.smtpPass) {
+      updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);
     }
     await this.prisma.emailConfig.upsert({
       where: { id: 1 },
       update: updateData,
-      create: { id: 1, ...updateData },
+      create: { id: 1, provider: 'smtp', ...updateData },
     });
-    await this.auditLog('email_config', '1', 'UPDATE', changedBy, null, { ...updateData, apiKey: '[REDACTED]' });
+    await this.auditLog('email_config', '1', 'UPDATE', changedBy, null, { ...updateData, smtpPass: '[REDACTED]' });
     return { success: true };
   }
 
