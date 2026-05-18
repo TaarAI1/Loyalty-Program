@@ -1,0 +1,722 @@
+{
+  "info": {
+    "name": "LoyaltyPro API",
+    "description": "Complete API reference for LoyaltyPro loyalty program platform.\n\nHow to use:\n1. Set the `baseUrl` variable to your Railway API URL (e.g. https://your-api.up.railway.app)\n2. Call POST {{baseUrl}}/api/auth/login to get a token\n3. The collection auto-saves the token — all other requests use it automatically",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://your-api.up.railway.app", "type": "string" },
+    { "key": "token",   "value": "",                                 "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.access_token) {",
+                  "  pm.collectionVariables.set('token', res.access_token);",
+                  "  console.log('Token saved automatically');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "2. Webhooks",
+      "item": [
+        {
+          "name": "Post Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-idempotency-key", "value": "TXN-20260518-001", "description": "Optional — auto-derived from transaction_id if omitted" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"TXN-20260518-001\",\n  \"customer_mobile\": \"3001234567\",\n  \"customer_name\": \"Ahmed Khan\",\n  \"sale_amount\": 5500,\n  \"transaction_date\": \"2026-05-18T10:00:00.000Z\",\n  \"store\": \"Karachi Main\",\n  \"region\": \"South\",\n  \"receipt_no\": \"RCP-001\",\n  \"outlet\": \"Ground Floor\",\n  \"country_code\": \"92\",\n  \"items\": [\n    {\n      \"sku\": \"SKU-001\",\n      \"description\": \"Blue Denim Jeans\",\n      \"qty\": 2,\n      \"unit_price\": 2000,\n      \"total_price\": 4000\n    },\n    {\n      \"sku\": \"SKU-002\",\n      \"description\": \"Cotton T-Shirt\",\n      \"qty\": 1,\n      \"unit_price\": 1500,\n      \"total_price\": 1500\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/webhooks/transaction", "host": ["{{baseUrl}}"], "path": ["api","webhooks","transaction"] }
+          }
+        },
+        {
+          "name": "Upsert Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"RP-CUST-001\",\n  \"name\": \"Nadia Butt\",\n  \"mobile\": \"3091234567\",\n  \"email\": \"nadia@example.com\",\n  \"dob\": \"1986-06-20\",\n  \"gender\": \"Female\",\n  \"region\": \"South\",\n  \"store\": \"Karachi Clifton\",\n  \"country_code\": \"92\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/webhooks/customer", "host": ["{{baseUrl}}"], "path": ["api","webhooks","customer"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "3. Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/customers?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers"],
+              "query": [
+                { "key": "search",   "value": "",   "disabled": true, "description": "Search by name or mobile" },
+                { "key": "tierId",   "value": "",   "disabled": true, "description": "Filter by tier ID" },
+                { "key": "region",   "value": "",   "disabled": true },
+                { "key": "store",    "value": "",   "disabled": true },
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id"],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ahmed Khan\",\n  \"email\": \"ahmed@example.com\",\n  \"dateOfBirth\": \"1990-01-15\",\n  \"gender\": \"Male\",\n  \"region\": \"North\",\n  \"store\": \"Lahore Main\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id"],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id/history?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id","history"],
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        },
+        {
+          "name": "Get Points Ledger",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id/points-ledger?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id","points-ledger"],
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        },
+        {
+          "name": "Award Bonus Points",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": 500,\n  \"reason\": \"Birthday gift\",\n  \"awardedBy\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id/award-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id","award-points"],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        },
+        {
+          "name": "Send WhatsApp Notification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template_name\": \"points_earned_confirmation\",\n  \"message\": \"Dear Ahmed, your points have been credited.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/:id/notify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","customers",":id","notify"],
+              "variable": [{ "key": "id", "value": "paste-customer-uuid-here" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "4. Dashboard",
+      "item": [
+        {
+          "name": "Get Metrics (KPIs)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/dashboard/metrics", "host": ["{{baseUrl}}"], "path": ["api","dashboard","metrics"] }
+          }
+        },
+        {
+          "name": "Points Trend",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/points-trend?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","dashboard","points-trend"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          }
+        },
+        {
+          "name": "Tier Distribution",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/dashboard/tier-distribution", "host": ["{{baseUrl}}"], "path": ["api","dashboard","tier-distribution"] }
+          }
+        },
+        {
+          "name": "Recent Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/recent-transactions?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","dashboard","recent-transactions"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Customer Segments (RFM)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/dashboard/customer-segments", "host": ["{{baseUrl}}"], "path": ["api","dashboard","customer-segments"] }
+          }
+        },
+        {
+          "name": "Top Customers Leaderboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/top-customers?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","dashboard","top-customers"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "5. Configuration",
+      "item": [
+        {
+          "name": "Loyalty Tiers",
+          "item": [
+            {
+              "name": "List Tiers",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/loyalty-tiers", "host": ["{{baseUrl}}"], "path": ["api","configuration","loyalty-tiers"] }
+              }
+            },
+            {
+              "name": "Create / Update Tier",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": 1,\n  \"name\": \"Gold\",\n  \"pointsFrom\": 5000,\n  \"pointsTo\": 20000,\n  \"spendFrom\": 100000,\n  \"spendTo\": 250000,\n  \"rewardPercentage\": 10,\n  \"redeemValue\": 2,\n  \"benefits\": \"10% discount, Free delivery\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/loyalty-tiers", "host": ["{{baseUrl}}"], "path": ["api","configuration","loyalty-tiers"] },
+                "description": "Omit `id` to create a new tier"
+              }
+            },
+            {
+              "name": "Delete Tier",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/configuration/loyalty-tiers/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api","configuration","loyalty-tiers",":id"],
+                  "variable": [{ "key": "id", "value": "1" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Points Rules",
+          "item": [
+            {
+              "name": "List Points Rules",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/points-rules", "host": ["{{baseUrl}}"], "path": ["api","configuration","points-rules"] }
+              }
+            },
+            {
+              "name": "Create / Update Points Rule",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"welcome_bonus\",\n  \"name\": \"Welcome Bonus\",\n  \"value\": 500,\n  \"isActive\": true,\n  \"startDate\": null,\n  \"endDate\": null\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/points-rules", "host": ["{{baseUrl}}"], "path": ["api","configuration","points-rules"] },
+                "description": "type options: welcome_bonus | birthday_multiplier | first_purchase_bonus | global_multiplier"
+              }
+            },
+            {
+              "name": "Delete Points Rule",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/configuration/points-rules/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api","configuration","points-rules",":id"],
+                  "variable": [{ "key": "id", "value": "1" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Campaigns",
+          "item": [
+            {
+              "name": "List Campaigns",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/campaigns", "host": ["{{baseUrl}}"], "path": ["api","configuration","campaigns"] }
+              }
+            },
+            {
+              "name": "Create Campaign",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Eid Double Points\",\n  \"description\": \"Double points all of Eid week\",\n  \"multiplier\": 2,\n  \"startDate\": \"2026-03-28\",\n  \"endDate\": \"2026-04-05\",\n  \"targetTierId\": null,\n  \"isActive\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/campaigns", "host": ["{{baseUrl}}"], "path": ["api","configuration","campaigns"] }
+              }
+            },
+            {
+              "name": "Update Campaign",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"isActive\": false\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/configuration/campaigns/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api","configuration","campaigns",":id"],
+                  "variable": [{ "key": "id", "value": "1" }]
+                }
+              }
+            },
+            {
+              "name": "Delete Campaign",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/configuration/campaigns/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api","configuration","campaigns",":id"],
+                  "variable": [{ "key": "id", "value": "1" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "WhatsApp",
+          "item": [
+            {
+              "name": "Get WhatsApp Config",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/whatsapp", "host": ["{{baseUrl}}"], "path": ["api","configuration","whatsapp"] }
+              }
+            },
+            {
+              "name": "Update WhatsApp Config",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"access_token\": \"EAABxxxxxx\",\n  \"phone_number_id\": \"1234567890\",\n  \"business_account_id\": \"9876543210\",\n  \"template_expiry\": \"points_expiry_reminder\",\n  \"template_birthday\": \"birthday_greeting\",\n  \"template_points_earned\": \"points_earned_confirmation\",\n  \"template_tier_upgrade\": \"tier_upgrade_congratulations\",\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/whatsapp", "host": ["{{baseUrl}}"], "path": ["api","configuration","whatsapp"] }
+              }
+            },
+            {
+              "name": "Test WhatsApp",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"to\": \"923001234567\",\n  \"template_name\": \"points_earned_confirmation\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/whatsapp/test", "host": ["{{baseUrl}}"], "path": ["api","configuration","whatsapp","test"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "SMS",
+          "item": [
+            {
+              "name": "Get SMS Config",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/sms", "host": ["{{baseUrl}}"], "path": ["api","configuration","sms"] }
+              }
+            },
+            {
+              "name": "Update SMS Config",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"provider\": \"twilio\",\n  \"accountSid\": \"ACxxxxxxxxxxxxxxxx\",\n  \"authToken\": \"your-auth-token\",\n  \"fromNumber\": \"+12345678901\",\n  \"isActive\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/sms", "host": ["{{baseUrl}}"], "path": ["api","configuration","sms"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email (SMTP)",
+          "item": [
+            {
+              "name": "Get Email Config",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/configuration/email", "host": ["{{baseUrl}}"], "path": ["api","configuration","email"] }
+              }
+            },
+            {
+              "name": "Update Email Config (SMTP)",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"smtpHost\": \"smtp.gmail.com\",\n  \"smtpPort\": 587,\n  \"smtpUser\": \"you@gmail.com\",\n  \"smtpPass\": \"your-app-password\",\n  \"smtpSecure\": \"tls\",\n  \"fromEmail\": \"loyalty@yourbrand.com\",\n  \"fromName\": \"LoyaltyPro\",\n  \"alertEmail\": \"security@yourbrand.com\",\n  \"isActive\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/configuration/email", "host": ["{{baseUrl}}"], "path": ["api","configuration","email"] },
+                "description": "smtpSecure options: tls (port 587) | ssl (port 465) | none (port 25)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "6. Reports",
+      "item": [
+        {
+          "name": "Get Filter Options",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/reports/filters", "host": ["{{baseUrl}}"], "path": ["api","reports","filters"] }
+          }
+        },
+        {
+          "name": "Customer Tier Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/customer-tier?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","customer-tier"],
+              "query": [
+                { "key": "region",   "value": "",   "disabled": true },
+                { "key": "store",    "value": "",   "disabled": true },
+                { "key": "tierId",   "value": "",   "disabled": true },
+                { "key": "gender",   "value": "",   "disabled": true },
+                { "key": "dateFrom", "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
+                { "key": "dateTo",   "value": "",   "disabled": true, "description": "YYYY-MM-DD" },
+                { "key": "ageFrom",  "value": "",   "disabled": true },
+                { "key": "ageTo",    "value": "",   "disabled": true },
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Birthday Response Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/birthday-response?month=6&year=2026&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","birthday-response"],
+              "query": [
+                { "key": "month",    "value": "6" },
+                { "key": "year",     "value": "2026" },
+                { "key": "region",   "value": "", "disabled": true },
+                { "key": "store",    "value": "", "disabled": true },
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top Customers Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/top-customers?limit=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","top-customers"],
+              "query": [
+                { "key": "region",   "value": "", "disabled": true },
+                { "key": "store",    "value": "", "disabled": true },
+                { "key": "tierId",   "value": "", "disabled": true },
+                { "key": "gender",   "value": "", "disabled": true },
+                { "key": "dateFrom", "value": "", "disabled": true },
+                { "key": "dateTo",   "value": "", "disabled": true },
+                { "key": "limit",    "value": "100" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Loyalty Sales Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/loyalty-sales?dateFrom=2026-01-01&dateTo=2026-05-18&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","loyalty-sales"],
+              "query": [
+                { "key": "dateFrom", "value": "2026-01-01" },
+                { "key": "dateTo",   "value": "2026-05-18" },
+                { "key": "region",   "value": "", "disabled": true },
+                { "key": "store",    "value": "", "disabled": true },
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forensic Audit Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/forensic?dateFrom=2026-01-01&dateTo=2026-05-18&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","reports","forensic"],
+              "query": [
+                { "key": "dateFrom", "value": "2026-01-01" },
+                { "key": "dateTo",   "value": "2026-05-18" },
+                { "key": "region",   "value": "", "disabled": true },
+                { "key": "store",    "value": "", "disabled": true },
+                { "key": "page",     "value": "1" },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "7. Notifications  (Admin)",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","notifications"],
+              "query": [
+                { "key": "channel",    "value": "", "disabled": true, "description": "whatsapp | sms | email" },
+                { "key": "status",     "value": "", "disabled": true, "description": "sent | failed | pending" },
+                { "key": "customerId", "value": "", "disabled": true },
+                { "key": "page",       "value": "1" },
+                { "key": "pageSize",   "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Notification Stats",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/notifications/stats", "host": ["{{baseUrl}}"], "path": ["api","notifications","stats"] }
+          }
+        },
+        {
+          "name": "Resend Notification",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/:id/resend",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","notifications",":id","resend"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "8. User Management  (Admin)",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api","users"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john\",\n  \"password\": \"secret123\",\n  \"role\": \"user\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api","users"] },
+            "description": "role options: admin | user"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\",\n  \"role\": \"admin\",\n  \"isActive\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","users",":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "All fields optional"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","users",":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "9. Health Check",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api","health"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}

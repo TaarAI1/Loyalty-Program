@@ -128,17 +128,29 @@ export class CustomersService {
     await this.assertExists(customerId);
     const skip = (params.page - 1) * params.pageSize;
 
-    const [total, transactions] = await this.prisma.$transaction([
-      this.prisma.transaction.count({ where: { customerId } }),
+    // Run count and findMany independently so one failure can't silently zero the other
+    const total = await this.prisma.transaction.count({ where: { customerId } });
+
+    let transactions: unknown[];
+    try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.prisma.transaction.findMany as any)({
+      transactions = await (this.prisma.transaction.findMany as any)({
         where: { customerId },
         orderBy: { transactionDate: 'desc' },
         skip,
         take: params.pageSize,
         include: { items: true },
-      }),
-    ]);
+      });
+    } catch {
+      // Fallback: if transaction_items table is not yet migrated, return without items
+      this.logger.warn('getTransactionHistory: items include failed, falling back without items');
+      transactions = await this.prisma.transaction.findMany({
+        where: { customerId },
+        orderBy: { transactionDate: 'desc' },
+        skip,
+        take: params.pageSize,
+      });
+    }
 
     return {
       data: transactions,
