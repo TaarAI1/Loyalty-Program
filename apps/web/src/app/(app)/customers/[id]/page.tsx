@@ -21,7 +21,7 @@ import {
   segmentColor,
   segmentLabel,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerDetailPage() {
@@ -45,17 +45,25 @@ export default function CustomerDetailPage() {
     queryFn: configApi.getTiers,
   });
 
-  const { data: history } = useQuery({
+  const { data: history, isFetching: historyFetching, refetch: refetchHistory } = useQuery({
     queryKey: ['customer-history', id, historyPage],
     queryFn: () => customersApi.getHistory(id, { page: historyPage, pageSize: 10 }),
     enabled: !!customer,
+    staleTime: 0,
   });
 
-  const { data: ledger } = useQuery({
+  const { data: ledger, refetch: refetchLedger } = useQuery({
     queryKey: ['customer-ledger', id, ledgerPage],
     queryFn: () => customersApi.getLedger(id, { page: ledgerPage, pageSize: 10 }),
     enabled: !!customer,
+    staleTime: 0,
   });
+
+  function refreshAll() {
+    qc.invalidateQueries({ queryKey: ['customer', id] });
+    refetchHistory();
+    refetchLedger();
+  }
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -186,10 +194,21 @@ export default function CustomerDetailPage() {
     <div className="space-y-6">
       {/* Back + Actions */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshAll}
+            title="Refresh customer data"
+          >
+            <RefreshCw className={`w-4 h-4 ${historyFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={openEdit}>
             <Edit2 className="w-4 h-4" />
@@ -205,6 +224,7 @@ export default function CustomerDetailPage() {
           </Button>
         </div>
       </div>
+
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
