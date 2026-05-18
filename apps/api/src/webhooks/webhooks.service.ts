@@ -24,6 +24,7 @@ export class WebhooksService {
 
     const result = await this.points.processTransaction({
       retailproTransactionId: dto.transaction_id,
+      custSid: dto.cust_sid,
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,

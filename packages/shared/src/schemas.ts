@@ -13,6 +13,7 @@ export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 // ── Webhook: Inbound Transaction ──────────────────────────────────────────────
 export const WebhookTransactionSchema = z.object({
   transaction_id:  z.string().min(1),
+  cust_sid:        z.string().max(100).optional(),   // POS system customer ID — preferred lookup key
   customer_mobile: z.string().min(7).max(20),
   customer_name:   z.string().min(1).max(255),
   sale_amount:     z.number().positive(),

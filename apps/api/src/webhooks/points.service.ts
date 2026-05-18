@@ -36,6 +36,7 @@ export class PointsService {
    */
   async processTransaction(params: {
     retailproTransactionId: string;
+    custSid?: string;
     customerMobile: string;
     customerName: string;
     saleAmount: number;
@@ -47,14 +48,24 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
-    const { retailproTransactionId, customerMobile, customerName, saleAmount, countryCode = '92' } = params;
+    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, countryCode = '92' } = params;
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Find or create customer
-      let customer = await tx.customer.findFirst({
-        where: { mobileNumber: customerMobile, countryCode },
-        include: { tier: true },
-      });
+      // Look up customer: prefer cust_sid (retailproId) for accuracy, fall back to mobile
+      let customer = custSid
+        ? await tx.customer.findFirst({
+            where: {
+              OR: [
+                { retailproId: custSid },
+                { mobileNumber: customerMobile, countryCode },
+              ],
+            },
+            include: { tier: true },
+          })
+        : await tx.customer.findFirst({
+            where: { mobileNumber: customerMobile, countryCode },
+            include: { tier: true },
+          });
 
       const isNewCustomer = !customer;
 
@@ -63,6 +74,7 @@ export class PointsService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         customer = await (tx.customer.create as any)({
           data: {
+            retailproId: custSid ?? null,
             name: customerName,
             mobileNumber: customerMobile,
             countryCode,
@@ -74,9 +86,16 @@ export class PointsService {
           include: { tier: true },
         });
         this.logger.log(
-          { customerId: customer!.id, mobile: customerMobile },
+          { customerId: customer!.id, mobile: customerMobile, custSid },
           'New customer created via webhook',
         );
+      } else if (custSid && !customer.retailproId) {
+        // Back-fill cust_sid if customer was previously created without it
+        await tx.customer.update({
+          where: { id: customer.id },
+          data: { retailproId: custSid },
+        });
+        this.logger.log({ customerId: customer.id, custSid }, 'Back-filled cust_sid on existing customer');
       }
 
       // Non-null assertion: customer is guaranteed assigned at this point
