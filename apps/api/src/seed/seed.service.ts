@@ -30,15 +30,36 @@ export class SeedService {
   constructor(private readonly prisma: PrismaService) {}
 
   async seedIfEmpty() {
-    // If seeded data exists but was created with old logic, clear and reseed
-    const seedTx = await this.prisma.transaction.findFirst({
+    // Detect old seed data (transactions using the old 'TXN-' prefix) and clean up
+    const oldSeedTx = await this.prisma.transaction.findFirst({
       where: { retailproTransactionId: { startsWith: 'TXN-' } },
     });
+    if (oldSeedTx) {
+      this.logger.log('Migrating old SEED prefix TXN- → SEED- …');
+      // Only delete transactions that look like seed data (numeric timestamp pattern)
+      await this.prisma.transaction.updateMany({
+        where: { retailproTransactionId: { startsWith: 'TXN-' } },
+        data: { retailproTransactionId: oldSeedTx.retailproTransactionId.replace('TXN-', 'SEED-') },
+      });
+    }
+
+    // Check for existing SEED- prefixed demo data — if present, wipe and reseed
+    const seedTx = await this.prisma.transaction.findFirst({
+      where: { retailproTransactionId: { startsWith: 'SEED-' } },
+    });
     if (seedTx) {
-      this.logger.log('Clearing old seed data for reseed with corrected point calculation…');
-      await this.prisma.pointsExpiry.deleteMany({});
-      await this.prisma.pointsLedger.deleteMany({});
-      await this.prisma.transaction.deleteMany({ where: { retailproTransactionId: { startsWith: 'TXN-' } } });
+      this.logger.log('Clearing seed demo data for reseed…');
+      // Get seed customer IDs (retailproId starts with 'RP-') to scope deletes
+      const seedCustomers = await this.prisma.customer.findMany({
+        where: { retailproId: { startsWith: 'RP-' } },
+        select: { id: true },
+      });
+      const seedIds = seedCustomers.map((c) => c.id);
+      if (seedIds.length > 0) {
+        await this.prisma.pointsExpiry.deleteMany({ where: { customerId: { in: seedIds } } });
+        await this.prisma.pointsLedger.deleteMany({ where: { customerId: { in: seedIds } } });
+      }
+      await this.prisma.transaction.deleteMany({ where: { retailproTransactionId: { startsWith: 'SEED-' } } });
       await this.prisma.customer.deleteMany({ where: { retailproId: { startsWith: 'RP-' } } });
     }
 
@@ -112,7 +133,7 @@ export class SeedService {
         const txDate = this.daysAgo(daysAgo as number);
         const tx = await this.prisma.transaction.create({
           data: {
-            retailproTransactionId: `TXN-${Date.now()}-${i}-${j}`,
+            retailproTransactionId: `SEED-${Date.now()}-${i}-${j}`,
             customerId: customer.id,
             transactionDate: txDate,
             saleAmount: amount as number,
