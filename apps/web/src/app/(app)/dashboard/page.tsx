@@ -16,8 +16,9 @@ import {
 import { dashboardApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatNumber, formatDateTime, tierColor, segmentColor, segmentLabel } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatDateTime, segmentColor, segmentLabel } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { TierBadge } from '@/components/ui/tier-badge';
 import {
   Users,
   TrendingUp,
@@ -298,7 +299,7 @@ export default function DashboardPage() {
                             </span>
                           </td>
                           <td className="py-3 px-3">
-                            <Badge className={tierColor(c.tier?.name)}>{c.tier?.name}</Badge>
+                            <TierBadge name={c.tier?.name} />
                           </td>
                           <td className="py-3 px-3 text-right font-semibold text-slate-800 text-xs">{formatCurrency(c.lifetimeSale)}</td>
                           <td className="py-3 px-3 pr-6 text-right">
@@ -383,7 +384,7 @@ export default function DashboardPage() {
                     (tx: { id: string; customer: { name: string; tier: { name: string } }; store: string; saleAmount: number; pointsEarned: number; transactionDate: string }) => (
                       <tr key={tx.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
                         <td className="py-3.5 px-6 font-medium text-slate-800">{tx.customer?.name}</td>
-                        <td className="py-3.5 px-3"><Badge className={tierColor(tx.customer?.tier?.name)}>{tx.customer?.tier?.name}</Badge></td>
+                        <td className="py-3.5 px-3"><TierBadge name={tx.customer?.tier?.name} /></td>
                         <td className="py-3.5 px-3 text-slate-500 text-xs">{tx.store}</td>
                         <td className="py-3.5 px-3 text-right font-semibold text-slate-800">{formatCurrency(tx.saleAmount)}</td>
                         <td className="py-3.5 px-3 text-right">

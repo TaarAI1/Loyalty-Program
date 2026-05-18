@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { TierBadge } from '@/components/ui/tier-badge';
 import { Dialog } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -17,7 +18,6 @@ import {
   formatNumber,
   formatDate,
   formatDateTime,
-  tierColor,
   segmentColor,
   segmentLabel,
 } from '@/lib/utils';
@@ -236,7 +236,7 @@ export default function CustomerDetailPage() {
                 {customer.email && <p className="text-muted-foreground text-sm">{customer.email}</p>}
               </div>
               <div className="flex flex-col items-end gap-1.5">
-                <Badge className={tierColor(customer.tier?.name)}>{customer.tier?.name}</Badge>
+                <TierBadge name={customer.tier?.name} />
                 {customer.segment && (
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(customer.segment)}`}>
                     {segmentLabel(customer.segment)}
@@ -347,7 +347,7 @@ export default function CustomerDetailPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <Badge className={tierColor(t.name)}>{t.name}</Badge>
+                        <TierBadge name={t.name} />
                         <span className={`font-black text-sm ${isActive ? 'text-[#a07800]' : 'text-slate-500'}`}>
                           {Number(t.rewardPercentage)}%
                         </span>

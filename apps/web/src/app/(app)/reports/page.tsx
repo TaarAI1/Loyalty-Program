@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatNumber, formatDate, tierColor, statusColor } from '@/lib/utils';
+import { TierBadge } from '@/components/ui/tier-badge';
+import { formatCurrency, formatNumber, formatDate, statusColor } from '@/lib/utils';
 import { exportToCsv, exportToExcel, exportToPdf } from '@/lib/export';
 import {
   FileDown,
@@ -421,7 +422,7 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
                 <td className="py-2 px-3">{String(row.store ?? '')}</td>
                 <td className="py-2 px-3 font-medium">{String(row.customerName ?? '')}</td>
                 <td className="py-2 px-3 text-muted-foreground">{String(row.customerCell ?? '')}</td>
-                <td className="py-2 px-3"><Badge className={tierColor(String(row.tier ?? ''))}>{String(row.tier ?? '')}</Badge></td>
+                <td className="py-2 px-3"><TierBadge name={String(row.tier ?? '')} /></td>
                 <td className="py-2 px-3">{formatNumber(Number(row.totalTransactions))}</td>
                 <td className="py-2 px-3">{row.lastVisitDays != null ? `${row.lastVisitDays}d` : '—'}</td>
                 <td className="py-2 px-3 font-medium">{formatCurrency(Number(row.netSale))}</td>
@@ -472,7 +473,7 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
                 <td className="py-2 px-3 text-muted-foreground font-medium">#{i + 1}</td>
                 <td className="py-2 px-3 font-medium">{String(row.customerName ?? '')}</td>
                 <td className="py-2 px-3 text-muted-foreground">{String(row.phoneNo ?? '')}</td>
-                <td className="py-2 px-3"><Badge className={tierColor(String(row.tier ?? ''))}>{String(row.tier ?? '')}</Badge></td>
+                <td className="py-2 px-3"><TierBadge name={String(row.tier ?? '')} /></td>
                 <td className="py-2 px-3 font-bold">{formatCurrency(Number(row.netSale))}</td>
               </tr>
             ))}

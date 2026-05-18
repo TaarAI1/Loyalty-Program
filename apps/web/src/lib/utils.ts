@@ -52,6 +52,24 @@ export function tierColor(tier: string): string {
   }
 }
 
+/** Returns inline React styles for a tier — immune to Tailwind purging */
+export function tierStyle(tier: string): React.CSSProperties {
+  switch (tier?.toLowerCase()) {
+    case 'classic':
+      return { background: '#d6cfc7', color: '#44403c', border: '1px solid #a8a29e', fontWeight: 600 };
+    case 'silver':
+      return { background: 'linear-gradient(135deg,#e2e8f0 0%,#cbd5e1 100%)', color: '#1e293b', border: '1px solid #94a3b8', fontWeight: 600 };
+    case 'gold':
+      return { background: 'linear-gradient(135deg,#fde68a 0%,#f59e0b 100%)', color: '#78350f', border: '1px solid #d97706', fontWeight: 700 };
+    case 'platinum':
+      return { background: 'linear-gradient(135deg,#e9d5ff 0%,#a855f7 100%)', color: '#3b0764', border: '1px solid #9333ea', fontWeight: 700 };
+    case 'diamond':
+      return { background: 'linear-gradient(135deg,#a5f3fc 0%,#22d3ee 100%)', color: '#083344', border: '1px solid #0891b2', fontWeight: 700 };
+    default:
+      return { background: '#e5e7eb', color: '#374151', border: '1px solid #9ca3af', fontWeight: 600 };
+  }
+}
+
 export function segmentColor(segment: string): string {
   switch (segment?.toLowerCase()) {
     case 'champion': return 'bg-yellow-100 text-yellow-800 border-yellow-300';

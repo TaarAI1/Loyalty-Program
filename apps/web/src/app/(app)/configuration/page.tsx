@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { tierColor, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
+import { TierBadge } from '@/components/ui/tier-badge';
 import { Plus, Pencil, Trash2, Send, Save, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -118,7 +119,7 @@ function TiersTab() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <Badge className={tierColor(String(tier.name))}>{String(tier.name)}</Badge>
+                      <TierBadge name={String(tier.name)} />
                       <div className="text-sm flex items-center flex-wrap gap-x-1">
                         <span className="font-bold text-[#a07800]">{Number(tier.rewardPercentage)}% reward</span>
                         <span className="text-muted-foreground mx-1">·</span>

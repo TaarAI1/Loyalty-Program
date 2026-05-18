@@ -8,9 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatNumber, formatDate, tierColor, segmentColor, segmentLabel } from '@/lib/utils';
+import { TierBadge } from '@/components/ui/tier-badge';
+import { formatCurrency, formatNumber, formatDate, segmentColor, segmentLabel } from '@/lib/utils';
 import { exportToCsv } from '@/lib/export';
 import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -163,9 +163,7 @@ export default function CustomersPage() {
                           <td className="py-3 px-4 font-medium">{c.name}</td>
                           <td className="py-3 px-4 text-muted-foreground">{c.mobileNumber}</td>
                           <td className="py-3 px-4">
-                            <Badge className={tierColor(c.tier?.name)}>
-                              {c.tier?.name ?? '—'}
-                            </Badge>
+                            <TierBadge name={c.tier?.name} />
                           </td>
                           <td className="py-3 px-4">
                             {c.segment && (
