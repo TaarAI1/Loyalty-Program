@@ -44,10 +44,9 @@ export class WebhooksService {
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
 
     return {
-      success: true,
+      ...customerSummary,
       points_earned: result.pointsEarned,
       tier_upgraded: result.tierUpgraded,
-      ...customerSummary,
       action: undefined,   // not relevant for transaction response
     };
   }
