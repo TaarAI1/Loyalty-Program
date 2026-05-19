@@ -1,8 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { PointsRulesService } from '../configuration/points-rules.service';
-import { CampaignsService } from '../configuration/campaigns.service';
 import { calculatePoints, getExpiryDate, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
@@ -22,8 +20,6 @@ export class PointsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
-    private readonly pointsRules: PointsRulesService,
-    private readonly campaigns: CampaignsService,
   ) {}
 
   /**
@@ -103,37 +99,12 @@ export class PointsService {
 
       const currentTierName = c.tier?.name ?? null;
 
-      // Determine reward percentage based on current tier (rewardPercentage stored as e.g. 4.00 = 4%)
+      // Calculate points based on tier reward percentage only
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
-      let pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
+      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
 
-      // Apply campaign multiplier (active time-limited campaigns)
-      const campaignMultiplier = await this.campaigns.getActiveMultiplier(c.tierId);
-      if (campaignMultiplier > 1) pointsEarned = Math.round(pointsEarned * campaignMultiplier);
-
-      // Apply welcome bonus for brand-new customers on their first transaction
-      if (isNewCustomer) {
-        const welcomeBonus = await this.pointsRules.getActiveValue('welcome_bonus');
-        if (welcomeBonus) pointsEarned += welcomeBonus;
-      }
-
-      // Apply birthday multiplier (if today is customer's birthday month+day)
-      if (c.dateOfBirth) {
-        const now = params.transactionDate;
-        const dob = new Date(c.dateOfBirth);
-        if (dob.getMonth() === now.getMonth() && dob.getDate() === now.getDate()) {
-          const birthdayMultiplier = await this.pointsRules.getActiveValue('birthday_multiplier');
-          if (birthdayMultiplier && birthdayMultiplier > 1)
-            pointsEarned = Math.round(pointsEarned * birthdayMultiplier);
-        }
-      }
-
-      // Apply first-purchase bonus (customer has no prior transactions)
+      // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });
-      if (txCount === 0 && !isNewCustomer) {
-        const firstPurchaseBonus = await this.pointsRules.getActiveValue('first_purchase_bonus');
-        if (firstPurchaseBonus) pointsEarned += firstPurchaseBonus;
-      }
 
       // Calculate new lifetime values
       const newLifetimeSale = Number(c.lifetimeSale) + saleAmount;

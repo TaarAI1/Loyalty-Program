@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Settings, BarChart3, Bell,
-  Gift, UserCog, LogOut, ChevronLeft, ChevronRight, Zap,
+  Gift, UserCog, LogOut, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -16,7 +16,6 @@ const baseNavItems = [
   { href: '/reports',    label: 'Reports',   icon: BarChart3 },
 ];
 const adminNavItems = [
-  { href: '/campaigns',      label: 'Campaigns',       icon: Zap },
   { href: '/notifications',  label: 'Notifications',   icon: Bell },
   { href: '/configuration',  label: 'Configuration',   icon: Settings },
   { href: '/users',          label: 'User Management', icon: UserCog },

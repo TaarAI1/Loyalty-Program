@@ -10,15 +10,11 @@ import {
   Headers,
 } from '@nestjs/common';
 import { ConfigurationService } from './configuration.service';
-import { PointsRulesService, PointsRuleDto } from './points-rules.service';
-import { CampaignsService, CampaignDto } from './campaigns.service';
 
 @Controller('configuration')
 export class ConfigurationController {
   constructor(
     private readonly configurationService: ConfigurationService,
-    private readonly pointsRulesService: PointsRulesService,
-    private readonly campaignsService: CampaignsService,
   ) {}
 
   // ── Tiers ──────────────────────────────────────────────────────────────────
@@ -105,45 +101,4 @@ export class ConfigurationController {
     return this.configurationService.updateEmailConfig(body as Parameters<ConfigurationService['updateEmailConfig']>[0], changedBy);
   }
 
-  // ── Points Rules ───────────────────────────────────────────────────────────
-
-  @Get('points-rules')
-  getPointsRules() {
-    return this.pointsRulesService.findAll();
-  }
-
-  @Put('points-rules')
-  upsertPointsRule(@Body() body: PointsRuleDto & { id?: number }) {
-    return this.pointsRulesService.upsert(body.id, body);
-  }
-
-  @Delete('points-rules/:id')
-  deletePointsRule(@Param('id', ParseIntPipe) id: number) {
-    return this.pointsRulesService.delete(id);
-  }
-
-  // ── Campaigns ─────────────────────────────────────────────────────────────
-
-  @Get('campaigns')
-  getCampaigns() {
-    return this.campaignsService.findAll();
-  }
-
-  @Post('campaigns')
-  createCampaign(@Body() body: CampaignDto) {
-    return this.campaignsService.create(body);
-  }
-
-  @Put('campaigns/:id')
-  updateCampaign(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: Partial<CampaignDto>,
-  ) {
-    return this.campaignsService.update(id, body);
-  }
-
-  @Delete('campaigns/:id')
-  deleteCampaign(@Param('id', ParseIntPipe) id: number) {
-    return this.campaignsService.delete(id);
-  }
 }
