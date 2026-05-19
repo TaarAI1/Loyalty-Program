@@ -41,12 +41,14 @@ export class WebhooksService {
       items: dto.items,
     });
 
+    const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
+
     return {
       success: true,
       points_earned: result.pointsEarned,
-      new_tier: result.newTier,
       tier_upgraded: result.tierUpgraded,
-      customer_id: result.customerId,
+      ...customerSummary,
+      action: undefined,   // not relevant for transaction response
     };
   }
 
@@ -76,10 +78,10 @@ export class WebhooksService {
         },
       });
       this.logger.log({ customerId: existing.id }, 'Customer updated via webhook');
-      return { success: true, action: 'updated', customer_id: existing.id };
+      return this.buildCustomerResponse('updated', existing.id);
     }
 
-    // New customer — find lowest tier by spend threshold
+    // New customer — assign to lowest tier
     const tier = await this.prisma.loyaltyTier.findFirst({ orderBy: { spendFrom: 'asc' } });
     const customer = await this.prisma.customer.create({
       data: {
@@ -97,6 +99,62 @@ export class WebhooksService {
     });
 
     this.logger.log({ customerId: customer.id }, 'Customer created via webhook');
-    return { success: true, action: 'created', customer_id: customer.id };
+    return this.buildCustomerResponse('created', customer.id);
+  }
+
+  /** Fetch fresh customer + tier data and build a rich response */
+  private async buildCustomerResponse(action: 'created' | 'updated', customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      include: { tier: true },
+    });
+
+    if (!customer) return { success: true, action, customer_id: customerId };
+
+    const tier = customer.tier;
+
+    // Next tier (for spend-to-next info)
+    const nextTier = await this.prisma.loyaltyTier.findFirst({
+      where: { spendFrom: { gt: Number(customer.lifetimeSale) } },
+      orderBy: { spendFrom: 'asc' },
+    });
+
+    const spendToNext = nextTier
+      ? Math.max(0, Number(nextTier.spendFrom) - Number(customer.lifetimeSale))
+      : null;
+
+    return {
+      success: true,
+      action,
+      customer: {
+        id:            customer.id,
+        cust_sid:      customer.retailproId,
+        name:          customer.name,
+        mobile:        customer.mobileNumber,
+        email:         customer.email ?? null,
+        store:         customer.store ?? null,
+        region:        customer.region ?? null,
+        segment:       (customer as Record<string, unknown>)['segment'] ?? null,
+      },
+      points: {
+        available:       customer.totalPoints,
+        lifetime_earned: customer.lifetimePoints,
+        lifetime_sale:   Number(customer.lifetimeSale),
+      },
+      tier: {
+        id:                 tier?.id ?? null,
+        name:               tier?.name ?? null,
+        reward_percentage:  tier ? Number(tier.rewardPercentage) : null,
+        redeem_value:       tier ? Number((tier as Record<string, unknown>)['redeemValue'] ?? 1) : null,
+        spend_from:         tier ? Number(tier.spendFrom) : null,
+        spend_to:           tier?.spendTo ? Number(tier.spendTo) : null,
+        benefits:           tier?.benefits ?? null,
+      },
+      next_tier: nextTier ? {
+        name:       nextTier.name,
+        spend_from: Number(nextTier.spendFrom),
+        spend_to_next: spendToNext,
+      } : null,
+    };
   }
 }
