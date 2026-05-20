@@ -8,6 +8,13 @@ import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 import { SeedService } from './seed/seed.service';
 
+// Fastify's fast-json-stringify can't handle BigInt (used by Prisma for @id autoincrement fields).
+// Teach the serializer to emit BigInt values as plain numbers.
+(BigInt.prototype as unknown as Record<string, unknown>)['toJSON'] = function (this: bigint) {
+  const n = Number(this);
+  return Number.isSafeInteger(n) ? n : this.toString();
+};
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
