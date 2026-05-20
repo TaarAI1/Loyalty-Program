@@ -30,13 +30,21 @@ export class SeedService {
   constructor(private readonly prisma: PrismaService) {}
 
   async seedIfEmpty() {
+    try {
+      await this.doSeedIfEmpty();
+    } catch (err) {
+      // Never crash the API on seed failure — just log and continue
+      this.logger.error({ err }, 'seedIfEmpty failed — skipping seed');
+    }
+  }
+
+  private async doSeedIfEmpty() {
     // Detect old seed data (transactions using the old 'TXN-' prefix) and clean up
     const oldSeedTx = await this.prisma.transaction.findFirst({
       where: { retailproTransactionId: { startsWith: 'TXN-' } },
     });
     if (oldSeedTx) {
       this.logger.log('Migrating old SEED prefix TXN- → SEED- …');
-      // Only delete transactions that look like seed data (numeric timestamp pattern)
       await this.prisma.transaction.updateMany({
         where: { retailproTransactionId: { startsWith: 'TXN-' } },
         data: { retailproTransactionId: oldSeedTx.retailproTransactionId.replace('TXN-', 'SEED-') },
@@ -56,11 +64,16 @@ export class SeedService {
       });
       const seedIds = seedCustomers.map((c) => c.id);
       if (seedIds.length > 0) {
+        // Delete ALL dependent records first (including any real transactions on seed customers)
         await this.prisma.pointsExpiry.deleteMany({ where: { customerId: { in: seedIds } } });
         await this.prisma.pointsLedger.deleteMany({ where: { customerId: { in: seedIds } } });
+        await this.prisma.notificationLog.deleteMany({ where: { customerId: { in: seedIds } } });
+        // Delete ALL transactions for seed customers (not just SEED- prefixed ones)
+        await this.prisma.transaction.deleteMany({ where: { customerId: { in: seedIds } } });
+        await this.prisma.customer.deleteMany({ where: { id: { in: seedIds } } });
       }
+      // Also clean up any remaining SEED- transactions (orphaned)
       await this.prisma.transaction.deleteMany({ where: { retailproTransactionId: { startsWith: 'SEED-' } } });
-      await this.prisma.customer.deleteMany({ where: { retailproId: { startsWith: 'RP-' } } });
     }
 
     const count = await this.prisma.customer.count();
@@ -176,7 +189,7 @@ export class SeedService {
     }
 
     this.logger.log('Test data seeded successfully');
-  }
+  }  // end doSeedIfEmpty
 
   private daysAgo(days: number): Date {
     const d = new Date();

@@ -49,6 +49,14 @@ export class CustomersController {
     return this.customersService.getTransactionHistory(id, { page, pageSize });
   }
 
+  @Get(':id/transactions/:txId/items')
+  getTransactionItems(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('txId', ParseUUIDPipe) txId: string,
+  ) {
+    return this.customersService.getTransactionItems(id, txId);
+  }
+
   @Get(':id/points-ledger')
   getPointsLedger(
     @Param('id', ParseUUIDPipe) id: string,

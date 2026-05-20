@@ -128,34 +128,34 @@ export class CustomersService {
     await this.assertExists(customerId);
     const skip = (params.page - 1) * params.pageSize;
 
-    // Run count and findMany independently so one failure can't silently zero the other
-    const total = await this.prisma.transaction.count({ where: { customerId } });
-
-    let transactions: unknown[];
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transactions = await (this.prisma.transaction.findMany as any)({
+    const [total, transactions] = await this.prisma.$transaction([
+      this.prisma.transaction.count({ where: { customerId } }),
+      this.prisma.transaction.findMany({
         where: { customerId },
         orderBy: { transactionDate: 'desc' },
         skip,
         take: params.pageSize,
-        include: { items: true },
-      });
-    } catch {
-      // Fallback: if transaction_items table is not yet migrated, return without items
-      this.logger.warn('getTransactionHistory: items include failed, falling back without items');
-      transactions = await this.prisma.transaction.findMany({
-        where: { customerId },
-        orderBy: { transactionDate: 'desc' },
-        skip,
-        take: params.pageSize,
-      });
-    }
+      }),
+    ]);
 
     return {
       data: transactions,
       meta: { total, page: params.page, pageSize: params.pageSize, totalPages: Math.ceil(total / params.pageSize) },
     };
+  }
+
+  async getTransactionItems(customerId: string, transactionId: string) {
+    await this.assertExists(customerId);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items = await (this.prisma as any).transactionItem.findMany({
+        where: { transactionId },
+        orderBy: { id: 'asc' },
+      });
+      return { data: items ?? [] };
+    } catch {
+      return { data: [] };
+    }
   }
 
   async getPointsLedger(

@@ -48,6 +48,8 @@ export const customersApi = {
     api.post(`/customers/${id}/notify`, data).then((r) => r.data),
   awardPoints: (id: string, data: { points: number; reason: string }) =>
     api.post(`/customers/${id}/award-points`, data).then((r) => r.data),
+  getTransactionItems: (customerId: string, txId: string) =>
+    api.get(`/customers/${customerId}/transactions/${txId}/items`).then((r) => r.data),
 };
 
 // Configuration
