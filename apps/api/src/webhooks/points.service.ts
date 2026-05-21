@@ -7,6 +7,7 @@ import { LoyaltyTier, Customer } from '@prisma/client';
 export interface ProcessTransactionResult {
   success: boolean;
   pointsEarned: number;
+  pointsRedeemed: number;
   newTier: string;
   previousTier: string | null;
   tierUpgraded: boolean;
@@ -36,6 +37,7 @@ export class PointsService {
     customerMobile: string;
     customerName: string;
     saleAmount: number;
+    redeemPoints?: number;
     transactionDate: Date;
     store: string;
     region: string;
@@ -44,7 +46,7 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
-    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, countryCode = '92' } = params;
+    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, redeemPoints = 0, countryCode = '92' } = params;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Look up customer: prefer cust_sid (retailproId) for accuracy, fall back to mobile
@@ -99,17 +101,27 @@ export class PointsService {
 
       const currentTierName = c.tier?.name ?? null;
 
-      // Calculate points based on tier reward percentage only
+      // Validate redemption: customer must have enough points
+      if (redeemPoints > 0 && c.totalPoints < redeemPoints) {
+        throw new BadRequestException(
+          `Insufficient points: customer has ${c.totalPoints}, requested to redeem ${redeemPoints}`,
+        );
+      }
+
+      // Payable amount after redemption (1 point = 1 PKR towards the bill)
+      const payableAmount = redeemPoints > 0 ? Math.max(0, saleAmount - redeemPoints) : saleAmount;
+
+      // Calculate points earned on payable amount only
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
-      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
+      const pointsEarned = rewardPct > 0 ? calculatePoints(payableAmount, rewardPct) : 0;
 
       // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });
 
-      // Calculate new lifetime values
+      // Calculate new lifetime values (deduct redeemed, add earned)
       const newLifetimeSale = Number(c.lifetimeSale) + saleAmount;
       const newLifetimePoints = c.lifetimePoints + pointsEarned;
-      const newTotalPoints = c.totalPoints + pointsEarned;
+      const newTotalPoints = c.totalPoints - redeemPoints + pointsEarned;
 
       // Find the correct tier for new lifetime sale
       const newTier = await this.determineTier(tx as typeof this.prisma, newLifetimeSale);
@@ -122,6 +134,8 @@ export class PointsService {
           transactionDate: params.transactionDate,
           saleAmount,
           pointsEarned,
+          pointsRedeemed: redeemPoints,
+          redemptionAmount: redeemPoints,   // 1 point = 1 PKR
           store: params.store,
           region: params.region,
           receiptNo: params.receiptNo,
@@ -171,13 +185,29 @@ export class PointsService {
         });
       }
 
-      // Points ledger entry
+      // Points ledger: redemption entry first (so running balance is correct)
+      let balanceAfterRedeem = c.totalPoints;
+      if (redeemPoints > 0) {
+        balanceAfterRedeem = c.totalPoints - redeemPoints;
+        await tx.pointsLedger.create({
+          data: {
+            customerId: c.id,
+            transactionId: transaction.id,
+            pointsChange: -redeemPoints,
+            runningBalance: balanceAfterRedeem,
+            reason: 'REDEEMED',
+            referenceId: retailproTransactionId,
+          },
+        });
+      }
+
+      // Points ledger: earned entry
       await tx.pointsLedger.create({
         data: {
           customerId: c.id,
           transactionId: transaction.id,
           pointsChange: pointsEarned,
-          runningBalance: newTotalPoints,
+          runningBalance: balanceAfterRedeem + pointsEarned,
           reason: 'EARNED',
           referenceId: retailproTransactionId,
         },
@@ -212,6 +242,7 @@ export class PointsService {
         customer: c,
         transaction,
         pointsEarned,
+        redeemPoints,
         newTier,
         previousTierName: currentTierName,
         newTotalPoints,
@@ -231,6 +262,7 @@ export class PointsService {
     return {
       success: true,
       pointsEarned: result.pointsEarned,
+      pointsRedeemed: result.redeemPoints,
       newTier: result.newTier.name,
       previousTier: result.previousTierName,
       tierUpgraded,

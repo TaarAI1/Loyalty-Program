@@ -23,6 +23,7 @@ export const WebhookTransactionSchema = z.object({
   receipt_no:      z.string().max(100).optional(),
   outlet:          z.string().max(100).optional(),
   country_code:    z.string().max(5).default('92'),
+  redeem_points:   z.number().int().nonnegative().default(0),  // 0 = no redemption
   items:           z.array(TransactionItemSchema).optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;

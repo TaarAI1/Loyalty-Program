@@ -32,6 +32,7 @@ export class WebhooksService {
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
+      redeemPoints: dto.redeem_points ?? 0,
       transactionDate: new Date(dto.transaction_date),
       store: dto.store,
       region: dto.region,
@@ -46,8 +47,9 @@ export class WebhooksService {
     return {
       ...customerSummary,
       points_earned: result.pointsEarned,
+      points_redeemed: result.pointsRedeemed,
       tier_upgraded: result.tierUpgraded,
-      action: undefined,   // not relevant for transaction response
+      action: undefined,
     };
   }
 
