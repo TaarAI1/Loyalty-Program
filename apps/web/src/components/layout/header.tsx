@@ -17,13 +17,13 @@ const titles: Record<string, string> = {
 export function Header() {
   const pathname = usePathname();
   const { user }  = useAuth();
-  const title     = Object.entries(titles).find(([k]) => pathname.startsWith(k))?.[1] ?? 'LoyalArc';
+  const title     = Object.entries(titles).find(([k]) => pathname.startsWith(k))?.[1] ?? 'Rewardly';
 
   return (
     <header className="h-14 border-b border-[#e8e8e8] bg-white flex items-center justify-between px-6 shrink-0">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm">
-        <span className="text-[#999] font-medium">LoyalArc</span>
+        <span className="text-[#999] font-medium">Rewardly</span>
         <ChevronRight className="w-3.5 h-3.5 text-[#ccc]" />
         <span className="font-black text-[#111111]">{title}</span>
       </div>
