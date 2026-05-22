@@ -6,7 +6,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LoyaltyPro',
+  title: 'LoyalArc',
   description: 'Customer Loyalty Management System',
 };
 

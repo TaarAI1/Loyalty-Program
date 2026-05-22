@@ -52,7 +52,7 @@ export default function LoginPage() {
             <Gift className="w-5 h-5 text-[#111111]" />
           </div>
           <div>
-            <p className="text-white font-black text-lg leading-none tracking-tight">LoyaltyPro</p>
+            <p className="text-white font-black text-lg leading-none tracking-tight">LoyalArc</p>
             <p className="text-[#555] text-xs font-medium mt-0.5">Management System</p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-[#444] text-xs font-medium">
-          © {new Date().getFullYear()} LoyaltyPro · All rights reserved
+          © {new Date().getFullYear()} LoyalArc · All rights reserved
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default function LoginPage() {
             <div className="w-9 h-9 rounded-xl bg-[#FFD000] flex items-center justify-center">
               <Gift className="w-4 h-4 text-[#111111]" />
             </div>
-            <p className="font-black text-[#111111] text-lg tracking-tight">LoyaltyPro</p>
+            <p className="font-black text-[#111111] text-lg tracking-tight">LoyalArc</p>
           </div>
 
           {/* Yellow accent */}

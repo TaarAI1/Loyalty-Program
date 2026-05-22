@@ -49,7 +49,7 @@ export function Sidebar() {
         </div>
         {!collapsed && (
           <div>
-            <p className="font-black text-[15px] text-white leading-none tracking-tight">LoyaltyPro</p>
+            <p className="font-black text-[15px] text-white leading-none tracking-tight">LoyalArc</p>
             <p className="text-[#666] text-[11px] mt-0.5 font-medium">Management System</p>
           </div>
         )}

@@ -675,7 +675,7 @@ function EmailTab() {
             <div className="space-y-1">
               <Label>From Name</Label>
               <Input
-                placeholder={String(c?.fromName ?? 'LoyaltyPro')}
+                placeholder={String(c?.fromName ?? 'LoyalArc')}
                 value={form.fromName}
                 onChange={(e) => setForm((f) => ({ ...f, fromName: e.target.value }))}
               />

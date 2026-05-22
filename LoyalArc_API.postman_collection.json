@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "LoyaltyPro API",
-    "description": "Complete API reference for LoyaltyPro loyalty program platform.\n\nHow to use:\n1. Set the `baseUrl` variable to your Railway API URL (e.g. https://your-api.up.railway.app)\n2. Call POST {{baseUrl}}/api/auth/login to get a token\n3. The collection auto-saves the token — all other requests use it automatically",
+    "name": "LoyalArc API",
+    "description": "Complete API reference for LoyalArc loyalty program platform.\n\nHow to use:\n1. Set the `baseUrl` variable to your Railway API URL (e.g. https://your-api.up.railway.app)\n2. Call POST {{baseUrl}}/api/auth/login to get a token\n3. The collection auto-saves the token — all other requests use it automatically",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -478,7 +478,7 @@
                 "header": [{ "key": "Content-Type", "value": "application/json" }],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"smtpHost\": \"smtp.gmail.com\",\n  \"smtpPort\": 587,\n  \"smtpUser\": \"you@gmail.com\",\n  \"smtpPass\": \"your-app-password\",\n  \"smtpSecure\": \"tls\",\n  \"fromEmail\": \"loyalty@yourbrand.com\",\n  \"fromName\": \"LoyaltyPro\",\n  \"alertEmail\": \"security@yourbrand.com\",\n  \"isActive\": true\n}",
+                  "raw": "{\n  \"smtpHost\": \"smtp.gmail.com\",\n  \"smtpPort\": 587,\n  \"smtpUser\": \"you@gmail.com\",\n  \"smtpPass\": \"your-app-password\",\n  \"smtpSecure\": \"tls\",\n  \"fromEmail\": \"loyalty@yourbrand.com\",\n  \"fromName\": \"LoyalArc\",\n  \"alertEmail\": \"security@yourbrand.com\",\n  \"isActive\": true\n}",
                   "options": { "raw": { "language": "json" } }
                 },
                 "url": { "raw": "{{baseUrl}}/api/configuration/email", "host": ["{{baseUrl}}"], "path": ["api","configuration","email"] },

@@ -37,7 +37,7 @@ export class EmailService {
 
     try {
       await transporter.sendMail({
-        from: `"${config.fromName ?? 'LoyaltyPro'}" <${config.fromEmail}>`,
+        from: `"${config.fromName ?? 'LoyalArc'}" <${config.fromEmail}>`,
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
