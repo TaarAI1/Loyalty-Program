@@ -221,15 +221,17 @@ Points formula: `ROUND(sale_amount × tier_percentage / 100)`
 
 1. Create a new Railway project
 2. Add PostgreSQL and Redis add-ons
-3. Create three services pointing to:
-   - `apps/api` (set root directory to `apps/api`)
-   - `apps/worker` (set root directory to `apps/worker`)
-   - `apps/web` (set root directory to `apps/web`)
+3. Create three services (this repo is a **pnpm monorepo** — use repo root as Root Directory):
+   - **API**: Root Directory = `.` (repo root), Config file = `apps/api/railway.toml`, branch `Mahnoor`
+   - **Worker**: Root Directory = `.`, Config file = `apps/worker/railway.toml`
+   - **Web**: Root Directory = `.`, Config file = `apps/web/railway.toml`
 4. Set environment variables for each service (see above)
 5. Deploy the API service (migrations run automatically via `node start.js` on boot)
 6. The seed runs automatically on first startup
 
-**Railway API start command:** use `node start.js` only. Leave **Custom Start Command** and **Pre-deploy command** empty. Do not run `prisma migrate resolve --applied` or `prisma migrate deploy` in Railway settings (that causes P3008/P3009 loops).
+**Railway API:** leave **Custom Build Command** empty (uses `pnpm` from `apps/api/railway.toml`). Leave **Custom Start Command** empty. Do not use `npm i` or `prisma migrate` in custom commands — the repo uses pnpm workspaces (`workspace:*`).
+
+**If build fails with `Unsupported URL Type "workspace:"`:** Root Directory must be `.` (repo root), not `apps/api`.
 
 If the database is stuck, open the **PostgreSQL** service → **Data** → **Query**, run `apps/api/prisma/scripts/railway-fix.sql`, then redeploy.
 

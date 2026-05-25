@@ -1,7 +1,9 @@
+# Root Directory = "." (repo root)
 [build]
 builder = "nixpacks"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @loyalty/worker run build"
 
 [deploy]
-startCommand = "node dist/main"
+startCommand = "node apps/worker/dist/main"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

@@ -1,10 +1,10 @@
+# Railway API service — set Root Directory to "." (repo root), NOT apps/api
 [build]
 builder = "nixpacks"
-# Override any custom build that only runs prisma migrate — must compile the API
-buildCommand = "npm run build"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @loyalty/api run build"
 
 [deploy]
-startCommand = "node start.js"
+startCommand = "node apps/api/start.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

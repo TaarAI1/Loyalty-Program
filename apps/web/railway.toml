@@ -1,8 +1,10 @@
+# Root Directory = "." (repo root)
 [build]
 builder = "nixpacks"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @loyalty/web run build"
 
 [deploy]
-startCommand = "pnpm start"
+startCommand = "pnpm --filter @loyalty/web start"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
