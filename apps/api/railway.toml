@@ -3,7 +3,7 @@ builder = "nixpacks"
 
 [deploy]
 # Migrations run inside dist/main.js via run-migrations.ts — do not add prisma CLI here
-startCommand = "node dist/main"
+startCommand = "node start.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

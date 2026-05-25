@@ -226,8 +226,12 @@ Points formula: `ROUND(sale_amount × tier_percentage / 100)`
    - `apps/worker` (set root directory to `apps/worker`)
    - `apps/web` (set root directory to `apps/web`)
 4. Set environment variables for each service (see above)
-5. Run the initial migration by triggering a deploy of the API service
+5. Deploy the API service (migrations run automatically via `node start.js` on boot)
 6. The seed runs automatically on first startup
+
+**Railway API start command:** use `node start.js` only. Leave **Custom Start Command** and **Pre-deploy command** empty. Do not run `prisma migrate resolve --applied` or `prisma migrate deploy` in Railway settings (that causes P3008/P3009 loops).
+
+If the database is stuck, open the **PostgreSQL** service → **Data** → **Query**, run `apps/api/prisma/scripts/railway-fix.sql`, then redeploy.
 
 > **Redis note:** Railway Redis requires `family: 0` in ioredis options for IPv4/IPv6 compatibility. This is already configured.
 

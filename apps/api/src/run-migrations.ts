@@ -5,13 +5,21 @@ const FAILED_MIGRATION = '20260515000001_add_loyalty_best_practices';
 const INIT_SQL = 'prisma/migrations/20260514000001_init/migration.sql';
 const LOG = '[rewardly-migrate]';
 
-/** apps/api root (parent of dist/) */
 function getApiRoot(): string {
   return join(__dirname, '..');
 }
 
 function log(msg: string): void {
   console.log(`${LOG} ${msg}`);
+}
+
+function isRailwayDb(): boolean {
+  const url = process.env.DATABASE_URL ?? '';
+  return (
+    !!process.env.RAILWAY_ENVIRONMENT ||
+    url.includes('railway') ||
+    url.includes('rlwy.net')
+  );
 }
 
 function runPrisma(args: string, options?: { ignoreError?: boolean; input?: string }): void {
@@ -44,29 +52,38 @@ function loyaltyTiersMissing(): boolean {
   }
 }
 
-/** Clear P3009 failed migration via SQL (works when CLI resolve is not invoked). */
 function clearFailedMigrationSql(): void {
   const sql = `
-UPDATE "_prisma_migrations"
-SET rolled_back_at = CURRENT_TIMESTAMP
+DELETE FROM "_prisma_migrations"
 WHERE migration_name = '${FAILED_MIGRATION}'
-  AND finished_at IS NULL
-  AND rolled_back_at IS NULL;
+  AND finished_at IS NULL;
 `;
   runPrisma('db execute --stdin', { ignoreError: true, input: sql });
 }
 
-/**
- * Heal baselined-then-empty DBs and apply pending migrations.
- * Called from main.ts before Nest boots so Railway only needs: node dist/main
- */
+function applySchema(): void {
+  if (isRailwayDb()) {
+    log('Railway DB — using prisma db push (bypasses broken migration history)');
+    runPrisma('db push --accept-data-loss --skip-generate');
+    return;
+  }
+
+  log('migrate deploy');
+  try {
+    runPrisma('migrate deploy');
+  } catch {
+    log('migrate deploy failed — falling back to db push');
+    runPrisma('db push --accept-data-loss --skip-generate');
+  }
+}
+
 export function runMigrationsBeforeBoot(): void {
   if (process.env.SKIP_DB_MIGRATE === '1') {
     log('SKIP_DB_MIGRATE=1 — skipping');
     return;
   }
 
-  log(`bootstrap heal starting (apiRoot=${getApiRoot()}, cwd=${process.cwd()})`);
+  log(`heal starting (apiRoot=${getApiRoot()}, cwd=${process.cwd()}, railway=${isRailwayDb()})`);
 
   clearFailedMigrationSql();
   runPrisma(`migrate resolve --rolled-back ${FAILED_MIGRATION}`, { ignoreError: true });
@@ -78,7 +95,6 @@ export function runMigrationsBeforeBoot(): void {
     log('loyalty_tiers OK');
   }
 
-  log('migrate deploy');
-  runPrisma('migrate deploy');
+  applySchema();
   log('done');
 }

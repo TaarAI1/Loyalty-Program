@@ -1,0 +1,3 @@
+# Force Railway/Nixpacks to use our entrypoint (not a custom prisma CLI chain).
+[start]
+cmd = "node start.js"
