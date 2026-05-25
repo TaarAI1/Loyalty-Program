@@ -1,7 +1,6 @@
 /**
- * Runs during `npm run build` when DATABASE_URL is set (Railway build).
- * Clears failed Prisma migration rows and syncs schema via db push
- * (does not use migrate deploy — avoids P3008/P3009).
+ * Manual DB heal: pnpm --filter @loyalty/api run db:heal
+ * Do NOT run during Railway build — Postgres is only reachable at runtime (start.js).
  */
 const { execSync } = require('child_process');
 const { join } = require('path');
@@ -34,11 +33,11 @@ function run(args, { ignore = false, input } = {}) {
 }
 
 if (!process.env.DATABASE_URL) {
-  log('no DATABASE_URL — skip (local build)');
+  log('no DATABASE_URL — skip');
   process.exit(0);
 }
 
-log('healing database before build continues...');
+log('healing database...');
 
 run('db execute --stdin', {
   ignore: true,

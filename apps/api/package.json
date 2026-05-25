@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/heal-db.js && prisma generate && nest build",
+    "build": "prisma generate && nest build",
     "dev": "nest start --watch",
     "start": "node start.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
-    "db:migrate": "node scripts/migrate-deploy.js",
+    "db:heal": "node scripts/heal-db.js",
+    "db:migrate": "node scripts/heal-db.js",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts"
   },

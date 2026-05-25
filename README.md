@@ -233,6 +233,8 @@ Points formula: `ROUND(sale_amount × tier_percentage / 100)`
 
 **If build fails with `Unsupported URL Type "workspace:"`:** Root Directory must be `.` (repo root), not `apps/api`.
 
+**If build fails with P1001 / can't reach `postgres.railway.internal`:** That is normal during build — the DB is only reachable when the container **starts**. Do not run `heal-db` in the build command; migrations run via `node apps/api/start.js` at runtime.
+
 If the database is stuck, open the **PostgreSQL** service → **Data** → **Query**, run `apps/api/prisma/scripts/railway-fix.sql`, then redeploy.
 
 > **Redis note:** Railway Redis requires `family: 0` in ioredis options for IPv4/IPv6 compatibility. This is already configured.
