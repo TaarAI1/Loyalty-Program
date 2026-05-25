@@ -2,9 +2,8 @@
 builder = "nixpacks"
 
 [deploy]
-# prestart in package.json also runs migrate-deploy.js when Railway uses pnpm/npm start
-releaseCommand = "node scripts/migrate-deploy.js"
-startCommand = "pnpm run start"
+# Migrations run inside dist/main.js via run-migrations.ts — do not add prisma CLI here
+startCommand = "node dist/main"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

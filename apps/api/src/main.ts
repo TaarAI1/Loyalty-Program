@@ -1,3 +1,4 @@
+import { runMigrationsBeforeBoot } from './run-migrations';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
@@ -16,6 +17,8 @@ import { SeedService } from './seed/seed.service';
 };
 
 async function bootstrap() {
+  runMigrationsBeforeBoot();
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: false }),
