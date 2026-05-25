@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "dev": "nest start --watch",
-    "start": "node scripts/migrate-deploy.js && node dist/main",
+    "prestart": "node scripts/migrate-deploy.js",
+    "start": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "node scripts/migrate-deploy.js",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts"
   },
