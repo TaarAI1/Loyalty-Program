@@ -1,6 +1,7 @@
-# Root Directory = "." (repo root)
+# Root Directory = "/" | Config file = apps/web/railway.toml
 [build]
 builder = "nixpacks"
+nixpacksConfigPath = "apps/web/nixpacks.toml"
 buildCommand = "pnpm install --frozen-lockfile && pnpm turbo run build --filter=@loyalty/web"
 
 [deploy]

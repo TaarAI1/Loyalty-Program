@@ -1,6 +1,7 @@
 # Railway API service — set Root Directory to "." (repo root), NOT apps/api
 [build]
 builder = "nixpacks"
+nixpacksConfigPath = "apps/api/nixpacks.toml"
 buildCommand = "pnpm install --frozen-lockfile && pnpm turbo run build --filter=@loyalty/api"
 
 [deploy]
