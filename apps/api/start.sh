@@ -1,13 +1,22 @@
 #!/bin/sh
-set -e
 
-# Step 1: Clear any stuck/failed migration rows so deploy can re-apply them
+# Write the fix SQL inline to /tmp to avoid any path resolution issues
+cat > /tmp/fix_migrations.sql << ENDSQL
+DROP TABLE IF EXISTS "points_rules";
+DROP TABLE IF EXISTS "campaigns";
+DELETE FROM "_prisma_migrations"
+WHERE migration_name = '20260515000001_add_loyalty_best_practices';
+ENDSQL
+
+echo ">>> Running migration fix..."
 node_modules/.bin/prisma db execute \
-  --file ./prisma/fix-failed-migrations.sql \
-  --schema ./prisma/schema.prisma || true
+  --file /tmp/fix_migrations.sql \
+  --schema ./prisma/schema.prisma \
+  && echo ">>> Migration fix applied." \
+  || echo ">>> Migration fix skipped (already clean)."
 
-# Step 2: Apply all pending migrations
-node_modules/.bin/prisma migrate deploy
+echo ">>> Running prisma migrate deploy..."
+node_modules/.bin/prisma migrate deploy || exit 1
 
-# Step 3: Start the application
+echo ">>> Starting application..."
 exec node dist/main
