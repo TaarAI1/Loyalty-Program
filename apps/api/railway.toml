@@ -1,7 +1,7 @@
 # Railway API service — set Root Directory to "." (repo root), NOT apps/api
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @loyalty/api run build"
+buildCommand = "pnpm install --frozen-lockfile && pnpm turbo run build --filter=@loyalty/api"
 
 [deploy]
 startCommand = "node apps/api/start.js"

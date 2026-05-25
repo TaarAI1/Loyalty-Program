@@ -1,7 +1,7 @@
 # Root Directory = "." (repo root)
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @loyalty/web run build"
+buildCommand = "pnpm install --frozen-lockfile && pnpm turbo run build --filter=@loyalty/web"
 
 [deploy]
 startCommand = "pnpm --filter @loyalty/web start"
