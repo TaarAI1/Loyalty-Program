@@ -1,3 +1,6 @@
+-- Required for gen_random_uuid() on PostgreSQL (e.g. Railway)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE "loyalty_tiers" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(50) NOT NULL,
