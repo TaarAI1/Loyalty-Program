@@ -5,7 +5,7 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
-    "start": "node_modules/.bin/prisma migrate deploy && node dist/main",
+    "start": "node_modules/.bin/prisma migrate resolve --rolled-back 20260515000001_add_loyalty_best_practices || true && node_modules/.bin/prisma migrate deploy && node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
