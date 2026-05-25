@@ -1,8 +1,9 @@
 [build]
 builder = "nixpacks"
+# Override any custom build that only runs prisma migrate — must compile the API
+buildCommand = "npm run build"
 
 [deploy]
-# Migrations run inside dist/main.js via run-migrations.ts — do not add prisma CLI here
 startCommand = "node start.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300

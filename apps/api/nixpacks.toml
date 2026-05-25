@@ -1,3 +1,5 @@
-# Force Railway/Nixpacks to use our entrypoint (not a custom prisma CLI chain).
+[phases.build]
+cmds = ["npm run build"]
+
 [start]
 cmd = "node start.js"

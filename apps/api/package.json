@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "prisma generate && nest build",
+    "build": "node scripts/heal-db.js && prisma generate && nest build",
     "dev": "nest start --watch",
     "start": "node start.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",

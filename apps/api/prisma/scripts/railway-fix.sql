@@ -1,11 +1,15 @@
--- Run ONCE in Railway → PostgreSQL service → Data → Query (not the API shell).
--- Fixes P3009 failed migration and lets the API start.
--- Safe to re-run.
+-- Run in Railway → PostgreSQL → Data → Query (one-time fix)
+-- Then redeploy API with buildCommand: npm run build, start: node start.js
 
--- Remove the failed migration row blocking deploy
+-- 1) Remove failed migration blocking deploy (P3009)
 DELETE FROM "_prisma_migrations"
 WHERE migration_name = '20260515000001_add_loyalty_best_practices'
   AND finished_at IS NULL;
 
--- Optional: if loyalty_tiers still does not exist, run the init migration file
--- from apps/api via: npx prisma db execute --file prisma/migrations/20260514000001_init/migration.sql
+-- 2) If init was marked applied but tables were never created, remove bogus init row
+DELETE FROM "_prisma_migrations"
+WHERE migration_name = '20260514000001_init'
+  AND NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'loyalty_tiers'
+  );

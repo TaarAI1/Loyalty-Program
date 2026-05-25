@@ -13,15 +13,6 @@ function log(msg: string): void {
   console.log(`${LOG} ${msg}`);
 }
 
-function isRailwayDb(): boolean {
-  const url = process.env.DATABASE_URL ?? '';
-  return (
-    !!process.env.RAILWAY_ENVIRONMENT ||
-    url.includes('railway') ||
-    url.includes('rlwy.net')
-  );
-}
-
 function runPrisma(args: string, options?: { ignoreError?: boolean; input?: string }): void {
   const cmd = `npx prisma ${args}`;
   log(`> ${cmd}`);
@@ -52,49 +43,40 @@ function loyaltyTiersMissing(): boolean {
   }
 }
 
-function clearFailedMigrationSql(): void {
+function healMigrationTable(): void {
   const sql = `
 DELETE FROM "_prisma_migrations"
-WHERE migration_name = '${FAILED_MIGRATION}'
-  AND finished_at IS NULL;
+WHERE migration_name = '${FAILED_MIGRATION}' AND finished_at IS NULL;
+
+DELETE FROM "_prisma_migrations"
+WHERE migration_name = '20260514000001_init'
+  AND NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'loyalty_tiers'
+  );
 `;
   runPrisma('db execute --stdin', { ignoreError: true, input: sql });
 }
 
-function applySchema(): void {
-  if (isRailwayDb()) {
-    log('Railway DB — using prisma db push (bypasses broken migration history)');
-    runPrisma('db push --accept-data-loss --skip-generate');
-    return;
-  }
-
-  log('migrate deploy');
-  try {
-    runPrisma('migrate deploy');
-  } catch {
-    log('migrate deploy failed — falling back to db push');
-    runPrisma('db push --accept-data-loss --skip-generate');
-  }
-}
-
+/**
+ * Production schema sync — never uses `prisma migrate deploy` (avoids P3008/P3009).
+ */
 export function runMigrationsBeforeBoot(): void {
   if (process.env.SKIP_DB_MIGRATE === '1') {
     log('SKIP_DB_MIGRATE=1 — skipping');
     return;
   }
 
-  log(`heal starting (apiRoot=${getApiRoot()}, cwd=${process.cwd()}, railway=${isRailwayDb()})`);
+  log(`heal starting (apiRoot=${getApiRoot()}, cwd=${process.cwd()})`);
 
-  clearFailedMigrationSql();
-  runPrisma(`migrate resolve --rolled-back ${FAILED_MIGRATION}`, { ignoreError: true });
+  healMigrationTable();
 
   if (loyaltyTiersMissing()) {
     log('loyalty_tiers missing — applying init SQL');
     runPrisma(`db execute --file ${INIT_SQL}`);
-  } else {
-    log('loyalty_tiers OK');
   }
 
-  applySchema();
+  log('db push (schema sync)');
+  runPrisma('db push --accept-data-loss --skip-generate');
   log('done');
 }
