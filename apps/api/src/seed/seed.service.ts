@@ -30,6 +30,10 @@ export class SeedService {
   constructor(private readonly prisma: PrismaService) {}
 
   async seedIfEmpty() {
+    if (process.env.SKIP_DEMO_SEED === '1') {
+      this.logger.log('SKIP_DEMO_SEED=1 — skipping demo customer seed');
+      return;
+    }
     try {
       await this.doSeedIfEmpty();
     } catch (err) {
