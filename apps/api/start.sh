@@ -1,6 +1,11 @@
 #!/bin/sh
 
-# Write the fix SQL inline to /tmp to avoid any path resolution issues
+# Move into the api directory regardless of where Railway calls this script from
+cd "$(dirname "$0")"
+
+echo ">>> Working directory: $(pwd)"
+
+# Write fix SQL to /tmp
 cat > /tmp/fix_migrations.sql << ENDSQL
 DROP TABLE IF EXISTS "points_rules";
 DROP TABLE IF EXISTS "campaigns";
