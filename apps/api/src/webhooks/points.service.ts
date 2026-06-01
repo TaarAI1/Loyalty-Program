@@ -181,6 +181,9 @@ export class PointsService {
             qty: item.qty,
             unitPrice: item.unit_price,
             totalPrice: item.total_price,
+            taxAmount: item.tax_amount ?? null,
+            grossAmount: item.gross_amount ?? null,
+            netAmount: item.net_amount ?? null,
           })),
         });
       }

@@ -91,6 +91,9 @@ model TransactionItem {
   qty           Decimal  @db.Decimal(10, 3)
   unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
   totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
+  taxAmount     Decimal? @map("tax_amount") @db.Decimal(10, 2)
+  grossAmount   Decimal? @map("gross_amount") @db.Decimal(10, 2)
+  netAmount     Decimal? @map("net_amount") @db.Decimal(10, 2)
   createdAt     DateTime @default(now()) @map("created_at")
 
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
