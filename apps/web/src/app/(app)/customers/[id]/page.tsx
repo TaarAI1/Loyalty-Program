@@ -23,6 +23,7 @@ import {
 } from '@/lib/utils';
 import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { isValidEmail } from '@loyalty/shared';
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -635,7 +636,7 @@ export default function CustomerDetailPage() {
       {/* Edit Dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Customer">
         <div className="space-y-3">
-          {(['name', 'email', 'gender', 'region', 'store'] as const).map((field) => (
+          {(['name', 'gender', 'region', 'store'] as const).map((field) => (
             <div key={field} className="space-y-1">
               <Label className="capitalize">{field}</Label>
               <Input
@@ -644,6 +645,14 @@ export default function CustomerDetailPage() {
               />
             </div>
           ))}
+          <div className="space-y-1">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={editForm.email}
+              onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+            />
+          </div>
           <div className="space-y-1">
             <Label>Date of Birth</Label>
             <Input
@@ -656,7 +665,13 @@ export default function CustomerDetailPage() {
             <Button
               className="flex-1"
               loading={updateMutation.isPending}
-              onClick={() => updateMutation.mutate(editForm)}
+              onClick={() => {
+                if (editForm.email.trim() && !isValidEmail(editForm.email)) {
+                  toast.error('Enter a valid email address');
+                  return;
+                }
+                updateMutation.mutate(editForm);
+              }}
             >
               Save Changes
             </Button>

@@ -1,15 +1,18 @@
 import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Param,
+  BadRequestException,
   Body,
-  Query,
-  ParseUUIDPipe,
+  Controller,
   DefaultValuePipe,
+  Get,
+  Param,
   ParseIntPipe,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
 } from '@nestjs/common';
+import { ZodError } from 'zod';
+import { CustomerUpdateSchema } from '@loyalty/shared';
 import { CustomersService } from './customers.service';
 
 @Controller('customers')
@@ -67,11 +70,16 @@ export class CustomersController {
   }
 
   @Put(':id')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean }>,
-  ) {
-    return this.customersService.update(id, body);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown) {
+    try {
+      const data = CustomerUpdateSchema.parse(body);
+      return this.customersService.update(id, data);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        throw new BadRequestException(err.errors.map((e) => e.message).join('; '));
+      }
+      throw err;
+    }
   }
 
   @Post(':id/notify')

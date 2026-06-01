@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { optionalEmailSchema, phoneNumberSchema } from './validation';
 
 // ── Webhook: Transaction Item ──────────────────────────────────────────────────
 export const TransactionItemSchema = z.object({
@@ -14,7 +15,7 @@ export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 export const WebhookTransactionSchema = z.object({
   transaction_id:  z.string().min(1),
   cust_sid:        z.string().max(100).optional(),   // POS system customer ID — preferred lookup key
-  customer_mobile: z.string().min(7).max(20),
+  customer_mobile: phoneNumberSchema,
   customer_name:   z.string().min(1).max(255),
   sale_amount:     z.number().positive(),
   transaction_date: z.string().datetime(),
@@ -32,8 +33,8 @@ export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
 export const WebhookCustomerSchema = z.object({
   customer_id: z.string().min(1),
   name: z.string().min(1).max(255),
-  mobile: z.string().min(7).max(20),
-  email: z.string().email().optional(),
+  mobile: phoneNumberSchema,
+  email: optionalEmailSchema,
   dob: z.string().optional(),
   gender: z.enum(['Male', 'Female', 'Other']).optional(),
   region: z.string().max(100).optional(),
@@ -41,6 +42,17 @@ export const WebhookCustomerSchema = z.object({
   country_code: z.string().max(5).default('92'),
 });
 export type WebhookCustomerDto = z.infer<typeof WebhookCustomerSchema>;
+
+export const CustomerUpdateSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  email: optionalEmailSchema,
+  dateOfBirth: z.string().optional(),
+  gender: z.enum(['Male', 'Female', 'Other']).optional(),
+  region: z.string().max(100).optional(),
+  store: z.string().max(100).optional(),
+  isActive: z.boolean().optional(),
+});
+export type CustomerUpdateDto = z.infer<typeof CustomerUpdateSchema>;
 
 // ── Loyalty Tier ──────────────────────────────────────────────────────────────
 export const LoyaltyTierSchema = z.object({
@@ -96,7 +108,7 @@ export type RedeemPointsDto = z.infer<typeof RedeemPointsSchema>;
 
 // ── WhatsApp Test ─────────────────────────────────────────────────────────────
 export const WhatsAppTestSchema = z.object({
-  to: z.string().min(7).max(20),
+  to: phoneNumberSchema,
   template_name: z.string().min(1),
   message: z.string().min(1).optional(),
 });
