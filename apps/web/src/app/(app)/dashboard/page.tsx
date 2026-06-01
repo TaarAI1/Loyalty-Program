@@ -34,7 +34,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const TIER_PIE_COLORS = ['#FFD000', '#111111', '#e6bb00', '#444444', '#f5c518'];
+function tierPieColor(tier: string): string {
+  switch (tier?.toLowerCase()) {
+    case 'classic':  return '#d6cfc7';
+    case 'silver':   return '#cbd5e1';
+    case 'gold':     return '#f59e0b';
+    case 'platinum': return '#a855f7';
+    case 'diamond':  return '#22d3ee';
+    default:         return '#9ca3af';
+  }
+}
 const SEGMENT_COLORS = ['#FFD000', '#22c55e', '#3b82f6', '#8b5cf6', '#f97316', '#ef4444'];
 
 export default function DashboardPage() {
@@ -329,7 +338,7 @@ export default function DashboardPage() {
                   <PieChart>
                     <Pie data={distribution} dataKey="count" nameKey="tier" cx="50%" cy="50%" outerRadius={65} innerRadius={40} strokeWidth={0}>
                       {distribution.map((entry: { tier: string }, i: number) => (
-                        <Cell key={entry.tier} fill={TIER_PIE_COLORS[i % TIER_PIE_COLORS.length]} />
+                        <Cell key={entry.tier} fill={tierPieColor(entry.tier)} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -342,7 +351,7 @@ export default function DashboardPage() {
                   {distribution.map((entry: { tier: string; count: number; percentage: number }, i: number) => (
                     <div key={entry.tier} className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="w-2 h-2 rounded-full" style={{ background: TIER_PIE_COLORS[i % TIER_PIE_COLORS.length] }} />
+                        <span className="w-2 h-2 rounded-full" style={{ background: tierPieColor(entry.tier) }} />
                         {entry.tier}
                       </span>
                       <span className="font-semibold text-slate-800">{formatNumber(entry.count)} <span className="font-normal text-slate-400">({entry.percentage}%)</span></span>
