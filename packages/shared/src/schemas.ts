@@ -38,10 +38,11 @@ export const WebhookCustomerSchema = z.object({
   name: z.string().min(1).max(255),
   mobile: phoneNumberSchema,
   email: optionalEmailSchema,
-  dob: z.string().optional(),
-  gender: z.enum(['Male', 'Female', 'Other']).optional(),
-  region: z.string().max(100).optional(),
-  store: z.string().max(100).optional(),
+  dob: z.string().optional().transform((v) => v === '' ? undefined : v),
+  gender: z.string().optional().transform((v) => v === '' ? undefined : v)
+    .pipe(z.enum(['Male', 'Female', 'Other']).optional()),
+  region: z.string().optional().transform((v) => v === '' ? undefined : v),
+  store: z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
   country_code: z.string().max(5).default('92'),
 });
 export type WebhookCustomerDto = z.infer<typeof WebhookCustomerSchema>;
