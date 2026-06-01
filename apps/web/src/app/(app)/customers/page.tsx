@@ -106,12 +106,6 @@ export default function CustomersPage() {
               className="w-36"
             />
             <Input
-              placeholder="Region"
-              className="w-28"
-              value={region}
-              onChange={(e) => { setRegion(e.target.value); setPage(1); }}
-            />
-            <Input
               placeholder="Store"
               className="w-28"
               value={store}

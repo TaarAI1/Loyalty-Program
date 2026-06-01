@@ -222,14 +222,6 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent className="space-y-3 pt-0 text-sm">
               <div className="space-y-1">
-                <Label>Region</Label>
-                <Select
-                  options={regionOptions}
-                  value={filters.region}
-                  onChange={(e) => setFilters((f) => ({ ...f, region: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
                 <Label>Store</Label>
                 <Select
                   options={storeOptions}
