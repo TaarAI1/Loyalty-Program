@@ -34,11 +34,7 @@ export default function LoginPage() {
 
       {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #fffdf0 0%, #fff9d6 40%, #fffbe8 100%)' }}>
-
-        {/* Soft glow blobs */}
-        <div className="absolute top-[-60px] left-[-60px] w-72 h-72 rounded-full bg-[#FFD000] opacity-20 blur-[80px] pointer-events-none" />
-        <div className="absolute bottom-[-40px] right-[-40px] w-64 h-64 rounded-full bg-[#FFD000] opacity-15 blur-[80px] pointer-events-none" />
+        style={{ background: '#ffffff' }}>
 
         {/* Logo */}
         <div className="relative flex items-center gap-3 z-10">
