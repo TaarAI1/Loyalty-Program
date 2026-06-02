@@ -44,9 +44,9 @@ export class WebhooksService {
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
 
-    const taxAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.tax_amount   ?? 0), 0) : null;
-    const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : null;
-    const netAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : null;
+    const taxAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.tax_amount   ?? 0), 0) : (dto.tax_amount   ?? null);
+    const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : (dto.gross_amount ?? null);
+    const netAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : (dto.net_amount   ?? null);
 
     return {
       ...customerSummary,
