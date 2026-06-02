@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Gift, Eye, EyeOff, Loader2, ArrowRight, Star, TrendingUp } from 'lucide-react';
+import { Gift, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
@@ -50,91 +51,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ── Illustration: floating cards ── */}
-        <div className="relative z-10 flex items-center justify-center flex-1 py-6">
-          <div className="relative w-full max-w-[420px] h-[320px]">
-
-            {/* Points overview card — center */}
-            <div className="absolute top-[30px] left-[50%] -translate-x-1/2 w-[240px] rounded-2xl p-5 shadow-2xl z-20"
-              style={{ background: '#111', border: '1px solid #222' }}>
-              <p className="text-[#666] text-[11px] font-semibold mb-1 uppercase tracking-wider">Points Overview</p>
-              <div className="flex items-end gap-2 mb-3">
-                <p className="text-[#FFD000] text-3xl font-black leading-none">12,540</p>
-                <span className="text-green-400 text-xs font-bold mb-1 flex items-center gap-0.5">
-                  <TrendingUp className="w-3 h-3" /> 12.5%
-                </span>
-              </div>
-              {/* Mini bar chart */}
-              <div className="flex items-end gap-1 h-10">
-                {[35, 58, 42, 75, 50, 88, 65, 80].map((h, i) => (
-                  <div
-                    key={i}
-                    style={{ height: `${h}%` }}
-                    className={`flex-1 rounded-sm transition-all ${i === 5 || i === 7 ? 'bg-[#FFD000]' : 'bg-[#2a2a2a]'}`}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-between mt-1">
-                {['Jan','Mar','May','Jul'].map(m => (
-                  <span key={m} className="text-[#444] text-[8px]">{m}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Redeem Rewards card — top left */}
-            <div className="absolute top-0 left-0 w-[158px] rounded-2xl p-4 shadow-xl z-10"
-              style={{ background: '#111', border: '1px solid #FFD000' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[#FFD000] flex items-center justify-center">
-                  <Gift className="w-4 h-4 text-[#111]" />
-                </div>
-                <div>
-                  <p className="text-white text-[11px] font-bold leading-tight">Redeem</p>
-                  <p className="text-white text-[11px] font-bold leading-tight">Rewards</p>
-                </div>
-              </div>
-              <div className="w-full py-1.5 rounded-lg bg-[#FFD000] text-center">
-                <p className="text-[#111] text-[10px] font-black">Explore Rewards</p>
-              </div>
-            </div>
-
-            {/* 15% OFF badge — top right */}
-            <div className="absolute top-[10px] right-[10px] w-[72px] h-[72px] rounded-xl flex flex-col items-center justify-center shadow-lg z-10 rotate-6"
-              style={{ background: '#FFD000' }}>
-              <p className="text-[#111] text-2xl font-black leading-none">15%</p>
-              <p className="text-[#111] text-[11px] font-black">OFF</p>
-            </div>
-
-            {/* Gift box — bottom left */}
-            <div className="absolute bottom-[20px] left-[10px] w-[90px] h-[90px] rounded-2xl flex flex-col items-center justify-center shadow-xl z-10"
-              style={{ background: 'linear-gradient(135deg, #FFD000 0%, #e6bb00 100%)' }}>
-              <span className="text-4xl">🎁</span>
-            </div>
-
-            {/* Star coin — bottom center-left */}
-            <div className="absolute bottom-[10px] left-[115px] w-[64px] h-[64px] rounded-full flex flex-col items-center justify-center shadow-lg z-10"
-              style={{ background: 'linear-gradient(135deg, #FFD000 0%, #c9a000 100%)', border: '3px solid #e6bb00' }}>
-              <Star className="w-5 h-5 text-[#111] fill-[#111]" />
-              <p className="text-[#111] text-[8px] font-black mt-0.5">POINTS</p>
-            </div>
-
-            {/* Shopping bag — bottom right */}
-            <div className="absolute bottom-[15px] right-[15px] w-[80px] h-[96px] rounded-2xl flex items-center justify-center shadow-xl z-10"
-              style={{ background: '#222', border: '1px solid #333' }}>
-              <span className="text-4xl">🛍️</span>
-            </div>
-
-            {/* Yellow bag — middle left */}
-            <div className="absolute top-[100px] left-[-10px] w-[70px] h-[84px] rounded-xl flex items-center justify-center shadow-lg z-10"
-              style={{ background: 'linear-gradient(135deg, #FFD000 0%, #e6bb00 100%)' }}>
-              <span className="text-3xl">👜</span>
-            </div>
-
-            {/* Floating stars */}
-            <div className="absolute top-[14px] left-[165px] text-[#FFD000] text-lg z-30">⭐</div>
-            <div className="absolute top-[85px] right-[88px] text-[#FFD000] text-sm z-30 opacity-70">✦</div>
-            <div className="absolute bottom-[95px] right-[8px] text-[#FFD000] text-xs z-30 opacity-50">✦</div>
-          </div>
+        {/* ── Illustration image ── */}
+        <div className="relative z-10 flex items-center justify-center flex-1 py-4">
+          <Image
+            src="/login-illustration.png"
+            alt="Loyalty rewards illustration"
+            width={460}
+            height={360}
+            className="w-full max-w-[460px] object-contain drop-shadow-xl"
+            priority
+          />
         </div>
 
         {/* Text below illustration */}
