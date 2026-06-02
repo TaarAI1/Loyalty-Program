@@ -3,11 +3,14 @@ import { optionalEmailSchema, phoneNumberSchema } from './validation';
 
 // ── Webhook: Transaction Item ──────────────────────────────────────────────────
 export const TransactionItemSchema = z.object({
-  sku:         z.string().max(100).optional(),
-  description: z.string().max(500).optional(),
-  qty:         z.number().positive(),
-  unit_price:  z.number().nonnegative(),
-  total_price: z.number().nonnegative(),
+  sku:          z.string().max(100).optional(),
+  description:  z.string().max(500).optional(),
+  qty:          z.number().positive(),
+  unit_price:   z.number().nonnegative(),
+  total_price:  z.number().nonnegative(),
+  tax_amount:   z.number().nonnegative().optional(),
+  gross_amount: z.number().nonnegative().optional(),
+  net_amount:   z.number().nonnegative().optional(),
 });
 export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 

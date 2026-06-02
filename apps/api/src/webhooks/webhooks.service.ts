@@ -44,11 +44,18 @@ export class WebhooksService {
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
 
+    const taxAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.tax_amount   ?? 0), 0) : null;
+    const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : null;
+    const netAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : null;
+
     return {
       ...customerSummary,
-      points_earned: result.pointsEarned,
+      points_earned:   result.pointsEarned,
       points_redeemed: result.pointsRedeemed,
-      tier_upgraded: result.tierUpgraded,
+      tier_upgraded:   result.tierUpgraded,
+      tax_amount:      taxAmount,
+      gross_amount:    grossAmount,
+      net_amount:      netAmount,
       action: undefined,
     };
   }
