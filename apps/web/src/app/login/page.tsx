@@ -54,7 +54,7 @@ export default function LoginPage() {
             alt="Loyalty rewards illustration"
             width={460}
             height={360}
-            className="w-full max-w-[460px] object-contain drop-shadow-xl"
+            className="w-full max-w-[460px] object-contain"
             priority
           />
         </div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-3xl font-black text-[#111] mb-1.5 tracking-tight">
-            Welcome back 👋
+            Welcome back
           </h2>
           <p className="text-[#aaa] text-sm mb-8">Sign in to continue and manage your loyalty program.</p>
 
