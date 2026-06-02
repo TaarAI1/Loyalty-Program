@@ -13,27 +13,29 @@ export class WebhooksService {
   ) {}
 
   async handleTransaction(dto: WebhookTransactionDto) {
+    const transactionId = dto.transaction_id ?? crypto.randomUUID();
+
     // Check for duplicate transaction_id directly in the database — transparent and reliable
     const existing = await this.prisma.transaction.findFirst({
-      where: { retailproTransactionId: dto.transaction_id },
+      where: { retailproTransactionId: transactionId },
       select: { id: true, customerId: true, pointsEarned: true, saleAmount: true },
     });
 
     if (existing) {
-      this.logger.warn({ transaction_id: dto.transaction_id }, 'Duplicate transaction_id rejected');
+      this.logger.warn({ transaction_id: transactionId }, 'Duplicate transaction_id rejected');
       throw new ConflictException(
-        `Transaction ID "${dto.transaction_id}" already exists. Each transaction must have a unique ID.`,
+        `Transaction ID "${transactionId}" already exists. Each transaction must have a unique ID.`,
       );
     }
 
     const result = await this.points.processTransaction({
-      retailproTransactionId: dto.transaction_id,
+      retailproTransactionId: transactionId,
       custSid: dto.cust_sid,
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       redeemPoints: dto.redeem_points ?? 0,
-      transactionDate: new Date(dto.transaction_date),
+      transactionDate: dto.transaction_date ? new Date(dto.transaction_date) : new Date(),
       store: dto.store,
       region: dto.region,
       receiptNo: dto.receipt_no,
