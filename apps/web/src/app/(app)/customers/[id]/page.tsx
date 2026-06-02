@@ -193,7 +193,7 @@ export default function CustomerDetailPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back + Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -227,6 +227,159 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
+      {/* Unified Customer Card */}
+      {(() => {
+        type TierRow = { id: number; name: string; rewardPercentage: number; redeemValue?: number; spendFrom: number; spendTo: number };
+        const tierList = (tiers ?? []) as TierRow[];
+        const currentIdx = tierList.findIndex((t) => t.name === customer.tier?.name);
+        const overallPct = tierList.length > 1
+          ? Math.min(100, ((currentIdx + (tierProgressPct / 100)) / (tierList.length - 1)) * 100)
+          : tierProgressPct;
+
+        function tierDotColor(name: string): string {
+          switch (name?.toLowerCase()) {
+            case 'silver':   return '#94a3b8';
+            case 'gold':     return '#f59e0b';
+            case 'platinum': return '#a855f7';
+            case 'diamond':  return '#22d3ee';
+            default:         return '#FFD000';
+          }
+        }
+
+        return (
+          <Card>
+            <CardContent className="p-6 space-y-5">
+              {/* Name + badges */}
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-bold">{customer.name}</h2>
+                  <TierBadge name={customer.tier?.name} />
+                  {customer.segment && (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(customer.segment)}`}>
+                      {segmentLabel(customer.segment)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">{customer.mobileNumber}</p>
+                {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
+              </div>
+
+              {/* Milestone tier progress bar */}
+              {tierList.length > 0 && (
+                <div className="space-y-1">
+                  {/* Tier icons + labels */}
+                  <div className="flex items-end">
+                    {tierList.map((t, i) => {
+                      const isActive = t.name === customer.tier?.name;
+                      const isPast = i <= currentIdx;
+                      return (
+                        <div key={t.id} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                            style={{
+                              background: isPast ? tierDotColor(t.name) : '#e2e8f0',
+                              color: isPast ? '#fff' : '#94a3b8',
+                              outline: isActive ? `2px solid ${tierDotColor(t.name)}` : 'none',
+                              outlineOffset: '2px',
+                            }}
+                          >
+                            {t.name.charAt(0)}
+                          </div>
+                          <span className={`text-xs font-semibold ${isActive ? 'text-slate-800' : 'text-muted-foreground'}`}>
+                            {t.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Progress track with milestone dots */}
+                  <div className="relative h-2 mx-[20px]">
+                    <div className="absolute inset-0 bg-muted rounded-full" />
+                    <div
+                      className="absolute top-0 left-0 h-2 rounded-full transition-all duration-700"
+                      style={{
+                        width: `${overallPct}%`,
+                        background: tierDotColor(customer.tier?.name ?? ''),
+                      }}
+                    />
+                    {tierList.map((_, i) => {
+                      const pos = tierList.length > 1 ? (i / (tierList.length - 1)) * 100 : 0;
+                      const isPast = i <= currentIdx;
+                      return (
+                        <div
+                          key={i}
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
+                          style={{
+                            left: `${pos}%`,
+                            background: isPast ? tierDotColor(tierList[currentIdx]?.name ?? '') : '#cbd5e1',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Amount labels */}
+                  <div className="flex mx-[20px]">
+                    {tierList.map((t, i) => (
+                      <div
+                        key={t.id}
+                        className="flex-1 flex"
+                        style={{ justifyContent: i === 0 ? 'flex-start' : i === tierList.length - 1 ? 'flex-end' : 'center' }}
+                      >
+                        <span className={`text-[10px] tabular-nums ${t.name === customer.tier?.name ? 'font-bold text-slate-700' : 'text-muted-foreground'}`}>
+                          {i === tierList.length - 1 && !t.spendTo ? `${formatCurrency(t.spendFrom)}+` : formatCurrency(t.spendFrom)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progress label */}
+                  <p className="text-center text-xs text-muted-foreground pt-0.5">
+                    {nextTier
+                      ? <><span className="font-semibold text-slate-700">{formatCurrency(nextTier.spendFrom - Number(customer.lifetimeSale))}</span> to {nextTier.name}</>
+                      : <span className="text-yellow-600 font-semibold">Maximum tier reached</span>
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Stats rows — two divider rows */}
+              <div className="border-t divide-y">
+                {/* Row 1: key metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-x py-3">
+                  {[
+                    { label: <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Engagement</span>, value: `${customer.engagementScore ?? 0}/100` },
+                    { label: 'Available Points', value: formatNumber(customer.totalPoints) },
+                    { label: 'Lifetime Earned', value: formatNumber(customer.lifetimePoints) },
+                    { label: 'Lifetime Sale', value: formatCurrency(Number(customer.lifetimeSale)) },
+                    { label: 'Last Visit', value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
+                  ].map((item, i) => (
+                    <div key={i} className="px-4 first:pl-0 last:pr-0">
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Row 2: profile details */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x py-3">
+                  {[
+                    { label: 'Gender', value: customer.gender ?? '—' },
+                    { label: 'Store', value: customer.store ?? '—' },
+                    { label: 'Region', value: customer.region ?? '—' },
+                    { label: 'DOB', value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
+                  ].map((item, i) => (
+                    <div key={i} className="px-4 first:pl-0 last:pr-0">
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <p className="font-semibold text-sm text-slate-800 mt-0.5">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -245,151 +398,6 @@ export default function CustomerDetailPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Profile Card */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <Card className="xl:col-span-1">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-bold">{customer.name}</h2>
-                <p className="text-muted-foreground text-sm">{customer.mobileNumber}</p>
-                {customer.email && <p className="text-muted-foreground text-sm">{customer.email}</p>}
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <TierBadge name={customer.tier?.name} />
-                {customer.segment && (
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(customer.segment)}`}>
-                    {segmentLabel(customer.segment)}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Engagement score bar */}
-            {customer.engagementScore !== undefined && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1"><Zap className="w-3 h-3" /> Engagement</span>
-                  <span className="font-bold">{customer.engagementScore}/100</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full transition-all duration-700"
-                    style={{
-                      width: `${customer.engagementScore}%`,
-                      background: customer.engagementScore >= 70 ? '#22c55e' : customer.engagementScore >= 40 ? '#FFD000' : '#ef4444',
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Points highlight */}
-            <div className="bg-[#fffde8] border border-[#FFD000]/30 rounded-xl p-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-[#a07800] font-medium">Available Points</p>
-                <p className="text-2xl font-black text-[#111]">{formatNumber(customer.totalPoints)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Lifetime Earned</p>
-                <p className="font-bold text-slate-700">{formatNumber(customer.lifetimePoints)}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Lifetime Sale</p>
-                <p className="font-bold">{formatCurrency(Number(customer.lifetimeSale))}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Last Visit</p>
-                <p className="font-bold">{customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—'}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Gender</p>
-                <p className="font-medium">{customer.gender ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Store</p>
-                <p className="font-medium">{customer.store ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Region</p>
-                <p className="font-medium">{customer.region ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">DOB</p>
-                <p className="font-medium">{customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tier Progress */}
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>Tier Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{customer.tier?.name} Tier</span>
-                {nextTier ? (
-                  <span className="text-muted-foreground">
-                    {formatCurrency(nextTier.spendFrom - Number(customer.lifetimeSale))} to {nextTier.name}
-                  </span>
-                ) : (
-                  <span className="text-yellow-600 font-medium">Maximum tier reached</span>
-                )}
-              </div>
-              <div className="w-full bg-muted rounded-full h-3">
-                <div
-                  className="h-3 rounded-full transition-all duration-700"
-                  style={{ width: `${tierProgressPct}%`, background: '#FFD000' }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{formatCurrency(Number(customer.tier?.spendFrom ?? 0))}</span>
-                {nextTier && <span>{formatCurrency(Number(nextTier.spendFrom))}</span>}
-              </div>
-            </div>
-
-            {/* Tier benefits */}
-            {tiers && (
-              <div className="grid grid-cols-2 gap-3">
-                {(tiers as Array<{ id: number; name: string; rewardPercentage: number; redeemValue?: number; spendFrom: number; spendTo: number }>).map((t) => {
-                  const isActive = customer.tier?.name === t.name;
-                  return (
-                    <div
-                      key={t.id}
-                      className={`p-3 rounded-lg border text-sm transition-all ${
-                        isActive ? 'border-[#FFD000] bg-[#fffde8] shadow-sm' : 'border-border bg-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <TierBadge name={t.name} />
-                        <span className={`font-black text-sm ${isActive ? 'text-[#a07800]' : 'text-slate-500'}`}>
-                          {Number(t.rewardPercentage)}%
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground mt-1.5 text-xs">
-                        {formatCurrency(t.spendFrom)} – {t.spendTo ? formatCurrency(t.spendTo) : '∞'}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        1 pt = PKR {Number(t.redeemValue ?? 1)}
-                      </p>
-                      {isActive && (
-                        <p className="text-[10px] font-bold text-[#a07800] mt-1">◉ Current Tier</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Transaction History + Points Ledger */}
