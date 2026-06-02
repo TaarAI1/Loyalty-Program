@@ -34,7 +34,7 @@ export class CustomersService {
       }),
       ...(tierId && { tierId }),
       ...(region && { region }),
-      ...(store && { store }),
+      ...(store && { store: { contains: store, mode: 'insensitive' as const } }),
       ...(isActive !== undefined && { isActive }),
     };
 
