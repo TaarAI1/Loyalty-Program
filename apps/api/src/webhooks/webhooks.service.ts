@@ -13,29 +13,27 @@ export class WebhooksService {
   ) {}
 
   async handleTransaction(dto: WebhookTransactionDto) {
-    const transactionId = dto.transaction_id ?? crypto.randomUUID();
-
     // Check for duplicate transaction_id directly in the database — transparent and reliable
     const existing = await this.prisma.transaction.findFirst({
-      where: { retailproTransactionId: transactionId },
+      where: { retailproTransactionId: dto.transaction_id },
       select: { id: true, customerId: true, pointsEarned: true, saleAmount: true },
     });
 
     if (existing) {
-      this.logger.warn({ transaction_id: transactionId }, 'Duplicate transaction_id rejected');
+      this.logger.warn({ transaction_id: dto.transaction_id }, 'Duplicate transaction_id rejected');
       throw new ConflictException(
-        `Transaction ID "${transactionId}" already exists. Each transaction must have a unique ID.`,
+        `Transaction ID "${dto.transaction_id}" already exists. Each transaction must have a unique ID.`,
       );
     }
 
     const result = await this.points.processTransaction({
-      retailproTransactionId: transactionId,
+      retailproTransactionId: dto.transaction_id,
       custSid: dto.cust_sid,
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       redeemPoints: dto.redeem_points ?? 0,
-      transactionDate: dto.transaction_date ? (isNaN(new Date(dto.transaction_date).getTime()) ? new Date() : new Date(dto.transaction_date)) : new Date(),
+      transactionDate: new Date(dto.transaction_date),
       store: dto.store,
       region: dto.region,
       receiptNo: dto.receipt_no,
@@ -46,18 +44,11 @@ export class WebhooksService {
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
 
-    const taxAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.tax_amount   ?? 0), 0) : null;
-    const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount  ?? 0), 0) : dto.sale_amount;
-    const netAmount   = dto.sale_amount - (dto.redeem_points ?? 0);
-
     return {
       ...customerSummary,
-      points_earned:   result.pointsEarned,
+      points_earned: result.pointsEarned,
       points_redeemed: result.pointsRedeemed,
-      tier_upgraded:   result.tierUpgraded,
-      tax_amount:      taxAmount,
-      gross_amount:    grossAmount,
-      net_amount:      netAmount,
+      tier_upgraded: result.tierUpgraded,
       action: undefined,
     };
   }
