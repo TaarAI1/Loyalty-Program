@@ -286,7 +286,7 @@ export default function CustomerDetailPage() {
               {/* Milestone tier progress bar */}
               {tierList.length > 0 && (
                 <div className="space-y-1">
-                  {/* Tier icons + labels */}
+                  {/* Tier icons + badges + percentages */}
                   <div className="flex items-end">
                     {tierList.map((t, i) => {
                       const isActive = t.name === customer.tier?.name;
@@ -294,18 +294,19 @@ export default function CustomerDetailPage() {
                       return (
                         <div key={t.id} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm"
                             style={{
                               background: isPast ? tierDotColor(t.name) : '#e2e8f0',
                               color: isPast ? '#fff' : '#94a3b8',
-                              outline: isActive ? `2px solid ${tierDotColor(t.name)}` : 'none',
+                              outline: isActive ? `3px solid ${tierDotColor(t.name)}` : 'none',
                               outlineOffset: '2px',
                             }}
                           >
                             {t.name.charAt(0)}
                           </div>
-                          <span className={`text-xs font-semibold ${isActive ? 'text-slate-800' : 'text-muted-foreground'}`}>
-                            {t.name}
+                          <TierBadge name={t.name} />
+                          <span className={`text-[11px] font-bold ${isActive ? 'text-[#a07800]' : 'text-muted-foreground'}`}>
+                            {Number(t.rewardPercentage)}%
                           </span>
                         </div>
                       );
