@@ -227,6 +227,25 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
+      {/* Summary Stat Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+        {statCards.map((card) => (
+          <Card key={card.label} className="overflow-hidden hover:shadow-md transition-all">
+            <div className="h-0.5 w-full" style={{ background: card.accent }} />
+            <CardContent className="p-4 space-y-2.5">
+              <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
+              </div>
+              <div>
+                <p className="text-[19px] font-black text-[#111] tabular-nums leading-tight">{card.value}</p>
+                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{card.label}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{card.sub}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Unified Customer Card */}
       {(() => {
         type TierRow = { id: number; name: string; rewardPercentage: number; redeemValue?: number; spendFrom: number; spendTo: number };
@@ -293,16 +312,22 @@ export default function CustomerDetailPage() {
                     })}
                   </div>
 
-                  {/* Progress track with milestone dots */}
+                  {/* Progress track with milestone dots + percentage */}
                   <div className="relative h-2 mx-[20px]">
                     <div className="absolute inset-0 bg-muted rounded-full" />
                     <div
                       className="absolute top-0 left-0 h-2 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${overallPct}%`,
-                        background: tierDotColor(customer.tier?.name ?? ''),
-                      }}
+                      style={{ width: `${overallPct}%`, background: '#FFD000' }}
                     />
+                    {/* Percentage label above the fill end */}
+                    {overallPct > 0 && overallPct < 100 && (
+                      <div
+                        className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold text-[#a07800] whitespace-nowrap"
+                        style={{ left: `${overallPct}%` }}
+                      >
+                        {Math.round(tierProgressPct)}%
+                      </div>
+                    )}
                     {tierList.map((_, i) => {
                       const pos = tierList.length > 1 ? (i / (tierList.length - 1)) * 100 : 0;
                       const isPast = i <= currentIdx;
@@ -310,10 +335,7 @@ export default function CustomerDetailPage() {
                         <div
                           key={i}
                           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
-                          style={{
-                            left: `${pos}%`,
-                            background: isPast ? tierDotColor(tierList[currentIdx]?.name ?? '') : '#cbd5e1',
-                          }}
+                          style={{ left: `${pos}%`, background: isPast ? '#FFD000' : '#cbd5e1' }}
                         />
                       );
                     })}
@@ -380,25 +402,6 @@ export default function CustomerDetailPage() {
           </Card>
         );
       })()}
-
-      {/* Summary Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-        {statCards.map((card) => (
-          <Card key={card.label} className="overflow-hidden hover:shadow-md transition-all">
-            <div className="h-0.5 w-full" style={{ background: card.accent }} />
-            <CardContent className="p-4 space-y-2.5">
-              <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
-                <card.icon className={`w-4 h-4 ${card.iconColor}`} />
-              </div>
-              <div>
-                <p className="text-[19px] font-black text-[#111] tabular-nums leading-tight">{card.value}</p>
-                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{card.label}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{card.sub}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
       {/* Transaction History + Points Ledger */}
       <Card>
