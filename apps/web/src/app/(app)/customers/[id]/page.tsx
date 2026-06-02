@@ -304,7 +304,6 @@ export default function CustomerDetailPage() {
                           >
                             {t.name.charAt(0)}
                           </div>
-                          <TierBadge name={t.name} />
                           <span className={`text-[11px] font-bold ${isActive ? 'text-[#a07800]' : 'text-muted-foreground'}`}>
                             {Number(t.rewardPercentage)}%
                           </span>
