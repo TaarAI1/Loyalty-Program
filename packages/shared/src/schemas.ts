@@ -21,7 +21,7 @@ export const WebhookTransactionSchema = z.object({
   customer_mobile:  phoneNumberSchema,                // only required field
   customer_name:    z.string().max(255).default(''),
   sale_amount:      z.number().nonnegative().default(0),
-  transaction_date: z.string().datetime().optional(),
+  transaction_date: z.string().optional(),
   store:            z.string().max(100).default(''),
   region:           z.string().max(100).default(''),
   receipt_no:       z.string().max(100).optional(),

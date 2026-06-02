@@ -35,7 +35,7 @@ export class WebhooksService {
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       redeemPoints: dto.redeem_points ?? 0,
-      transactionDate: dto.transaction_date ? new Date(dto.transaction_date) : new Date(),
+      transactionDate: dto.transaction_date ? (isNaN(new Date(dto.transaction_date).getTime()) ? new Date() : new Date(dto.transaction_date)) : new Date(),
       store: dto.store,
       region: dto.region,
       receiptNo: dto.receipt_no,
