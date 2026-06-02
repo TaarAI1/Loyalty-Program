@@ -293,17 +293,7 @@ export default function CustomerDetailPage() {
                       const isPast = i <= currentIdx;
                       return (
                         <div key={t.id} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm"
-                            style={{
-                              background: isPast ? tierDotColor(t.name) : '#e2e8f0',
-                              color: isPast ? '#fff' : '#94a3b8',
-                              outline: isActive ? `3px solid ${tierDotColor(t.name)}` : 'none',
-                              outlineOffset: '2px',
-                            }}
-                          >
-                            {t.name.charAt(0)}
-                          </div>
+                          <TierBadge name={t.name} />
                           <span className={`text-[11px] font-bold ${isActive ? 'text-[#a07800]' : 'text-muted-foreground'}`}>
                             {Number(t.rewardPercentage)}%
                           </span>
