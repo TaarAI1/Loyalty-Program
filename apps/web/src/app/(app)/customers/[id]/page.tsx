@@ -409,7 +409,7 @@ export default function CustomerDetailPage() {
                     <tr className="border-b border-border">
                       <th className="w-8 py-3 px-2" />
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Date</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Receipt</th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">Transaction ID</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Amount</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Earned</th>
@@ -422,7 +422,7 @@ export default function CustomerDetailPage() {
                       (tx: {
                         id: string;
                         transactionDate: string;
-                        receiptNo: string;
+                        retailproTransactionId: string;
                         store: string;
                         saleAmount: number;
                         pointsEarned: number;
@@ -460,7 +460,7 @@ export default function CustomerDetailPage() {
                                 </button>
                               </td>
                               <td className="py-2 px-2 text-xs">{formatDateTime(tx.transactionDate)}</td>
-                              <td className="py-2 px-2 text-muted-foreground text-xs">{tx.receiptNo ?? '—'}</td>
+                              <td className="py-2 px-2 text-muted-foreground text-xs">{tx.retailproTransactionId ?? '—'}</td>
                               <td className="py-2 px-2 text-muted-foreground text-xs">{tx.store}</td>
                               <td className="py-2 px-2 text-right font-medium text-sm">
                                 {formatCurrency(Number(tx.saleAmount))}
