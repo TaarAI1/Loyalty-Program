@@ -13,27 +13,34 @@ export class WebhooksService {
   ) {}
 
   async handleTransaction(dto: WebhookTransactionDto) {
-    // Check for duplicate transaction_id directly in the database — transparent and reliable
-    const existing = await this.prisma.transaction.findFirst({
-      where: { retailproTransactionId: dto.transaction_id },
-      select: { id: true, customerId: true, pointsEarned: true, saleAmount: true },
-    });
+    const transactionId = dto.transaction_id ?? crypto.randomUUID();
 
-    if (existing) {
-      this.logger.warn({ transaction_id: dto.transaction_id }, 'Duplicate transaction_id rejected');
-      throw new ConflictException(
-        `Transaction ID "${dto.transaction_id}" already exists. Each transaction must have a unique ID.`,
-      );
+    // Check for duplicate transaction_id — skip check for auto-generated UUIDs
+    if (dto.transaction_id) {
+      const existing = await this.prisma.transaction.findFirst({
+        where: { retailproTransactionId: transactionId },
+        select: { id: true },
+      });
+      if (existing) {
+        this.logger.warn({ transaction_id: transactionId }, 'Duplicate transaction_id rejected');
+        throw new ConflictException(
+          `Transaction ID "${transactionId}" already exists. Each transaction must have a unique ID.`,
+        );
+      }
     }
 
+    const transactionDate = dto.transaction_date
+      ? (isNaN(new Date(dto.transaction_date).getTime()) ? new Date() : new Date(dto.transaction_date))
+      : new Date();
+
     const result = await this.points.processTransaction({
-      retailproTransactionId: dto.transaction_id,
+      retailproTransactionId: transactionId,
       custSid: dto.cust_sid,
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       redeemPoints: dto.redeem_points ?? 0,
-      transactionDate: new Date(dto.transaction_date),
+      transactionDate,
       store: dto.store,
       region: dto.region,
       receiptNo: dto.receipt_no,

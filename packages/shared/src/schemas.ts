@@ -16,22 +16,22 @@ export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 
 // ── Webhook: Inbound Transaction ──────────────────────────────────────────────
 export const WebhookTransactionSchema = z.object({
-  transaction_id:  z.string().min(1),
-  cust_sid:        z.string().max(100).optional(),   // POS system customer ID — preferred lookup key
-  customer_mobile: phoneNumberSchema,
-  customer_name:   z.string().min(1).max(255),
-  sale_amount:     z.number().positive(),
-  tax_amount:      z.number().nonnegative().optional(),
-  gross_amount:    z.number().nonnegative().optional(),
-  net_amount:      z.number().nonnegative().optional(),
-  transaction_date: z.string().datetime({ offset: true }),
-  store:           z.string().min(1).max(100),
-  region:          z.string().min(1).max(100),
-  receipt_no:      z.string().max(100).optional(),
-  outlet:          z.string().max(100).optional(),
-  country_code:    z.string().max(5).default('92'),
-  redeem_points:   z.number().int().nonnegative().default(0),  // 0 = no redemption
-  items:           z.array(TransactionItemSchema).optional(),
+  transaction_id:   z.string().min(1).optional(),
+  cust_sid:         z.string().max(100).optional(),
+  customer_mobile:  phoneNumberSchema,               // only required field
+  customer_name:    z.string().max(255).default(''),
+  sale_amount:      z.number().nonnegative().default(0),
+  tax_amount:       z.number().nonnegative().optional(),
+  gross_amount:     z.number().nonnegative().optional(),
+  net_amount:       z.number().nonnegative().optional(),
+  transaction_date: z.string().datetime({ offset: true }).optional(),
+  store:            z.string().max(100).default(''),
+  region:           z.string().max(100).default(''),
+  receipt_no:       z.string().max(100).optional(),
+  outlet:           z.string().max(100).optional(),
+  country_code:     z.string().max(5).default('92'),
+  redeem_points:    z.number().int().nonnegative().default(0),
+  items:            z.array(TransactionItemSchema).optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
 
