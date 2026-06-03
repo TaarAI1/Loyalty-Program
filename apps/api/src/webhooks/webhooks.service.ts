@@ -39,6 +39,7 @@ export class WebhooksService {
       customerMobile: dto.customer_mobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
+      grossAmount: dto.gross_amount,
       redeemPoints: dto.redeem_points ?? 0,
       transactionDate,
       store: dto.store,

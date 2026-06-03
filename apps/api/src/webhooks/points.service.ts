@@ -37,6 +37,7 @@ export class PointsService {
     customerMobile: string;
     customerName: string;
     saleAmount: number;
+    grossAmount?: number;
     redeemPoints?: number;
     transactionDate: Date;
     store: string;
@@ -46,7 +47,7 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
-    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, redeemPoints = 0, countryCode = '92' } = params;
+    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, redeemPoints = 0, countryCode = '92' } = params;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Look up customer: prefer cust_sid (retailproId) for accuracy, fall back to mobile
@@ -118,8 +119,8 @@ export class PointsService {
       // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });
 
-      // Calculate new lifetime values (deduct redeemed, add earned)
-      const newLifetimeSale = Number(c.lifetimeSale) + saleAmount;
+      // Calculate new lifetime values — use gross_amount for spend tracking if provided, else sale_amount
+      const newLifetimeSale = Number(c.lifetimeSale) + (grossAmount ?? saleAmount);
       const newLifetimePoints = c.lifetimePoints + pointsEarned;
       const newTotalPoints = c.totalPoints - redeemPoints + pointsEarned;
 
