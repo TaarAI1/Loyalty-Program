@@ -24,7 +24,7 @@ export const WebhookTransactionSchema = z.object({
   tax_amount:      z.number().nonnegative().optional(),
   gross_amount:    z.number().nonnegative().optional(),
   net_amount:      z.number().nonnegative().optional(),
-  transaction_date: z.string().datetime(),
+  transaction_date: z.string().datetime({ offset: true }),
   store:           z.string().min(1).max(100),
   region:          z.string().min(1).max(100),
   receipt_no:      z.string().max(100).optional(),
