@@ -361,7 +361,6 @@ export default function CustomerDetailPage() {
                   {[
                     { label: <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Engagement</span>, value: `${customer.engagementScore ?? 0}/100` },
                     { label: 'Available Points', value: formatNumber(customer.totalPoints) },
-                    { label: 'Lifetime Earned', value: formatNumber(customer.lifetimePoints) },
                     { label: 'Lifetime Sale', value: formatCurrency(Number(customer.lifetimeSale)) },
                     { label: 'Last Visit', value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
                   ].map((item, i) => (
