@@ -31,7 +31,7 @@ export default function CustomersPage() {
     queryFn: configApi.getTiers,
   });
 
-  type CustomerRow = { id: string; name: string; mobileNumber: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; };
+  type CustomerRow = { id: string; name: string; mobileNumber: string; countryCode: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; };
   type CustomerListResult = { data: CustomerRow[]; meta: { total: number; page: number; pageSize: number; totalPages: number } };
 
   const { data, isLoading } = useQuery<CustomerListResult>({
@@ -155,7 +155,7 @@ export default function CustomersPage() {
                           onClick={() => router.push(`/customers/${c.id}`)}
                         >
                           <td className="py-3 px-4 font-medium">{c.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{c.mobileNumber}</td>
+                          <td className="py-3 px-4 text-muted-foreground">+{c.countryCode} {c.mobileNumber}</td>
                           <td className="py-3 px-4">
                             <TierBadge name={c.tier?.name} />
                           </td>
