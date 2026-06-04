@@ -279,7 +279,7 @@ export default function CustomerDetailPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">{customer.mobileNumber}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">+{customer.countryCode} {customer.mobileNumber}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
               </div>
 
