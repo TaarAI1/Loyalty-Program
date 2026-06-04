@@ -56,7 +56,6 @@ interface Filters {
   region: string;
   store: string;
   tierId: string;
-  gender: string;
   ageBracket: string;
   dateFrom: string;
   dateTo: string;
@@ -69,7 +68,6 @@ const defaultFilters: Filters = {
   region: '',
   store: '',
   tierId: '',
-  gender: '',
   ageBracket: '',
   dateFrom: '',
   dateTo: '',
@@ -93,7 +91,6 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
       region: filters.region || undefined,
       store: filters.store || undefined,
       tierId: filters.tierId || undefined,
-      gender: filters.gender || undefined,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       month: filters.month || undefined,
@@ -193,13 +190,6 @@ export default function ReportsPage() {
       label: t.name,
     })),
   ];
-  const genderOptions = [
-    { value: '', label: 'All Genders' },
-    { value: 'Male', label: 'Male' },
-    { value: 'Female', label: 'Female' },
-    { value: 'Other', label: 'Other' },
-  ];
-
   return (
     <div className="flex gap-4 h-full">
       {/* Filter Sidebar */}
@@ -235,14 +225,6 @@ export default function ReportsPage() {
                   options={tierOptions}
                   value={filters.tierId}
                   onChange={(e) => setFilters((f) => ({ ...f, tierId: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Gender</Label>
-                <Select
-                  options={genderOptions}
-                  value={filters.gender}
-                  onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
                 />
               </div>
               <div className="space-y-1">

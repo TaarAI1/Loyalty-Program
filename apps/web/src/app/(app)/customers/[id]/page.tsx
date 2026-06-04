@@ -71,7 +71,6 @@ export default function CustomerDetailPage() {
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
-    gender: '',
     region: '',
     store: '',
     dateOfBirth: '',
@@ -116,7 +115,6 @@ export default function CustomerDetailPage() {
       setEditForm({
         name: customer.name ?? '',
         email: customer.email ?? '',
-        gender: customer.gender ?? '',
         region: customer.region ?? '',
         store: customer.store ?? '',
         dateOfBirth: customer.dateOfBirth ? customer.dateOfBirth.slice(0, 10) : '',
@@ -376,7 +374,6 @@ export default function CustomerDetailPage() {
                 {/* Row 2: profile details */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 divide-x py-3">
                   {[
-                    { label: 'Gender', value: customer.gender ?? '—' },
                     { label: 'Store', value: customer.store ?? '—' },
                     { label: 'Region', value: customer.region ?? '—' },
                     { label: 'DOB', value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
@@ -637,7 +634,7 @@ export default function CustomerDetailPage() {
       {/* Edit Dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Customer">
         <div className="space-y-3">
-          {(['name', 'gender', 'region', 'store'] as const).map((field) => (
+          {(['name', 'region', 'store'] as const).map((field) => (
             <div key={field} className="space-y-1">
               <Label className="capitalize">{field}</Label>
               <Input
