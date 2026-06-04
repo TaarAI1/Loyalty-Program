@@ -109,12 +109,9 @@ export class PointsService {
         );
       }
 
-      // Payable amount after redemption (1 point = 1 PKR towards the bill)
-      const payableAmount = redeemPoints > 0 ? Math.max(0, saleAmount - redeemPoints) : saleAmount;
-
-      // Calculate points earned on payable amount only
+      // Points earned on full sale_amount — redemption is a discount, not deducted from earning base
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
-      const pointsEarned = rewardPct > 0 ? calculatePoints(payableAmount, rewardPct) : 0;
+      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
 
       // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });
