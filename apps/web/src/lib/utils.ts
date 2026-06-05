@@ -19,6 +19,7 @@ export function formatNumber(n: number): string {
 
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('en-PK', {
+    timeZone: 'Asia/Karachi',
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -27,6 +28,7 @@ export function formatDate(date: string | Date): string {
 
 export function formatDateTime(date: string | Date): string {
   return new Intl.DateTimeFormat('en-PK', {
+    timeZone: 'Asia/Karachi',
     day: '2-digit',
     month: 'short',
     year: 'numeric',
