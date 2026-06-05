@@ -21,7 +21,7 @@ import {
   segmentColor,
   segmentLabel,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
 
@@ -354,32 +354,80 @@ export default function CustomerDetailPage() {
                 </div>
               )}
 
-              {/* Stats rows — two divider rows */}
-              <div className="border-t divide-y">
+              {/* Stats rows — enhanced */}
+              <div className="border-t pt-4 space-y-3">
                 {/* Row 1: key metrics */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-x py-3">
-                  {[
-                    { label: <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Engagement</span>, value: `${customer.engagementScore ?? 0}/100` },
-                    { label: 'Available Points', value: formatNumber(customer.totalPoints) },
-                    { label: 'Lifetime Sale', value: formatCurrency(Number(customer.lifetimeSale)) },
-                    { label: 'Last Visit', value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
-                  ].map((item, i) => (
-                    <div key={i} className="px-4 first:pl-0 last:pr-0">
-                      <p className="text-xs text-muted-foreground">{item.label}</p>
-                      <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">{item.value}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Engagement */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-7 h-7 rounded-lg bg-yellow-50 flex items-center justify-center">
+                        <Zap className="w-3.5 h-3.5 text-yellow-600" />
+                      </div>
+                      <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded-full border border-yellow-200">
+                        {customer.engagementScore ?? 0}/100
+                      </span>
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-base font-bold text-slate-800 tabular-nums leading-tight">{customer.engagementScore ?? 0}<span className="text-xs font-normal text-slate-400">/100</span></p>
+                      <p className="text-[11px] text-muted-foreground">Engagement Score</p>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div className="h-full rounded-full bg-[#FFD000] transition-all duration-700" style={{ width: `${customer.engagementScore ?? 0}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Available Points */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-2">
+                    <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center">
+                      <Star className="w-3.5 h-3.5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-800 tabular-nums leading-tight">{formatNumber(customer.totalPoints)}</p>
+                      <p className="text-[11px] text-muted-foreground">Available Points</p>
+                    </div>
+                  </div>
+
+                  {/* Lifetime Sale */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-800 tabular-nums leading-tight">{formatCurrency(Number(customer.lifetimeSale))}</p>
+                      <p className="text-[11px] text-muted-foreground">Lifetime Sale</p>
+                    </div>
+                  </div>
+
+                  {/* Last Visit */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-2">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-800 tabular-nums leading-tight">
+                        {customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—'}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">Last Visit</p>
+                    </div>
+                  </div>
                 </div>
+
                 {/* Row 2: profile details */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x py-3">
+                <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Store', value: customer.store ?? '—' },
-                    { label: 'Region', value: customer.region ?? '—' },
-                    { label: 'DOB', value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
+                    { label: 'Store', value: customer.store ?? '—', icon: Building2, iconBg: 'bg-orange-50', iconColor: 'text-orange-500' },
+                    { label: 'Region', value: customer.region ?? '—', icon: MapPin, iconBg: 'bg-pink-50', iconColor: 'text-pink-500' },
+                    { label: 'Date of Birth', value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—', icon: Calendar, iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
                   ].map((item, i) => (
-                    <div key={i} className="px-4 first:pl-0 last:pr-0">
-                      <p className="text-xs text-muted-foreground">{item.label}</p>
-                      <p className="font-semibold text-sm text-slate-800 mt-0.5">{item.value}</p>
+                    <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
+                        <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                        <p className="font-semibold text-sm text-slate-800 leading-tight">{item.value}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
