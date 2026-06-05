@@ -73,6 +73,7 @@ model Transaction {
   region                  String?   @db.VarChar(100)
   outlet                  String?   @db.VarChar(100)
   taxAmount               Decimal?  @map("tax_amount") @db.Decimal(10, 2)
+  grossAmount             Decimal?  @map("gross_amount") @db.Decimal(10, 2)
   status                  String    @default("completed") @db.VarChar(20)
   createdAt               DateTime  @default(now()) @map("created_at")
 

@@ -459,8 +459,12 @@ export default function CustomerDetailPage() {
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Date</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Transaction ID</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Amount</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+                        <span>Sale Amount</span>
+                        <span className="block text-[10px] font-normal text-slate-400">points base</span>
+                      </th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Tax Amount</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Gross Amount</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Earned</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Redeemed</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
@@ -475,6 +479,7 @@ export default function CustomerDetailPage() {
                         store: string;
                         saleAmount: number;
                         taxAmount: number | null;
+                        grossAmount: number | null;
                         pointsEarned: number;
                         pointsRedeemed: number;
                         status: string;
@@ -518,6 +523,9 @@ export default function CustomerDetailPage() {
                               <td className="py-2 px-2 text-right text-slate-500 text-sm">
                                 {tx.taxAmount != null ? formatCurrency(Number(tx.taxAmount)) : '—'}
                               </td>
+                              <td className="py-2 px-2 text-right font-medium text-sm text-slate-700">
+                                {tx.grossAmount != null ? formatCurrency(Number(tx.grossAmount)) : '—'}
+                              </td>
                               <td className="py-2 px-2 text-right text-green-600 text-sm font-semibold">
                                 +{formatNumber(tx.pointsEarned)}
                               </td>
@@ -532,7 +540,7 @@ export default function CustomerDetailPage() {
                             </tr>
                             {isExpanded && (
                               <tr className="bg-[#fffde8]/60 border-b border-[#FFD000]/20">
-                                <td colSpan={9} className="px-4 py-3">
+                                <td colSpan={10} className="px-4 py-3">
                                   {!items ? (
                                     <p className="text-xs text-slate-400">Loading items…</p>
                                   ) : items.length === 0 ? (

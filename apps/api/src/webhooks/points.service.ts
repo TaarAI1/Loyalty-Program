@@ -141,6 +141,7 @@ export class PointsService {
           receiptNo: params.receiptNo,
           outlet: params.outlet,
           taxAmount: taxAmount ?? null,
+          grossAmount: grossAmount ?? null,
           status: 'completed',
         },
       });
