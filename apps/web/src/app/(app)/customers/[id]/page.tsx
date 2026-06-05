@@ -743,9 +743,9 @@ export default function CustomerDetailPage() {
               }))}
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="active">● Active</option>
-              <option value="inactive">● Inactive</option>
-              <option value="blocked">● Blocked</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="blocked">Blocked</option>
             </select>
           </div>
           <div className="flex gap-2 pt-2">
