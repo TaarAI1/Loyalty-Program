@@ -96,7 +96,7 @@ export class ReportsService {
         store: customer?.store ?? '',
         customerName: customer?.name ?? '',
         customerCell: customer?.countryCode
-          ? `+${customer.countryCode} ${customer.mobileNumber}`
+          ? `+${customer.countryCode}${(customer.mobileNumber ?? '').replace(/^0/, '')}`
           : (customer?.mobileNumber ?? ''),
         tier: customer?.tier?.name ?? '',
         totalTransactions: r._count.id,
