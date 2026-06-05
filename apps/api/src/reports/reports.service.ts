@@ -76,6 +76,7 @@ export class ReportsService {
         id: true,
         name: true,
         mobileNumber: true,
+        countryCode: true,
         store: true,
         tier: { select: { name: true } },
       },
@@ -94,7 +95,9 @@ export class ReportsService {
       return {
         store: customer?.store ?? '',
         customerName: customer?.name ?? '',
-        customerCell: customer?.mobileNumber ?? '',
+        customerCell: customer?.countryCode
+          ? `+${customer.countryCode} ${customer.mobileNumber}`
+          : (customer?.mobileNumber ?? ''),
         tier: customer?.tier?.name ?? '',
         totalTransactions: r._count.id,
         lastVisitDays: daysSinceLastVisit,
