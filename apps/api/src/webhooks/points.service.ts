@@ -38,6 +38,7 @@ export class PointsService {
     customerName: string;
     saleAmount: number;
     grossAmount?: number;
+    taxAmount?: number | null;
     redeemPoints?: number;
     transactionDate: Date;
     store: string;
@@ -47,7 +48,7 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
-    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, redeemPoints = 0, countryCode = '92' } = params;
+    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Look up customer: prefer cust_sid (retailproId) for accuracy, fall back to mobile
@@ -125,7 +126,8 @@ export class PointsService {
       const newTier = await this.determineTier(tx as typeof this.prisma, newLifetimeSale);
 
       // Create the transaction record
-      const transaction = await tx.transaction.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transaction = await (tx.transaction.create as any)({
         data: {
           retailproTransactionId,
           customerId: c.id,
@@ -138,6 +140,7 @@ export class PointsService {
           region: params.region,
           receiptNo: params.receiptNo,
           outlet: params.outlet,
+          taxAmount: taxAmount ?? null,
           status: 'completed',
         },
       });
@@ -172,7 +175,8 @@ export class PointsService {
       if (params.items && params.items.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (tx as any).transactionItem.createMany({
-          data: params.items.map((item) => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: params.items.map((item: any) => ({
             transactionId: transaction.id,
             sku: item.sku ?? null,
             description: item.description ?? null,

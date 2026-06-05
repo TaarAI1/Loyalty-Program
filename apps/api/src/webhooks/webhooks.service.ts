@@ -33,6 +33,10 @@ export class WebhooksService {
       ? (isNaN(new Date(dto.transaction_date).getTime()) ? new Date() : new Date(dto.transaction_date))
       : new Date();
 
+    const txTaxAmount = dto.items
+      ? dto.items.reduce((sum, i) => sum + (i.tax_amount ?? 0), 0)
+      : (dto.tax_amount ?? null);
+
     const result = await this.points.processTransaction({
       retailproTransactionId: transactionId,
       custSid: dto.cust_sid,
@@ -40,6 +44,7 @@ export class WebhooksService {
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       grossAmount: dto.gross_amount,
+      taxAmount: txTaxAmount,
       redeemPoints: dto.redeem_points ?? 0,
       transactionDate,
       store: dto.store,
@@ -52,7 +57,6 @@ export class WebhooksService {
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);
 
-    const taxAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.tax_amount   ?? 0), 0) : (dto.tax_amount   ?? null);
     const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : (dto.gross_amount ?? null);
     const netAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : (dto.net_amount   ?? null);
 
@@ -61,7 +65,7 @@ export class WebhooksService {
       points_earned:   result.pointsEarned,
       points_redeemed: result.pointsRedeemed,
       tier_upgraded:   result.tierUpgraded,
-      tax_amount:      taxAmount,
+      tax_amount:      txTaxAmount,
       gross_amount:    grossAmount,
       net_amount:      netAmount,
       action: undefined,

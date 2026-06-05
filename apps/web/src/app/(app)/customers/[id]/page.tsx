@@ -456,6 +456,7 @@ export default function CustomerDetailPage() {
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Transaction ID</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Amount</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Tax Amount</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Earned</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Redeemed</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
@@ -469,6 +470,7 @@ export default function CustomerDetailPage() {
                         retailproTransactionId: string;
                         store: string;
                         saleAmount: number;
+                        taxAmount: number | null;
                         pointsEarned: number;
                         pointsRedeemed: number;
                         status: string;
@@ -509,6 +511,9 @@ export default function CustomerDetailPage() {
                               <td className="py-2 px-2 text-right font-medium text-sm">
                                 {formatCurrency(Number(tx.saleAmount))}
                               </td>
+                              <td className="py-2 px-2 text-right text-slate-500 text-sm">
+                                {tx.taxAmount != null ? formatCurrency(Number(tx.taxAmount)) : '—'}
+                              </td>
                               <td className="py-2 px-2 text-right text-green-600 text-sm font-semibold">
                                 +{formatNumber(tx.pointsEarned)}
                               </td>
@@ -523,7 +528,7 @@ export default function CustomerDetailPage() {
                             </tr>
                             {isExpanded && (
                               <tr className="bg-[#fffde8]/60 border-b border-[#FFD000]/20">
-                                <td colSpan={8} className="px-4 py-3">
+                                <td colSpan={9} className="px-4 py-3">
                                   {!items ? (
                                     <p className="text-xs text-slate-400">Loading items…</p>
                                   ) : items.length === 0 ? (
