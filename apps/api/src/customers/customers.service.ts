@@ -138,6 +138,13 @@ export class CustomersService {
       }),
     ]);
 
+    // #region agent log
+    const sample = transactions[0];
+    if (sample) {
+      fetch('http://127.0.0.1:7924/ingest/0cb38189-7caa-41c4-b161-2d77f3d9b15c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee8332'},body:JSON.stringify({sessionId:'ee8332',location:'customers.service.ts:getHistory',message:'first tx from DB',data:{id:(sample as any).id,saleAmount:(sample as any).saleAmount,taxAmount:(sample as any).taxAmount,grossAmount:(sample as any).grossAmount,hasKeys:Object.keys(sample)},timestamp:Date.now(),hypothesisId:'H-A/B/D'})}).catch(()=>{});
+    }
+    // #endregion
+
     return {
       data: transactions,
       meta: { total, page: params.page, pageSize: params.pageSize, totalPages: Math.ceil(total / params.pageSize) },
