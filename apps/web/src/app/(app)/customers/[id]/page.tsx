@@ -280,6 +280,19 @@ export default function CustomerDetailPage() {
                       {segmentLabel(customer.segment)}
                     </span>
                   )}
+                  {(customer as any).status && (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                      (customer as any).status === 'active'   ? 'bg-green-50 text-green-700 border-green-200'  :
+                      (customer as any).status === 'inactive' ? 'bg-red-50 text-red-700 border-red-200'        :
+                                                                'bg-gray-100 text-gray-700 border-gray-300'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        (customer as any).status === 'active'   ? 'bg-green-500' :
+                        (customer as any).status === 'inactive' ? 'bg-red-400'   : 'bg-gray-500'
+                      }`} />
+                      {((customer as any).status as string).charAt(0).toUpperCase() + ((customer as any).status as string).slice(1)}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-0.5">+{customer.countryCode} {customer.mobileNumber}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
