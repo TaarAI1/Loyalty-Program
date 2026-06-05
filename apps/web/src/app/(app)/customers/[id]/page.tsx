@@ -717,9 +717,24 @@ export default function CustomerDetailPage() {
             <Label>Status</Label>
             <div className="flex gap-2">
               {[
-                { value: 'active',   label: 'Active',   dot: 'bg-green-500' },
-                { value: 'inactive', label: 'Inactive', dot: 'bg-red-500'   },
-                { value: 'blocked',  label: 'Blocked',  dot: 'bg-gray-900'  },
+                {
+                  value: 'active',
+                  label: 'Active',
+                  dot: 'bg-green-400',
+                  selected: 'border-green-300 bg-green-50 text-green-700',
+                },
+                {
+                  value: 'inactive',
+                  label: 'Inactive',
+                  dot: 'bg-red-400',
+                  selected: 'border-red-300 bg-red-50 text-red-700',
+                },
+                {
+                  value: 'blocked',
+                  label: 'Blocked',
+                  dot: 'bg-gray-500',
+                  selected: 'border-gray-300 bg-gray-100 text-gray-700',
+                },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -727,11 +742,11 @@ export default function CustomerDetailPage() {
                   onClick={() => setEditForm((f) => ({ ...f, status: opt.value }))}
                   className={`flex items-center gap-2 flex-1 justify-center rounded-md border px-3 py-2 text-sm font-medium transition-all ${
                     editForm.status === opt.value
-                      ? 'border-[#FFD000] bg-[#fffde8] text-slate-800 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                      ? `${opt.selected} shadow-sm`
+                      : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
                   }`}
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${opt.dot}`} />
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
                   {opt.label}
                 </button>
               ))}
@@ -746,7 +761,10 @@ export default function CustomerDetailPage() {
                   toast.error('Enter a valid email address');
                   return;
                 }
-                updateMutation.mutate(editForm);
+                updateMutation.mutate({
+                  ...editForm,
+                  isActive: editForm.status === 'active',
+                });
               }}
             >
               Save Changes
