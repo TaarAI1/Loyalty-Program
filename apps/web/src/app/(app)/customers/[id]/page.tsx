@@ -460,8 +460,8 @@ export default function CustomerDetailPage() {
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Transaction ID</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Store</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">
-                        <span>Sale Amount</span>
-                        <span className="block text-[10px] font-normal text-slate-400">points base</span>
+                        Sale Amount
+                        <span className="ml-1 text-[10px] font-normal text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">pts base</span>
                       </th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Tax Amount</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Gross Amount</th>
