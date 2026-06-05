@@ -75,6 +75,7 @@ export default function CustomerDetailPage() {
     store: '',
     dateOfBirth: '',
     status: 'active',
+    isActive: true,
   });
 
   const updateMutation = useMutation({
@@ -120,6 +121,7 @@ export default function CustomerDetailPage() {
         store: customer.store ?? '',
         dateOfBirth: customer.dateOfBirth ? customer.dateOfBirth.slice(0, 10) : '',
         status: (customer as any).status ?? 'active',
+        isActive: (customer as any).isActive !== false,
       });
     }
     setEditOpen(true);
@@ -739,7 +741,7 @@ export default function CustomerDetailPage() {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setEditForm((f) => ({ ...f, status: opt.value }))}
+                  onClick={() => setEditForm((f) => ({ ...f, status: opt.value, isActive: opt.value === 'active' }))}
                   className={`flex items-center gap-2 flex-1 justify-center rounded-md border px-3 py-2 text-sm font-medium transition-all ${
                     editForm.status === opt.value
                       ? `${opt.selected} shadow-sm`
@@ -764,7 +766,7 @@ export default function CustomerDetailPage() {
                 updateMutation.mutate({
                   ...editForm,
                   isActive: editForm.status === 'active',
-                });
+                } as typeof editForm);
               }}
             >
               Save Changes
