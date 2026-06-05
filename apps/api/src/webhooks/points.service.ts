@@ -168,6 +168,8 @@ export class PointsService {
           name: customerName,
           engagementScore: newEngagementScore,
           segment,
+          ...(params.region ? { region: params.region } : {}),
+          ...(params.store  ? { store:  params.store  } : {}),
         },
       });
 
