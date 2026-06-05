@@ -688,7 +688,24 @@ export default function CustomerDetailPage() {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Customer">
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Customer"
+        headerExtra={
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+            editForm.status === 'active'   ? 'bg-green-50 text-green-700 border-green-200'  :
+            editForm.status === 'inactive' ? 'bg-red-50 text-red-700 border-red-200'        :
+                                             'bg-gray-100 text-gray-700 border-gray-300'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              editForm.status === 'active' ? 'bg-green-500' :
+              editForm.status === 'inactive' ? 'bg-red-400' : 'bg-gray-500'
+            }`} />
+            {editForm.status.charAt(0).toUpperCase() + editForm.status.slice(1)}
+          </span>
+        }
+      >
         <div className="space-y-3">
           {(['name', 'region', 'store'] as const).map((field) => (
             <div key={field} className="space-y-1">
@@ -717,42 +734,19 @@ export default function CustomerDetailPage() {
           </div>
           <div className="space-y-1">
             <Label>Status</Label>
-            <div className="flex gap-2">
-              {[
-                {
-                  value: 'active',
-                  label: 'Active',
-                  dot: 'bg-green-400',
-                  selected: 'border-green-300 bg-green-50 text-green-700',
-                },
-                {
-                  value: 'inactive',
-                  label: 'Inactive',
-                  dot: 'bg-red-400',
-                  selected: 'border-red-300 bg-red-50 text-red-700',
-                },
-                {
-                  value: 'blocked',
-                  label: 'Blocked',
-                  dot: 'bg-gray-500',
-                  selected: 'border-gray-300 bg-gray-100 text-gray-700',
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setEditForm((f) => ({ ...f, status: opt.value, isActive: opt.value === 'active' }))}
-                  className={`flex items-center gap-2 flex-1 justify-center rounded-md border px-3 py-2 text-sm font-medium transition-all ${
-                    editForm.status === opt.value
-                      ? `${opt.selected} shadow-sm`
-                      : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <select
+              value={editForm.status}
+              onChange={(e) => setEditForm((f) => ({
+                ...f,
+                status: e.target.value,
+                isActive: e.target.value === 'active',
+              }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="active">● Active</option>
+              <option value="inactive">● Inactive</option>
+              <option value="blocked">● Blocked</option>
+            </select>
           </div>
           <div className="flex gap-2 pt-2">
             <Button

@@ -8,11 +8,12 @@ interface DialogProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  headerExtra?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
 
-export function Dialog({ open, onClose, title, children, className }: DialogProps) {
+export function Dialog({ open, onClose, title, headerExtra, children, className }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,7 +37,10 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
         )}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            {headerExtra}
+          </div>
           <button
             onClick={onClose}
             className="p-1 rounded-lg hover:bg-muted transition-colors"
