@@ -74,6 +74,7 @@ export default function CustomerDetailPage() {
     region: '',
     store: '',
     dateOfBirth: '',
+    status: 'active',
   });
 
   const updateMutation = useMutation({
@@ -118,6 +119,7 @@ export default function CustomerDetailPage() {
         region: customer.region ?? '',
         store: customer.store ?? '',
         dateOfBirth: customer.dateOfBirth ? customer.dateOfBirth.slice(0, 10) : '',
+        status: (customer as any).status ?? 'active',
       });
     }
     setEditOpen(true);
@@ -710,6 +712,18 @@ export default function CustomerDetailPage() {
               value={editForm.dateOfBirth}
               onChange={(e) => setEditForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
             />
+          </div>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <select
+              value={editForm.status}
+              onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="blocked">Blocked</option>
+            </select>
           </div>
           <div className="flex gap-2 pt-2">
             <Button

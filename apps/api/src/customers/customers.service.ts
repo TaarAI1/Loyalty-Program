@@ -181,7 +181,7 @@ export class CustomersService {
     };
   }
 
-  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean }>) {
+  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string }>) {
     await this.assertExists(id);
     return this.prisma.customer.update({
       where: { id },
