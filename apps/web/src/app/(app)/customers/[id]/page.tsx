@@ -715,15 +715,27 @@ export default function CustomerDetailPage() {
           </div>
           <div className="space-y-1">
             <Label>Status</Label>
-            <select
-              value={editForm.status}
-              onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="blocked">Blocked</option>
-            </select>
+            <div className="flex gap-2">
+              {[
+                { value: 'active',   label: 'Active',   dot: 'bg-green-500' },
+                { value: 'inactive', label: 'Inactive', dot: 'bg-red-500'   },
+                { value: 'blocked',  label: 'Blocked',  dot: 'bg-gray-900'  },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, status: opt.value }))}
+                  className={`flex items-center gap-2 flex-1 justify-center rounded-md border px-3 py-2 text-sm font-medium transition-all ${
+                    editForm.status === opt.value
+                      ? 'border-[#FFD000] bg-[#fffde8] text-slate-800 shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${opt.dot}`} />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex gap-2 pt-2">
             <Button
