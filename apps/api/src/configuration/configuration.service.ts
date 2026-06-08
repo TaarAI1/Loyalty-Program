@@ -119,7 +119,7 @@ export class ConfigurationService {
       components: [
         {
           type: 'body',
-          parameters: [{ type: 'text', text: 'Test message from LoyalityPlus' }],
+          parameters: [{ type: 'text', text: 'Test message from LoyaltyPlus' }],
         },
       ],
       notificationType: 'test',
