@@ -314,10 +314,10 @@ export default function CustomerDetailPage() {
                       const isPast = i <= currentIdx;
                       return (
                         <div key={t.id} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
-                          <TierBadge name={t.name} />
                           <span className={`text-[11px] font-bold ${isActive ? 'text-[#a07800]' : 'text-muted-foreground'}`}>
                             {Number(t.rewardPercentage)}%
                           </span>
+                          <TierBadge name={t.name} />
                         </div>
                       );
                     })}
