@@ -42,7 +42,7 @@ export default function LoginPage() {
             <Gift className="w-5 h-5 text-[#111]" />
           </div>
           <div>
-            <p className="text-[#111] font-black text-lg leading-none tracking-tight">Rewardly</p>
+            <p className="text-[#111] font-black text-lg leading-none tracking-tight">LoyalityPlus</p>
             <p className="text-[#aaa] text-[11px] font-medium mt-0.5">Management System</p>
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
             <div className="w-9 h-9 rounded-xl bg-[#FFD000] flex items-center justify-center">
               <Gift className="w-4 h-4 text-[#111]" />
             </div>
-            <p className="font-black text-[#111] text-lg tracking-tight">Rewardly</p>
+            <p className="font-black text-[#111] text-lg tracking-tight">LoyalityPlus</p>
           </div>
 
           <h2 className="text-3xl font-black text-[#111] mb-1.5 tracking-tight">
@@ -169,7 +169,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-[#ccc] text-xs mt-6">
-            © {new Date().getFullYear()} Rewardly · All rights reserved
+            © {new Date().getFullYear()} LoyalityPlus · All rights reserved
           </p>
         </div>
       </div>
