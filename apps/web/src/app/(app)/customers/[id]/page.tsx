@@ -330,13 +330,16 @@ export default function CustomerDetailPage() {
                       className="absolute top-0 left-0 h-2 rounded-full transition-all duration-700"
                       style={{ width: `${overallPct}%`, background: '#FFD000' }}
                     />
-                    {/* Percentage label above the fill end */}
+                    {/* Drop-marker below the fill end */}
                     {overallPct > 0 && overallPct < 100 && (
                       <div
-                        className="absolute -top-5 -translate-x-1/2 text-[10px] font-bold text-[#a07800] whitespace-nowrap"
+                        className="absolute top-3 -translate-x-1/2 flex flex-col items-center"
                         style={{ left: `${overallPct}%` }}
                       >
-                        {Math.round(tierProgressPct)}%
+                        <div className="w-px h-2 bg-[#FFD000]" />
+                        <div className="bg-[#FFD000] text-[#7a5c00] text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+                          {Math.round(tierProgressPct)}%
+                        </div>
                       </div>
                     )}
                     {tierList.map((_, i) => {
@@ -353,7 +356,7 @@ export default function CustomerDetailPage() {
                   </div>
 
                   {/* Amount labels */}
-                  <div className="flex mx-[20px]">
+                  <div className="flex mx-[20px] pt-6">
                     {tierList.map((t, i) => (
                       <div
                         key={t.id}
