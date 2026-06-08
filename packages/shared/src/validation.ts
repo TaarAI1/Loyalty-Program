@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const PHONE_ERROR = 'Enter a valid mobile number (e.g. 3001234567 or 923001234567)';
+const PHONE_ERROR = 'Enter a valid Pakistani mobile number (e.g. 3001234567, 03001234567, or 923001234567)';
 const EMAIL_ERROR = 'Enter a valid email address';
 
 /** Strip spaces, dashes, and plus; keep digits only. */
@@ -20,13 +20,9 @@ export function normalizeLocalPhone(number: string, countryCode = '92'): string 
   return digits;
 }
 
-export function isValidPhoneNumber(value: string): boolean {
-  const digits = normalizePhoneDigits(value);
-  if (digits.length < 10 || digits.length > 15) return false;
-  if (digits.length === 10 && /^3[0-9]{9}$/.test(digits)) return true;
-  if (digits.length === 11 && /^03[0-9]{9}$/.test(digits)) return true;
-  if (digits.length === 12 && /^923[0-9]{9}$/.test(digits)) return true;
-  return /^[1-9][0-9]{9,14}$/.test(digits);
+export function isValidPhoneNumber(value: string, countryCode = '92'): boolean {
+  const local = normalizeLocalPhone(value, countryCode);
+  return /^3[0-9]{9}$/.test(local);
 }
 
 export function isValidEmail(value: string): boolean {
