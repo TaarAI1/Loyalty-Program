@@ -25,6 +25,7 @@ export function isValidPhoneNumber(value: string, countryCode = '92'): boolean {
   return /^3[0-9]{9}$/.test(local);
 }
 
+
 export function isValidEmail(value: string): boolean {
   return z.string().email().safeParse(value.trim()).success;
 }
