@@ -155,7 +155,14 @@ export default function CustomersPage() {
                           onClick={() => router.push(`/customers/${c.id}`)}
                         >
                           <td className="py-3 px-4 font-medium">{c.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">+{c.countryCode} {c.mobileNumber}</td>
+                          <td className="py-3 px-4 text-muted-foreground">
+                            {(() => {
+                              let d = c.mobileNumber.replace(/\D/g, '');
+                              if (d.startsWith(c.countryCode)) d = d.slice(c.countryCode.length);
+                              if (d.startsWith('0')) d = d.slice(1);
+                              return `+${c.countryCode} ${d}`;
+                            })()}
+                          </td>
                           <td className="py-3 px-4">
                             <TierBadge name={c.tier?.name} />
                           </td>

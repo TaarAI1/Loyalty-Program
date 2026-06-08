@@ -1,7 +1,7 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from './points.service';
-import { WebhookTransactionDto, WebhookCustomerDto } from '@loyalty/shared';
+import { WebhookTransactionDto, WebhookCustomerDto, normalizeLocalPhone } from '@loyalty/shared';
 
 @Injectable()
 export class WebhooksService {
@@ -37,10 +37,13 @@ export class WebhooksService {
       ? dto.items.reduce((sum, i) => sum + (i.tax_amount ?? 0), 0)
       : (dto.tax_amount ?? null);
 
+    const cc = dto.country_code ?? '92';
+    const customerMobile = normalizeLocalPhone(dto.customer_mobile, cc);
+
     const result = await this.points.processTransaction({
       retailproTransactionId: transactionId,
       custSid: dto.cust_sid,
-      customerMobile: dto.customer_mobile,
+      customerMobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
       grossAmount: dto.gross_amount,
@@ -51,7 +54,7 @@ export class WebhooksService {
       region: dto.region,
       receiptNo: dto.receipt_no,
       outlet: dto.outlet,
-      countryCode: dto.country_code ?? '92',
+      countryCode: cc,
       items: dto.items,
     });
 
@@ -74,12 +77,13 @@ export class WebhooksService {
 
   async handleCustomerUpsert(dto: WebhookCustomerDto) {
     const countryCode = dto.country_code ?? '92';
+    const mobileNumber = normalizeLocalPhone(dto.mobile, countryCode);
 
     const existing = await this.prisma.customer.findFirst({
       where: {
         OR: [
           { retailproId: dto.customer_id },
-          { mobileNumber: dto.mobile, countryCode },
+          { mobileNumber, countryCode },
         ],
       },
     });
@@ -95,6 +99,7 @@ export class WebhooksService {
           region: dto.region,
           store: dto.store,
           retailproId: dto.customer_id,
+          mobileNumber,
         },
       });
       this.logger.log({ customerId: existing.id }, 'Customer updated via webhook');
@@ -107,7 +112,7 @@ export class WebhooksService {
       data: {
         retailproId: dto.customer_id,
         name: dto.name,
-        mobileNumber: dto.mobile,
+        mobileNumber,
         countryCode,
         email: dto.email,
         dateOfBirth: dto.dob ? new Date(dto.dob) : undefined,

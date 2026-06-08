@@ -294,7 +294,13 @@ export default function CustomerDetailPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">+{customer.countryCode} {customer.mobileNumber}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{(() => {
+                  let d = (customer.mobileNumber ?? '').replace(/\D/g, '');
+                  const cc = customer.countryCode ?? '92';
+                  if (d.startsWith(cc)) d = d.slice(cc.length);
+                  if (d.startsWith('0')) d = d.slice(1);
+                  return `+${cc} ${d}`;
+                })()}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
               </div>
 
