@@ -58,6 +58,7 @@ export const CustomerUpdateSchema = z.object({
   region: z.string().max(100).optional(),
   store: z.string().max(100).optional(),
   isActive: z.boolean().optional(),
+  status: z.enum(['active', 'inactive', 'blocked']).optional(),
 });
 export type CustomerUpdateDto = z.infer<typeof CustomerUpdateSchema>;
 
