@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TierBadge } from '@/components/ui/tier-badge';
-import { formatCurrency, formatNumber, formatDate, segmentColor, segmentLabel } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatDate } from '@/lib/utils';
 import { exportToCsv } from '@/lib/export';
 import { Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';

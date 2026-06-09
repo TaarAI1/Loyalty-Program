@@ -18,8 +18,6 @@ import {
   formatNumber,
   formatDate,
   formatDateTime,
-  segmentColor,
-  segmentLabel,
 } from '@/lib/utils';
 import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -275,11 +273,6 @@ export default function CustomerDetailPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl font-bold">{customer.name}</h2>
                   <TierBadge name={customer.tier?.name} />
-                  {customer.segment && (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(customer.segment)}`}>
-                      {segmentLabel(customer.segment)}
-                    </span>
-                  )}
                   {(customer as any).status && (
                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                       (customer as any).status === 'active'   ? 'bg-green-50 text-green-700 border-green-200'  :

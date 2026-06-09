@@ -16,12 +16,11 @@ import {
 import { dashboardApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency, formatNumber, formatDateTime, segmentColor, segmentLabel } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatDateTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { TierBadge } from '@/components/ui/tier-badge';
 import {
   Users,
-  TrendingUp,
   Star,
   Layers,
   ShoppingBag,
@@ -44,7 +43,6 @@ function tierPieColor(tier: string): string {
     default:         return '#9ca3af';
   }
 }
-const SEGMENT_COLORS = ['#FFD000', '#22c55e', '#3b82f6', '#8b5cf6', '#f97316', '#ef4444'];
 
 export default function DashboardPage() {
   const { data: metrics, isLoading: metricsLoading } = useQuery({
@@ -68,11 +66,6 @@ export default function DashboardPage() {
     queryFn: () => dashboardApi.getRecentTransactions(10),
   });
 
-  const { data: segments } = useQuery({
-    queryKey: ['dashboard-segments'],
-    queryFn: dashboardApi.getCustomerSegments,
-    refetchInterval: 120000,
-  });
 
   const { data: topCustomers } = useQuery({
     queryKey: ['dashboard-top-customers'],
@@ -212,47 +205,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Customer Segments Pie */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Customer Segments</CardTitle>
-              <TrendingUp className="w-4 h-4 text-slate-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!segments ? (
-              <Skeleton className="h-56 w-full rounded-xl" />
-            ) : (
-              <>
-                <ResponsiveContainer width="100%" height={160}>
-                  <PieChart>
-                    <Pie data={segments} dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={65} innerRadius={40} strokeWidth={0}>
-                      {segments.map((entry: { segment: string; color: string }, i: number) => (
-                        <Cell key={entry.segment} fill={entry.color ?? SEGMENT_COLORS[i % SEGMENT_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                      formatter={(value: number, name: string) => [formatNumber(value), name]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-1.5 mt-2">
-                  {segments.map((s: { segment: string; label: string; color: string; count: number; percentage: number }, i: number) => (
-                    <div key={s.segment} className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: s.color ?? SEGMENT_COLORS[i % SEGMENT_COLORS.length] }} />
-                        {s.label}
-                      </span>
-                      <span className="font-semibold text-slate-800">{formatNumber(s.count)} <span className="font-normal text-slate-400">({s.percentage}%)</span></span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Row 2: Top Customers + Tier Distribution */}

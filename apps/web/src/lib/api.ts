@@ -28,7 +28,6 @@ export const dashboardApi = {
   getTierDistribution: () => api.get('/dashboard/tier-distribution').then((r) => r.data),
   getRecentTransactions: (limit = 10) =>
     api.get(`/dashboard/recent-transactions?limit=${limit}`).then((r) => r.data),
-  getCustomerSegments: () => api.get('/dashboard/customer-segments').then((r) => r.data),
   getTopCustomers: (limit = 10) =>
     api.get(`/dashboard/top-customers?limit=${limit}`).then((r) => r.data),
 };
