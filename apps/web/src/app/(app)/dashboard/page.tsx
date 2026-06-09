@@ -280,7 +280,6 @@ export default function DashboardPage() {
                     <tr className="border-b border-slate-100">
                       <th className="text-left py-2.5 px-6 table-header text-[11px]">#</th>
                       <th className="text-left py-2.5 px-3 table-header text-[11px]">Customer</th>
-                      <th className="text-left py-2.5 px-3 table-header text-[11px]">Segment</th>
                       <th className="text-left py-2.5 px-3 table-header text-[11px]">Tier</th>
                       <th className="text-right py-2.5 px-3 table-header text-[11px]">Lifetime Spend</th>
                       <th className="text-right py-2.5 pr-6 px-3 table-header text-[11px]">Points</th>
@@ -301,11 +300,6 @@ export default function DashboardPage() {
                           </td>
                           <td className="py-3 px-3">
                             <Link href={`/customers/${c.id}`} className="font-medium text-slate-800 hover:text-[#111] hover:underline">{c.name}</Link>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(c.segment)}`}>
-                              {segmentLabel(c.segment)}
-                            </span>
                           </td>
                           <td className="py-3 px-3">
                             <TierBadge name={c.tier?.name} />

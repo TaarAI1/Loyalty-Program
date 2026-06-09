@@ -129,7 +129,6 @@ export default function CustomersPage() {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Mobile</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Tier</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Segment</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Points</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Lifetime Sale</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Store</th>
@@ -140,7 +139,7 @@ export default function CustomersPage() {
                 {isLoading
                   ? [...Array(8)].map((_, i) => (
                       <tr key={i} className="border-b border-border/50">
-                        {[...Array(8)].map((__, j) => (
+                        {[...Array(7)].map((__, j) => (
                           <td key={j} className="py-3 px-4">
                             <Skeleton className="h-4 w-full" />
                           </td>
@@ -165,13 +164,6 @@ export default function CustomersPage() {
                           </td>
                           <td className="py-3 px-4">
                             <TierBadge name={c.tier?.name} />
-                          </td>
-                          <td className="py-3 px-4">
-                            {c.segment && (
-                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${segmentColor(c.segment)}`}>
-                                {segmentLabel(c.segment)}
-                              </span>
-                            )}
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-[#a07800]">
                             {formatNumber(c.totalPoints)}
