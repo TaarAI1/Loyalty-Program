@@ -160,7 +160,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Charts Row 1: Points Activity + Tier Distribution */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Points Trend */}
         <Card className="xl:col-span-2">
@@ -205,71 +205,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-      </div>
-
-      {/* Row 2: Top Customers + Tier Distribution */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        {/* Top Customers Leaderboard */}
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-[#FFD000]" />
-                <CardTitle>Top Customers</CardTitle>
-              </div>
-              <Link href="/customers" className="text-[11px] text-slate-500 hover:text-[#111] flex items-center gap-1">
-                View all <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            {!topCustomers ? (
-              <div className="space-y-2 px-6 pb-5">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left py-2.5 px-6 table-header text-[11px]">#</th>
-                      <th className="text-left py-2.5 px-3 table-header text-[11px]">Customer</th>
-                      <th className="text-left py-2.5 px-3 table-header text-[11px]">Tier</th>
-                      <th className="text-right py-2.5 px-3 table-header text-[11px]">Lifetime Spend</th>
-                      <th className="text-right py-2.5 pr-6 px-3 table-header text-[11px]">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topCustomers.map(
-                      (c: { id: string; name: string; segment: string; tier: { name: string }; lifetimeSale: number; totalPoints: number }, idx: number) => (
-                        <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-6">
-                            {idx < 3 ? (
-                              <span className={`font-black text-sm ${idx === 0 ? 'text-[#FFD000]' : idx === 1 ? 'text-slate-400' : 'text-amber-600'}`}>
-                                #{idx + 1}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-xs">#{idx + 1}</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-3">
-                            <Link href={`/customers/${c.id}`} className="font-medium text-slate-800 hover:text-[#111] hover:underline">{c.name}</Link>
-                          </td>
-                          <td className="py-3 px-3">
-                            <TierBadge name={c.tier?.name} />
-                          </td>
-                          <td className="py-3 px-3 text-right font-semibold text-slate-800 text-xs">{formatCurrency(c.lifetimeSale)}</td>
-                          <td className="py-3 px-3 pr-6 text-right">
-                            <span className="text-[#a07800] font-bold text-xs bg-[#fffde8] px-2 py-0.5 rounded-full">{formatNumber(c.totalPoints)}</span>
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Tier Distribution */}
         <Card>
           <CardHeader>
@@ -305,6 +240,69 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: Top Customers — full width */}
+      <div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-[#FFD000]" />
+                <CardTitle>Top Customers</CardTitle>
+              </div>
+              <Link href="/customers" className="text-[11px] text-slate-500 hover:text-[#111] flex items-center gap-1">
+                View all <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {!topCustomers ? (
+              <div className="space-y-2 px-6 pb-5">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left py-2.5 px-6 table-header text-[11px]">#</th>
+                      <th className="text-left py-2.5 px-3 table-header text-[11px]">Customer</th>
+                      <th className="text-left py-2.5 px-3 table-header text-[11px]">Tier</th>
+                      <th className="text-right py-2.5 px-3 table-header text-[11px]">Lifetime Spend</th>
+                      <th className="text-right py-2.5 pr-6 px-3 table-header text-[11px]">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topCustomers.map(
+                      (c: { id: string; name: string; tier: { name: string }; lifetimeSale: number; totalPoints: number }, idx: number) => (
+                        <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-6">
+                            {idx < 3 ? (
+                              <span className={`font-black text-sm ${idx === 0 ? 'text-[#FFD000]' : idx === 1 ? 'text-slate-400' : 'text-amber-600'}`}>
+                                #{idx + 1}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">#{idx + 1}</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            <Link href={`/customers/${c.id}`} className="font-medium text-slate-800 hover:text-[#111] hover:underline">{c.name}</Link>
+                          </td>
+                          <td className="py-3 px-3">
+                            <TierBadge name={c.tier?.name} />
+                          </td>
+                          <td className="py-3 px-3 text-right font-semibold text-slate-800 text-xs">{formatCurrency(c.lifetimeSale)}</td>
+                          <td className="py-3 px-3 pr-6 text-right">
+                            <span className="text-[#a07800] font-bold text-xs bg-[#fffde8] px-2 py-0.5 rounded-full">{formatNumber(c.totalPoints)}</span>
+                          </td>
+                        </tr>
+                      ),
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
