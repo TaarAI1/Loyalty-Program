@@ -820,12 +820,57 @@ function EmailTab() {
           </p>
         </div>
 
-        <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
-          <Save className="w-4 h-4" />
-          Save Configuration
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
+            <Save className="w-4 h-4" />
+            Save Configuration
+          </Button>
+          <TestEmailButton />
+          <ForensicTriggerButton />
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TestEmailButton() {
+  const mutation = useMutation({
+    mutationFn: configApi.testEmail,
+    onSuccess: (data: { sentTo: string }) =>
+      toast.success(`Test email sent to ${data.sentTo}`),
+    onError: (err) => toast.error(String(err)),
+  });
+  return (
+    <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
+      <Send className="w-4 h-4" />
+      Send Test Email
+    </Button>
+  );
+}
+
+function ForensicTriggerButton() {
+  const mutation = useMutation({
+    mutationFn: configApi.triggerForensicAlert,
+    onSuccess: (data: { suspects: number; alertsSent: number; skipped?: number; reason?: string }) => {
+      if (data.suspects === 0) {
+        toast.success('No suspicious activity found in the last 3 days.');
+      } else if (data.alertsSent === 0) {
+        toast.success(
+          data.reason
+            ? `${data.suspects} suspect(s) found — ${data.reason}`
+            : `${data.suspects} suspect(s) found — all already alerted in last 24h.`,
+        );
+      } else {
+        toast.success(`${data.suspects} suspect(s) found — ${data.alertsSent} alert email(s) queued.`);
+      }
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+  return (
+    <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
+      <AlertCircle className="w-4 h-4" />
+      Run Forensic Check Now
+    </Button>
   );
 }
 

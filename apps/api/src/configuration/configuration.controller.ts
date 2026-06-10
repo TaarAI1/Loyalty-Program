@@ -101,4 +101,14 @@ export class ConfigurationController {
     return this.configurationService.updateEmailConfig(body as Parameters<ConfigurationService['updateEmailConfig']>[0], changedBy);
   }
 
+  @Post('test-email')
+  testEmail() {
+    return this.configurationService.sendTestEmail();
+  }
+
+  @Post('trigger-forensic-alert')
+  triggerForensicAlert() {
+    return this.configurationService.triggerForensicCheck();
+  }
+
 }
