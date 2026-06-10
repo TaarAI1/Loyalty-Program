@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { configApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -567,6 +567,23 @@ function EmailTab() {
     isActive: true,
   });
 
+  useEffect(() => {
+    if (config) {
+      setForm((f) => ({
+        ...f,
+        smtpHost:   config.smtpHost   ?? '',
+        smtpPort:   config.smtpPort   ? String(config.smtpPort) : '',
+        smtpUser:   config.smtpUser   ?? '',
+        smtpSecure: config.smtpSecure ?? 'tls',
+        fromEmail:  config.fromEmail  ?? '',
+        fromName:   config.fromName   ?? '',
+        alertEmail: config.alertEmail ?? '',
+        isActive:   config.isActive   ?? true,
+        // smtpPass intentionally not pre-filled (stored encrypted)
+      }));
+    }
+  }, [config]);
+
   const updateMutation = useMutation({
     mutationFn: () => {
       const payload: Record<string, unknown> = {};
@@ -642,6 +659,7 @@ function EmailTab() {
             <div className="space-y-1">
               <Label>SMTP Username</Label>
               <Input
+                autoComplete="off"
                 placeholder={String(c?.smtpUser ?? 'you@gmail.com')}
                 value={form.smtpUser}
                 onChange={(e) => setForm((f) => ({ ...f, smtpUser: e.target.value }))}
@@ -651,6 +669,7 @@ function EmailTab() {
               <Label>SMTP Password</Label>
               <Input
                 type="password"
+                autoComplete="new-password"
                 placeholder={c?.smtpPass ? '••••••••' : 'Enter SMTP password'}
                 value={form.smtpPass}
                 onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
