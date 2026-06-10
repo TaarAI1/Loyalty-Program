@@ -558,7 +558,6 @@ function EmailTab() {
   const PASS_SENTINEL = '••••••••';
 
   const [showPass, setShowPass] = useState(false);
-  const [passReadOnly, setPassReadOnly] = useState(true);
 
   const [form, setForm] = useState({
     smtpHost: '',
@@ -676,16 +675,13 @@ function EmailTab() {
                 <Input
                   type={showPass ? 'text' : 'password'}
                   autoComplete="new-password"
-                  readOnly={passReadOnly}
-                  onFocus={() => {
-                    setPassReadOnly(false);
-                    if (form.smtpPass === PASS_SENTINEL) {
-                      setForm((f) => ({ ...f, smtpPass: '' }));
-                    }
-                  }}
                   placeholder="Enter new SMTP password"
                   value={form.smtpPass}
-                  onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const stripped = v.replace(/•/g, '');
+                    setForm((f) => ({ ...f, smtpPass: stripped }));
+                  }}
                   className="pr-10"
                 />
                 <button
