@@ -555,6 +555,8 @@ function EmailTab() {
     queryFn: configApi.getEmail,
   });
 
+  const PASS_SENTINEL = '••••••••';
+
   const [showPass, setShowPass] = useState(false);
   const [passReadOnly, setPassReadOnly] = useState(true);
 
@@ -582,7 +584,7 @@ function EmailTab() {
         fromName:   config.fromName   ?? '',
         alertEmail: config.alertEmail ?? '',
         isActive:   config.isActive   ?? true,
-        // smtpPass intentionally not pre-filled (stored encrypted)
+        smtpPass:   config.smtpPass   ? PASS_SENTINEL : '',
       }));
     }
   }, [config]);
@@ -593,7 +595,7 @@ function EmailTab() {
       if (form.smtpHost)   payload.smtpHost   = form.smtpHost;
       if (form.smtpPort)   payload.smtpPort   = Number(form.smtpPort);
       if (form.smtpUser)   payload.smtpUser   = form.smtpUser;
-      if (form.smtpPass)   payload.smtpPass   = form.smtpPass;
+      if (form.smtpPass && form.smtpPass !== PASS_SENTINEL) payload.smtpPass = form.smtpPass;
       if (form.smtpSecure) payload.smtpSecure = form.smtpSecure;
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
@@ -675,8 +677,13 @@ function EmailTab() {
                   type={showPass ? 'text' : 'password'}
                   autoComplete="new-password"
                   readOnly={passReadOnly}
-                  onFocus={() => setPassReadOnly(false)}
-                  placeholder={config?.smtpPass ? '••••••••' : 'Enter SMTP password'}
+                  onFocus={() => {
+                    setPassReadOnly(false);
+                    if (form.smtpPass === PASS_SENTINEL) {
+                      setForm((f) => ({ ...f, smtpPass: '' }));
+                    }
+                  }}
+                  placeholder="Enter new SMTP password"
                   value={form.smtpPass}
                   onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
                   className="pr-10"
@@ -690,6 +697,11 @@ function EmailTab() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {config?.smtpPass && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Password saved. Click the field to replace it.
+                </p>
+              )}
             </div>
           </div>
         </div>
