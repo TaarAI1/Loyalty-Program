@@ -102,8 +102,13 @@ export class ConfigurationController {
   }
 
   @Post('test-email')
-  testEmail() {
-    return this.configurationService.sendTestEmail();
+  testEmail(@Body() body: { to?: string }) {
+    return this.configurationService.sendTestEmail(body?.to);
+  }
+
+  @Get('email-logs')
+  getRecentEmailLogs() {
+    return this.configurationService.getRecentEmailLogs();
   }
 
   @Post('trigger-forensic-alert')

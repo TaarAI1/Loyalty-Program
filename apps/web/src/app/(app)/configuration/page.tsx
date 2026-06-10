@@ -797,19 +797,24 @@ function EmailTab() {
             <Save className="w-4 h-4" />
             Save Configuration
           </Button>
-          <TestEmailButton />
+          <TestEmailButton alertEmail={form.alertEmail} />
           <ForensicTriggerButton />
         </div>
+
+        <EmailDeliveryLogs />
       </CardContent>
     </Card>
   );
 }
 
-function TestEmailButton() {
+function TestEmailButton({ alertEmail }: { alertEmail: string }) {
+  const qc = useQueryClient();
   const mutation = useMutation({
-    mutationFn: configApi.testEmail,
-    onSuccess: (data: { sentTo: string }) =>
-      toast.success(`Test email sent to ${data.sentTo}`),
+    mutationFn: () => configApi.testEmail(alertEmail || undefined),
+    onSuccess: (data: { sentTo: string }) => {
+      toast.success(`Test email queued → ${data.sentTo}. Check Recent Deliveries below for status.`);
+      setTimeout(() => qc.invalidateQueries({ queryKey: ['email-logs'] }), 3000);
+    },
     onError: (err) => toast.error(String(err)),
   });
   return (
@@ -817,6 +822,98 @@ function TestEmailButton() {
       <Send className="w-4 h-4" />
       Send Test Email
     </Button>
+  );
+}
+
+function EmailDeliveryLogs() {
+  const { data: logs, isLoading, refetch } = useQuery<
+    Array<{
+      id: string;
+      recipient: string;
+      content: string | null;
+      status: string;
+      errorMessage: string | null;
+      sentAt: string;
+    }>
+  >({
+    queryKey: ['email-logs'],
+    queryFn: configApi.getEmailLogs,
+    refetchInterval: 15000,
+  });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Recent Deliveries
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          Refresh
+        </button>
+      </div>
+      {isLoading ? (
+        <div className="space-y-1">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-8 bg-muted rounded animate-pulse" />
+          ))}
+        </div>
+      ) : !logs || logs.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-3 text-center border rounded-lg">
+          No email delivery records yet.
+        </p>
+      ) : (
+        <div className="border rounded-lg overflow-hidden text-xs">
+          <table className="w-full">
+            <thead className="bg-muted text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2 font-medium">To</th>
+                <th className="text-left px-3 py-2 font-medium">Subject</th>
+                <th className="text-left px-3 py-2 font-medium">Status</th>
+                <th className="text-left px-3 py-2 font-medium">Error</th>
+                <th className="text-left px-3 py-2 font-medium">Time</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {logs.map((log) => (
+                <tr key={log.id} className="hover:bg-muted/50">
+                  <td className="px-3 py-2 max-w-[140px] truncate" title={log.recipient}>
+                    {log.recipient}
+                  </td>
+                  <td className="px-3 py-2 max-w-[160px] truncate" title={log.content ?? ''}>
+                    {log.content ?? '—'}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                        log.status === 'sent'
+                          ? 'bg-green-100 text-green-700'
+                          : log.status === 'failed'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {log.status}
+                    </span>
+                  </td>
+                  <td
+                    className="px-3 py-2 max-w-[200px] truncate text-red-600"
+                    title={log.errorMessage ?? ''}
+                  >
+                    {log.errorMessage ?? '—'}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                    {new Date(log.sentAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 

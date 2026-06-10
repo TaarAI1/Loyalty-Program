@@ -333,15 +333,17 @@ export class ConfigurationService {
 
   // ── SMTP Test Email ────────────────────────────────────────────────────────
 
-  async sendTestEmail() {
+  async sendTestEmail(recipientOverride?: string) {
     const config = await this.prisma.emailConfig.findFirst({ where: { id: 1 } });
 
     if (!config?.smtpHost || !config.smtpUser || !config.smtpPass || !config.fromEmail) {
       throw new BadRequestException('SMTP configuration is incomplete. Please save Host, Username, Password, and From Email first.');
     }
 
-    if (!config.alertEmail) {
-      throw new BadRequestException('Forensic Alert Email is not configured. Please save an alert email address first.');
+    const to = recipientOverride || config.alertEmail;
+
+    if (!to) {
+      throw new BadRequestException('No recipient email. Enter a Forensic Alert Email on screen or save one first.');
     }
 
     const html = `
@@ -357,14 +359,33 @@ export class ConfigurationService {
       </div>`;
 
     await this.queue.enqueueEmail({
-      to: config.alertEmail,
+      to,
       subject: 'LoyaltyPlus — SMTP Test Email',
       html,
       notificationType: 'alert',
     });
 
-    this.logger.log({ to: config.alertEmail }, 'Test email queued');
-    return { success: true, sentTo: config.alertEmail };
+    this.logger.log({ to }, 'Test email queued');
+    return { success: true, sentTo: to };
+  }
+
+  // ── Email Delivery Logs ────────────────────────────────────────────────────
+
+  async getRecentEmailLogs() {
+    const rows = await this.prisma.notificationLog.findMany({
+      where: { channel: 'email' },
+      orderBy: { sentAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        recipient: true,
+        content: true,
+        status: true,
+        errorMessage: true,
+        sentAt: true,
+      },
+    });
+    return rows.map((r) => ({ ...r, id: r.id.toString() }));
   }
 
   // ── Audit Log ──────────────────────────────────────────────────────────────
