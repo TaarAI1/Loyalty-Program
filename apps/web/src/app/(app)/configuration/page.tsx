@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { TierBadge } from '@/components/ui/tier-badge';
-import { Plus, Pencil, Trash2, Send, Save, AlertCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Send, Save, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Tier Management ───────────────────────────────────────────────────────────
@@ -555,6 +555,9 @@ function EmailTab() {
     queryFn: configApi.getEmail,
   });
 
+  const [showPass, setShowPass] = useState(false);
+  const [passReadOnly, setPassReadOnly] = useState(true);
+
   const [form, setForm] = useState({
     smtpHost: '',
     smtpPort: '',
@@ -667,13 +670,26 @@ function EmailTab() {
             </div>
             <div className="space-y-1">
               <Label>SMTP Password</Label>
-              <Input
-                type="password"
-                autoComplete="new-password"
-                placeholder={c?.smtpPass ? '••••••••' : 'Enter SMTP password'}
-                value={form.smtpPass}
-                onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
-              />
+              <div className="relative">
+                <Input
+                  type={showPass ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  readOnly={passReadOnly}
+                  onFocus={() => setPassReadOnly(false)}
+                  placeholder={config?.smtpPass ? '••••••••' : 'Enter SMTP password'}
+                  value={form.smtpPass}
+                  onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPass((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-slate-700"
+                >
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
