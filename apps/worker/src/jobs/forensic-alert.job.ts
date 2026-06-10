@@ -21,6 +21,7 @@ export class ForensicAlertJob {
     try {
       const suspects = await this.prisma.$queryRaw<
         Array<{
+          customer_name: string;
           mobile_number: string;
           tx_count: number;
           first_tx_date: Date;
@@ -30,6 +31,7 @@ export class ForensicAlertJob {
         }>
       >`
         SELECT 
+          c.name as customer_name,
           c.country_code || c.mobile_number as mobile_number,
           COUNT(t.id)::int as tx_count,
           MIN(t.transaction_date) as first_tx_date,
@@ -39,7 +41,7 @@ export class ForensicAlertJob {
         FROM transactions t
         JOIN customers c ON c.id = t.customer_id
         WHERE t.transaction_date >= NOW() - INTERVAL '3 days'
-        GROUP BY c.country_code, c.mobile_number
+        GROUP BY c.country_code, c.mobile_number, c.name
         HAVING COUNT(t.id) >= 5
       `;
 
@@ -106,6 +108,7 @@ export class ForensicAlertJob {
   }
 
   private buildAlertEmailHtml(suspect: {
+    customer_name: string;
     mobile_number: string;
     tx_count: number;
     first_tx_date: Date;
@@ -116,6 +119,7 @@ export class ForensicAlertJob {
     return `
       <h2 style="color:#dc2626">🚨 Suspicious Activity Detected</h2>
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-family:sans-serif">
+        <tr><th style="background:#f3f4f6">Customer Name</th><td>${suspect.customer_name ?? 'N/A'}</td></tr>
         <tr><th style="background:#f3f4f6">Mobile Number</th><td>${suspect.mobile_number}</td></tr>
         <tr><th style="background:#f3f4f6">Transaction Count (3 days)</th><td><strong>${suspect.tx_count}</strong></td></tr>
         <tr><th style="background:#f3f4f6">Total Amount</th><td>${suspect.total_amount.toFixed(2)}</td></tr>
