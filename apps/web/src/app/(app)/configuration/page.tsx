@@ -691,16 +691,7 @@ function EmailTab() {
                 <button
                   type="button"
                   tabIndex={-1}
-                  onClick={() => {
-                    if (form.smtpPass === PASS_SENTINEL) {
-                      // Sentinel mode: clear and switch to visible text so user can type new password
-                      setPassReadOnly(false);
-                      setForm((f) => ({ ...f, smtpPass: '' }));
-                      setShowPass(true);
-                    } else {
-                      setShowPass((v) => !v);
-                    }
-                  }}
+                  onClick={() => setShowPass((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-slate-700"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
