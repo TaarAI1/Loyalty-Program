@@ -640,7 +640,7 @@ function EmailTab() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Credentials</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>Username / Email</Label>
+              <Label>SMTP Username</Label>
               <Input
                 placeholder={String(c?.smtpUser ?? 'you@gmail.com')}
                 value={form.smtpUser}
@@ -648,7 +648,7 @@ function EmailTab() {
               />
             </div>
             <div className="space-y-1">
-              <Label>Password / App Password</Label>
+              <Label>SMTP Password</Label>
               <Input
                 type="password"
                 placeholder={c?.smtpPass ? '••••••••' : 'Enter SMTP password'}
