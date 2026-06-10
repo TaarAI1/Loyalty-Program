@@ -155,18 +155,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Default credentials */}
-          <div className="mt-6 p-4 rounded-xl bg-[#fafafa] border border-[#e8e8e8]">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#FFD000]" />
-              <p className="text-[11px] font-black text-[#111] uppercase tracking-widest">Default credentials</p>
-            </div>
-            <p className="text-xs text-[#888]">
-              Username: <span className="font-mono font-black text-[#111]">admin</span>
-              &nbsp;·&nbsp;
-              Password: <span className="font-mono font-black text-[#111]">admin123</span>
-            </p>
-          </div>
 
           <p className="text-center text-[#ccc] text-xs mt-6">
             © {new Date().getFullYear()} LoyaltyPlus · All rights reserved
