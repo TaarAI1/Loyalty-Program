@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { TierBadge } from '@/components/ui/tier-badge';
-import { Plus, Pencil, Trash2, Send, Save, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Send, Save, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Tier Management ───────────────────────────────────────────────────────────
@@ -555,10 +555,6 @@ function EmailTab() {
     queryFn: configApi.getEmail,
   });
 
-  const PASS_SENTINEL = '••••••••';
-
-  const [showPass, setShowPass] = useState(false);
-
   const [form, setForm] = useState({
     smtpHost: '',
     smtpPort: '',
@@ -583,7 +579,7 @@ function EmailTab() {
         fromName:   config.fromName   ?? '',
         alertEmail: config.alertEmail ?? '',
         isActive:   config.isActive   ?? true,
-        smtpPass:   config.smtpPass   ? PASS_SENTINEL : '',
+        // smtpPass not pre-filled — user must type to change
       }));
     }
   }, [config]);
@@ -594,7 +590,7 @@ function EmailTab() {
       if (form.smtpHost)   payload.smtpHost   = form.smtpHost;
       if (form.smtpPort)   payload.smtpPort   = Number(form.smtpPort);
       if (form.smtpUser)   payload.smtpUser   = form.smtpUser;
-      if (form.smtpPass && form.smtpPass !== PASS_SENTINEL) payload.smtpPass = form.smtpPass;
+      if (form.smtpPass) payload.smtpPass = form.smtpPass;
       if (form.smtpSecure) payload.smtpSecure = form.smtpSecure;
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
@@ -671,33 +667,13 @@ function EmailTab() {
             </div>
             <div className="space-y-1">
               <Label>SMTP Password</Label>
-              <div className="relative">
-                <Input
-                  type={showPass ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="Enter new SMTP password"
-                  value={form.smtpPass}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const stripped = v.replace(/•/g, '');
-                    setForm((f) => ({ ...f, smtpPass: stripped }));
-                  }}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-slate-700"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {config?.smtpPass && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Password saved. Click the field to replace it.
-                </p>
-              )}
+              <Input
+                type="text"
+                autoComplete="off"
+                placeholder={config?.smtpPass ? 'Password saved — type to change' : 'Enter SMTP password'}
+                value={form.smtpPass}
+                onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
+              />
             </div>
           </div>
         </div>
