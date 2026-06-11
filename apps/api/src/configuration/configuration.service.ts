@@ -180,7 +180,13 @@ export class ConfigurationService {
     },
     changedBy?: string,
   ) {
-    const updateData: Record<string, unknown> = { ...data };
+    const updateData: Record<string, unknown> = {
+      ...data,
+      ...(data.smtpHost   && { smtpHost:   data.smtpHost.trim() }),
+      ...(data.smtpUser   && { smtpUser:   data.smtpUser.trim() }),
+      ...(data.fromEmail  && { fromEmail:  data.fromEmail.trim() }),
+      ...(data.alertEmail && { alertEmail: data.alertEmail.trim() }),
+    };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);
     }
@@ -343,17 +349,20 @@ export class ConfigurationService {
       );
     }
 
-    const to = recipientOverride || config.alertEmail || config.fromEmail;
+    const host = config.smtpHost.trim();
+    const user = config.smtpUser.trim();
+    const fromEmail = config.fromEmail.trim();
+    const to = recipientOverride?.trim() || config.alertEmail?.trim() || fromEmail;
 
     const password = this.encryption.decrypt(config.smtpPass);
     const port = config.smtpPort ?? 587;
     const secure = config.smtpSecure === 'ssl';
 
     const transporter = nodemailer.createTransport({
-      host: config.smtpHost,
+      host,
       port,
       secure,
-      auth: { user: config.smtpUser, pass: password },
+      auth: { user, pass: password },
       ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
     });
 
@@ -371,7 +380,7 @@ export class ConfigurationService {
 
     try {
       await transporter.sendMail({
-        from: `"${config.fromName ?? 'LoyaltyPlus'}" <${config.fromEmail}>`,
+        from: `"${(config.fromName ?? 'LoyaltyPlus').trim()}" <${fromEmail}>`,
         to,
         subject: 'LoyaltyPlus — SMTP Test Email',
         html,
