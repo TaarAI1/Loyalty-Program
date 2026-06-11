@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from './encryption.service';
 import { QueueService } from '../queue/queue.service';
@@ -331,42 +332,57 @@ export class ConfigurationService {
     return { suspects: suspects.length, alertsSent, skipped };
   }
 
-  // ── SMTP Test Email ────────────────────────────────────────────────────────
+  // ── SMTP Test Email (direct send, no queue) ───────────────────────────────
 
   async sendTestEmail(recipientOverride?: string) {
     const config = await this.prisma.emailConfig.findFirst({ where: { id: 1 } });
 
     if (!config?.smtpHost || !config.smtpUser || !config.smtpPass || !config.fromEmail) {
-      throw new BadRequestException('SMTP configuration is incomplete. Please save Host, Username, Password, and From Email first.');
+      throw new BadRequestException(
+        'SMTP configuration is incomplete. Please save Host, Username, Password, and From Email first.',
+      );
     }
 
-    const to = recipientOverride || config.alertEmail;
+    const to = recipientOverride || config.alertEmail || config.fromEmail;
 
-    if (!to) {
-      throw new BadRequestException('No recipient email. Enter a Forensic Alert Email on screen or save one first.');
-    }
+    const password = this.encryption.decrypt(config.smtpPass);
+    const port = config.smtpPort ?? 587;
+    const secure = config.smtpSecure === 'ssl';
+
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost,
+      port,
+      secure,
+      auth: { user: config.smtpUser, pass: password },
+      ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
+    });
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
         <div style="background:#16a34a;color:#fff;padding:16px 24px;border-radius:8px 8px 0 0;text-align:center;">
-          <h2 style="margin:0;">✅ SMTP Test Email</h2>
+          <h2 style="margin:0;">SMTP Test Email</h2>
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px;">
           <p>This is a test email from <strong>LoyaltyPlus</strong>.</p>
-          <p>If you received this, your SMTP credentials are configured correctly. Forensic alert emails will be delivered to this address when suspicious activity is detected.</p>
+          <p>If you received this, your SMTP credentials are configured correctly.</p>
           <p style="color:#6b7280;font-size:12px;margin-top:24px;">Sent at: ${new Date().toLocaleString()}</p>
         </div>
       </div>`;
 
-    await this.queue.enqueueEmail({
-      to,
-      subject: 'LoyaltyPlus — SMTP Test Email',
-      html,
-      notificationType: 'alert',
-    });
-
-    this.logger.log({ to }, 'Test email queued');
-    return { success: true, sentTo: to };
+    try {
+      await transporter.sendMail({
+        from: `"${config.fromName ?? 'LoyaltyPlus'}" <${config.fromEmail}>`,
+        to,
+        subject: 'LoyaltyPlus — SMTP Test Email',
+        html,
+      });
+      this.logger.log({ to }, 'Test email sent directly via SMTP');
+      return { success: true, sentTo: to };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error({ to, error: msg }, 'Test email send failed');
+      throw new BadRequestException(`SMTP send failed: ${msg}`);
+    }
   }
 
   // ── Email Delivery Logs ────────────────────────────────────────────────────

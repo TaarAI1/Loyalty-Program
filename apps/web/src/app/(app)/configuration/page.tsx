@@ -722,223 +722,29 @@ function EmailTab() {
           Enable email notifications
         </label>
 
-        {/* Forensic Alert Email Preview */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Forensic Alert Email Preview
-          </p>
-          <div className="border rounded-lg overflow-hidden text-sm font-sans bg-[#f4f4f5]">
-            {/* Banner */}
-            <div className="bg-red-600 px-6 py-5 text-center">
-              <p className="text-red-200 text-[11px] tracking-widest uppercase mb-1">LoyaltyPlus Forensic Monitor</p>
-              <p className="text-white font-bold text-lg">🚨 Forensic Alert</p>
-              <p className="text-red-200 text-xs mt-1">Suspicious Activity Detected</p>
-            </div>
-            {/* Body */}
-            <div className="bg-white px-6 py-5 space-y-4">
-              <p className="text-gray-800 text-sm">Dear Admin,</p>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                Our automated forensic monitoring system has flagged a customer account for{' '}
-                <strong>suspicious transaction activity</strong>. Please review the details below and take appropriate action immediately.
-              </p>
-              {/* Highlight Box */}
-              <div className="bg-red-50 border-l-4 border-red-600 rounded px-4 py-3 text-red-900 text-sm leading-relaxed">
-                Customer <strong>[Customer Name]</strong> (Mobile: <strong>[Mobile Number]</strong>) has recorded{' '}
-                <strong>[Count] transactions</strong> within the last 3 days, which exceeds the allowed activity threshold.
-              </div>
-              {/* Details Table */}
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Activity Details</p>
-              <table style={{ borderCollapse: 'collapse', width: '100%' }} className="text-xs">
-                <tbody>
-                  {[
-                    ['Customer Name', '[Customer Name]'],
-                    ['Mobile Number', '[Mobile Number]'],
-                    ['Transaction Count (3 days)', '[Count]'],
-                    ['Total Amount', '[Amount]'],
-                    ['First Transaction', '[Date]'],
-                    ['Last Transaction', '[Date]'],
-                    ['Stores Visited', '[Store Names]'],
-                  ].map(([label, value], i) => (
-                    <tr key={label} style={{ background: i % 2 === 0 ? '#f9fafb' : '#ffffff' }}>
-                      <td style={{ border: '1px solid #e5e7eb', padding: '8px 12px', fontWeight: 600, color: '#374151', width: '45%' }}>{label}</td>
-                      <td style={{ border: '1px solid #e5e7eb', padding: '8px 12px', color: '#6b7280' }}>{value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {/* Recommended Action */}
-              <div className="bg-yellow-50 border border-yellow-300 rounded-md px-4 py-3 text-xs text-yellow-900 leading-relaxed">
-                <p className="font-bold mb-1">⚠️ Recommended Action</p>
-                <p>
-                  We strongly recommend reviewing this account immediately. Consider{' '}
-                  <strong>blocking the customer</strong> ([Customer Name]) until a full investigation is complete.
-                  Customer status can be managed directly from the <strong>LoyaltyPlus admin panel</strong> under the Customers section.
-                </p>
-              </div>
-              <p className="text-sm text-gray-700">
-                Regards,<br />
-                <strong>LoyaltyPlus Forensic Monitor</strong>
-              </p>
-            </div>
-            {/* Footer */}
-            <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 text-center">
-              <p className="text-[11px] text-gray-400">
-                This is an automated alert. Do not reply to this email.
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Sent automatically when a customer exceeds 5 transactions in 3 days. Customer name and mobile number are filled dynamically from the database.
-          </p>
-        </div>
-
         <div className="flex flex-wrap gap-3">
           <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
             <Save className="w-4 h-4" />
             Save Configuration
           </Button>
-          <TestEmailButton alertEmail={form.alertEmail} />
-          <ForensicTriggerButton />
+          <TestEmailButton alertEmail={form.alertEmail} fromEmail={form.fromEmail} />
         </div>
-
-        <EmailDeliveryLogs />
       </CardContent>
     </Card>
   );
 }
 
-function TestEmailButton({ alertEmail }: { alertEmail: string }) {
-  const qc = useQueryClient();
+function TestEmailButton({ alertEmail, fromEmail }: { alertEmail: string; fromEmail: string }) {
   const mutation = useMutation({
-    mutationFn: () => configApi.testEmail(alertEmail || undefined),
-    onSuccess: (data: { sentTo: string }) => {
-      toast.success(`Test email queued → ${data.sentTo}. Check Recent Deliveries below for status.`);
-      setTimeout(() => qc.invalidateQueries({ queryKey: ['email-logs'] }), 3000);
-    },
+    mutationFn: () => configApi.testEmail(alertEmail || fromEmail || undefined),
+    onSuccess: (data: { sentTo: string }) =>
+      toast.success(`Test email sent to ${data.sentTo}`),
     onError: (err) => toast.error(String(err)),
   });
   return (
     <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
       <Send className="w-4 h-4" />
       Send Test Email
-    </Button>
-  );
-}
-
-function EmailDeliveryLogs() {
-  const { data: logs, isLoading, refetch } = useQuery<
-    Array<{
-      id: string;
-      recipient: string;
-      content: string | null;
-      status: string;
-      errorMessage: string | null;
-      sentAt: string;
-    }>
-  >({
-    queryKey: ['email-logs'],
-    queryFn: configApi.getEmailLogs,
-    refetchInterval: 15000,
-  });
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Recent Deliveries
-        </p>
-        <button
-          onClick={() => refetch()}
-          className="text-xs text-muted-foreground hover:text-foreground underline"
-        >
-          Refresh
-        </button>
-      </div>
-      {isLoading ? (
-        <div className="space-y-1">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-8 bg-muted rounded animate-pulse" />
-          ))}
-        </div>
-      ) : !logs || logs.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-3 text-center border rounded-lg">
-          No email delivery records yet.
-        </p>
-      ) : (
-        <div className="border rounded-lg overflow-hidden text-xs">
-          <table className="w-full">
-            <thead className="bg-muted text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2 font-medium">To</th>
-                <th className="text-left px-3 py-2 font-medium">Subject</th>
-                <th className="text-left px-3 py-2 font-medium">Status</th>
-                <th className="text-left px-3 py-2 font-medium">Error</th>
-                <th className="text-left px-3 py-2 font-medium">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-muted/50">
-                  <td className="px-3 py-2 max-w-[140px] truncate" title={log.recipient}>
-                    {log.recipient}
-                  </td>
-                  <td className="px-3 py-2 max-w-[160px] truncate" title={log.content ?? ''}>
-                    {log.content ?? '—'}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                        log.status === 'sent'
-                          ? 'bg-green-100 text-green-700'
-                          : log.status === 'failed'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                  </td>
-                  <td
-                    className="px-3 py-2 max-w-[200px] truncate text-red-600"
-                    title={log.errorMessage ?? ''}
-                  >
-                    {log.errorMessage ?? '—'}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-                    {new Date(log.sentAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ForensicTriggerButton() {
-  const mutation = useMutation({
-    mutationFn: configApi.triggerForensicAlert,
-    onSuccess: (data: { suspects: number; alertsSent: number; skipped?: number; reason?: string }) => {
-      if (data.suspects === 0) {
-        toast.success('No suspicious activity found in the last 3 days.');
-      } else if (data.alertsSent === 0) {
-        toast.success(
-          data.reason
-            ? `${data.suspects} suspect(s) found — ${data.reason}`
-            : `${data.suspects} suspect(s) found — all already alerted in last 24h.`,
-        );
-      } else {
-        toast.success(`${data.suspects} suspect(s) found — ${data.alertsSent} alert email(s) queued.`);
-      }
-    },
-    onError: (err) => toast.error(String(err)),
-  });
-  return (
-    <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
-      <AlertCircle className="w-4 h-4" />
-      Run Forensic Check Now
     </Button>
   );
 }
