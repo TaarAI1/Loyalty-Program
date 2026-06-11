@@ -176,6 +176,7 @@ export class ConfigurationService {
       fromEmail?: string;
       fromName?: string;
       alertEmail?: string;
+      emailBody?: string;
       isActive?: boolean;
     },
     changedBy?: string,
@@ -186,6 +187,7 @@ export class ConfigurationService {
       ...(data.smtpUser   && { smtpUser:   data.smtpUser.trim() }),
       ...(data.fromEmail  && { fromEmail:  data.fromEmail.trim() }),
       ...(data.alertEmail && { alertEmail: data.alertEmail.trim() }),
+      ...(data.emailBody !== undefined && { emailBody: data.emailBody }),
     };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);
@@ -366,14 +368,15 @@ export class ConfigurationService {
       ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
     });
 
+    const bodyText = config.emailBody?.trim() || 'This is a test email from LoyaltyPlus. If you received this, your SMTP credentials are configured correctly.';
+
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
         <div style="background:#16a34a;color:#fff;padding:16px 24px;border-radius:8px 8px 0 0;text-align:center;">
           <h2 style="margin:0;">SMTP Test Email</h2>
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px;">
-          <p>This is a test email from <strong>LoyaltyPlus</strong>.</p>
-          <p>If you received this, your SMTP credentials are configured correctly.</p>
+          <p style="white-space:pre-wrap;">${bodyText}</p>
           <p style="color:#6b7280;font-size:12px;margin-top:24px;">Sent at: ${new Date().toLocaleString()}</p>
         </div>
       </div>`;

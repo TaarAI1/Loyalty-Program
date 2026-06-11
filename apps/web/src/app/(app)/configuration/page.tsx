@@ -564,6 +564,7 @@ function EmailTab() {
     fromEmail: '',
     fromName: '',
     alertEmail: '',
+    emailBody: '',
     isActive: true,
   });
 
@@ -578,6 +579,7 @@ function EmailTab() {
         fromEmail:  config.fromEmail  ?? '',
         fromName:   config.fromName   ?? '',
         alertEmail: config.alertEmail ?? '',
+        emailBody:  config.emailBody  ?? '',
         isActive:   config.isActive   ?? true,
         // smtpPass not pre-filled — user must type to change
       }));
@@ -595,6 +597,7 @@ function EmailTab() {
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
       if (form.alertEmail) payload.alertEmail = form.alertEmail;
+      payload.emailBody = form.emailBody;
       payload.isActive = form.isActive;
       return configApi.updateEmail(payload);
     },
@@ -709,6 +712,21 @@ function EmailTab() {
               />
               <p className="text-xs text-muted-foreground">Receives automated fraud / forensic alert emails.</p>
             </div>
+          </div>
+        </div>
+
+        {/* Email Body */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Email Body</p>
+          <div className="space-y-1">
+            <Label>Email Body Text</Label>
+            <textarea
+              className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Enter the body text for outgoing emails. Leave blank to use the default message."
+              value={form.emailBody}
+              onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">Used as the body of the test email. Supports plain text.</p>
           </div>
         </div>
 
