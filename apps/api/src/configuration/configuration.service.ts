@@ -344,6 +344,38 @@ export class ConfigurationService {
     }
   }
 
+  async verifySmtpConnection() {
+    const config = await this.prisma.emailConfig.findFirst({ where: { id: 1 } });
+
+    if (!config?.smtpHost || !config.smtpUser || !config.smtpPass) {
+      throw new BadRequestException(
+        'SMTP configuration incomplete. Please save Host, Username, and Password first.',
+      );
+    }
+
+    const host = config.smtpHost.trim();
+    const user = config.smtpUser.trim();
+    const password = this.encryption.decrypt(config.smtpPass);
+    const port = config.smtpPort ?? 587;
+    const secure = config.smtpSecure === 'ssl';
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass: password },
+      ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
+    });
+
+    try {
+      await transporter.verify();
+      return { success: true, message: 'SMTP connection verified successfully.' };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(`SMTP connection failed: ${msg}`);
+    }
+  }
+
   // ── Email Delivery Logs ────────────────────────────────────────────────────
 
   async getRecentEmailLogs() {

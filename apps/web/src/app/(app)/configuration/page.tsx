@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { TierBadge } from '@/components/ui/tier-badge';
-import { Plus, Pencil, Trash2, Send, Save, AlertCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Send, Save, AlertCircle, Wifi } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Tier Management ───────────────────────────────────────────────────────────
@@ -753,6 +753,7 @@ function EmailTab() {
             <Save className="w-4 h-4" />
             Save Configuration
           </Button>
+          <TestSmtpButton />
           <TestEmailButton alertEmail={form.alertEmail} fromEmail={form.fromEmail} />
         </div>
       </CardContent>
@@ -765,12 +766,27 @@ function TestEmailButton({ alertEmail, fromEmail }: { alertEmail: string; fromEm
     mutationFn: () => configApi.testEmail(alertEmail || fromEmail || undefined),
     onSuccess: (data: { sentTo: string }) =>
       toast.success(`Test email sent to ${data.sentTo}`),
-    onError: (err) => toast.error(String(err)),
+    onError: (err: Error) => toast.error(err.message),
   });
   return (
     <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
       <Send className="w-4 h-4" />
       Send Test Email
+    </Button>
+  );
+}
+
+function TestSmtpButton() {
+  const mutation = useMutation({
+    mutationFn: () => configApi.verifySmtp(),
+    onSuccess: (data: { message: string }) =>
+      toast.success(data.message),
+    onError: (err: Error) => toast.error(err.message),
+  });
+  return (
+    <Button variant="outline" loading={mutation.isPending} onClick={() => mutation.mutate()}>
+      <Wifi className="w-4 h-4" />
+      Test SMTP Connection
     </Button>
   );
 }

@@ -106,6 +106,11 @@ export class ConfigurationController {
     return this.configurationService.sendTestEmail(body?.to);
   }
 
+  @Post('verify-smtp')
+  verifySmtp() {
+    return this.configurationService.verifySmtpConnection();
+  }
+
   @Get('email-logs')
   getRecentEmailLogs() {
     return this.configurationService.getRecentEmailLogs();

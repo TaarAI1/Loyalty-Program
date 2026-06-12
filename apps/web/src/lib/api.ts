@@ -69,6 +69,7 @@ export const configApi = {
   updateEmail: (data: Record<string, unknown>) =>
     api.put('/configuration/email', data).then((r) => r.data),
   testEmail: (to?: string) => api.post('/configuration/test-email', { to }).then((r) => r.data),
+  verifySmtp: () => api.post('/configuration/verify-smtp').then((r) => r.data),
   triggerForensicAlert: () => api.post('/configuration/trigger-forensic-alert').then((r) => r.data),
   getEmailLogs: () => api.get('/configuration/email-logs').then((r) => r.data),
 };
