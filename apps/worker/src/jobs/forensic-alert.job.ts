@@ -116,10 +116,10 @@ export class ForensicAlertJob {
       const emailBody = emailConfig?.emailBody as string | null | undefined;
 
       if (alertEmail && isActive) {
-        const isFirstAlert = !lastAlert;
-        const subject = isFirstAlert
-          ? `Forensic Alert: Suspicious Activity — ${suspect.customer_name ?? suspect.mobile_number}`
-          : `Forensic Alert: New Transaction — ${suspect.customer_name ?? suspect.mobile_number} (${suspect.tx_count} total)`;
+      const isFirstAlert = !lastAlert;
+      const subject = isFirstAlert
+        ? `[LoyaltyPlus] Security Alert — Suspicious Transaction Activity Detected for ${suspect.customer_name ?? suspect.mobile_number}`
+        : `[LoyaltyPlus] Security Alert — Additional Transaction Flagged for ${suspect.customer_name ?? suspect.mobile_number} (${suspect.tx_count} Transactions in 3 Days)`;
 
         const html = emailBody?.trim()
           ? this.buildBodyFromTemplate(emailBody.trim(), suspect)
