@@ -148,6 +148,7 @@ export class ForensicAlertJob {
     const body = template
       .replace(/\{customername\}/gi, suspect.customer_name ?? 'N/A')
       .replace(/\{phoneno\}/gi, suspect.mobile_number)
+      .replace(/\{txcount\}/gi, String(suspect.tx_count))
       .replace(/\{date\}/gi, new Date().toLocaleString())
       .replace(/\{reason\}/gi, RULE_LABEL);
 
