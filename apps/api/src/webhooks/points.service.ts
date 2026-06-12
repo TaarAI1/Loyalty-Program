@@ -69,6 +69,11 @@ export class PointsService {
 
       const isNewCustomer = !customer;
 
+      // Reject transaction if the customer is blocked
+      if (customer && customer.status === 'blocked') {
+        throw new BadRequestException(`Customer ${customer.name} (${customer.mobileNumber}) is blocked. Transactions cannot be posted for blocked customers.`);
+      }
+
       if (!customer) {
         const tier = await this.getDefaultTier(tx as typeof this.prisma);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
