@@ -267,64 +267,11 @@ export class ConfigurationService {
 
       const name = s.customer_name ?? 'N/A';
       const mobile = s.mobile_number;
-      const stores = (s.stores ?? []).join(', ') || 'N/A';
-      const firstDate = new Date(s.first_tx_date).toLocaleString();
-      const lastDate = new Date(s.last_tx_date).toLocaleString();
-      const generatedAt = new Date().toLocaleString();
 
-      const html = `
-<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <tr><td style="background:#dc2626;padding:24px 32px;text-align:center;">
-          <p style="margin:0;font-size:13px;color:#fecaca;letter-spacing:2px;text-transform:uppercase;">LoyaltyPlus Forensic Monitor</p>
-          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">🚨 Forensic Alert</h1>
-          <p style="margin:6px 0 0;color:#fecaca;font-size:14px;">Suspicious Activity Detected</p>
-        </td></tr>
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear Admin,</p>
-          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
-            Our automated forensic monitoring system has flagged a customer account for <strong>suspicious transaction activity</strong>.
-            Please review the details below and take appropriate action immediately.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;margin-bottom:24px;">
-            <tr><td style="padding:14px 16px;font-size:14px;color:#7f1d1d;line-height:1.7;">
-              Customer <strong>${name}</strong> (Mobile: <strong>${mobile}</strong>) has recorded
-              <strong>${s.tx_count} transactions</strong> within the last 3 days, which exceeds the allowed activity threshold.
-            </td></tr>
-          </table>
-          <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Activity Details</p>
-          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Customer Name</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${name}</td></tr>
-            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Mobile Number</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${mobile}</td></tr>
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Transaction Count (3 days)</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#dc2626;font-weight:bold;">${s.tx_count}</td></tr>
-            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Total Amount</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${s.total_amount.toFixed(2)}</td></tr>
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">First Transaction</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${firstDate}</td></tr>
-            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Last Transaction</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${lastDate}</td></tr>
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Stores Visited</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${stores}</td></tr>
-          </table>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;margin-bottom:24px;">
-            <tr><td style="padding:16px 18px;">
-              <p style="margin:0 0 6px;font-size:13px;font-weight:bold;color:#92400e;">⚠️ Recommended Action</p>
-              <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
-                We strongly recommend reviewing this account immediately. Consider <strong>blocking the customer</strong> (${name}) until a full investigation is complete.
-                Customer status can be managed directly from the <strong>LoyaltyPlus admin panel</strong> under the Customers section.
-              </p>
-            </td></tr>
-          </table>
-          <p style="margin:0;font-size:14px;color:#374151;">Regards,<br><strong>LoyaltyPlus Forensic Monitor</strong></p>
-        </td></tr>
-        <tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#9ca3af;">
-            This is an automated alert generated by LoyaltyPlus Forensic Monitor on ${generatedAt}.<br>Do not reply to this email.
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+      const customBody = emailConfig.emailBody?.trim();
+      const html = customBody
+        ? this.buildBodyFromTemplate(customBody, { customer_name: s.customer_name, mobile_number: s.mobile_number })
+        : this.buildDefaultForensicHtml(s);
 
       await this.queue.enqueueEmail({
         to: emailConfig.alertEmail,
@@ -414,6 +361,75 @@ export class ConfigurationService {
       },
     });
     return rows.map((r) => ({ ...r, id: r.id.toString() }));
+  }
+
+  // ── Forensic Email Helpers ────────────────────────────────────────────────
+
+  private buildBodyFromTemplate(
+    template: string,
+    suspect: { customer_name: string; mobile_number: string },
+  ): string {
+    const body = template
+      .replace(/\{customername\}/gi, suspect.customer_name ?? 'N/A')
+      .replace(/\{phoneno\}/gi, suspect.mobile_number)
+      .replace(/\{date\}/gi, new Date().toLocaleString());
+
+    return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+  <p style="white-space:pre-wrap;font-size:14px;color:#374151;line-height:1.7;">${body}</p>
+</div>`;
+  }
+
+  private buildDefaultForensicHtml(s: {
+    customer_name: string;
+    mobile_number: string;
+    tx_count: number;
+    first_tx_date: Date;
+    last_tx_date: Date;
+    stores: string[];
+    total_amount: number;
+  }): string {
+    const name = s.customer_name ?? 'N/A';
+    const mobile = s.mobile_number;
+    const stores = (s.stores ?? []).join(', ') || 'N/A';
+    const firstDate = new Date(s.first_tx_date).toLocaleString();
+    const lastDate = new Date(s.last_tx_date).toLocaleString();
+    const generatedAt = new Date().toLocaleString();
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr><td style="background:#dc2626;padding:24px 32px;text-align:center;">
+          <p style="margin:0;font-size:13px;color:#fecaca;letter-spacing:2px;text-transform:uppercase;">LoyaltyPlus Forensic Monitor</p>
+          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">Forensic Alert</h1>
+          <p style="margin:6px 0 0;color:#fecaca;font-size:14px;">Suspicious Activity Detected</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear Admin,</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+            Our automated forensic monitoring system has flagged a customer account for <strong>suspicious transaction activity</strong>.
+          </p>
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Customer Name</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${name}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Mobile Number</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${mobile}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Transaction Count (3 days)</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#dc2626;font-weight:bold;">${s.tx_count}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Total Amount</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${s.total_amount.toFixed(2)}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">First Transaction</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${firstDate}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Last Transaction</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${lastDate}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Stores Visited</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${stores}</td></tr>
+          </table>
+          <p style="margin:0;font-size:14px;color:#374151;">Regards,<br><strong>LoyaltyPlus Forensic Monitor</strong></p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;">
+            This is an automated alert generated by LoyaltyPlus Forensic Monitor on ${generatedAt}.<br>Do not reply.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
   }
 
   // ── Audit Log ──────────────────────────────────────────────────────────────

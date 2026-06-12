@@ -74,7 +74,10 @@ export class ForensicAlertJob {
 
           // Send alert email
           if (emailConfig?.alertEmail && emailConfig.isActive) {
-            const html = this.buildAlertEmailHtml(suspect);
+            const customBody = (emailConfig as Record<string, unknown>).emailBody as string | null | undefined;
+            const html = customBody?.trim()
+              ? this.buildBodyFromTemplate(customBody.trim(), suspect)
+              : this.buildAlertEmailHtml(suspect);
             await this.email.sendAlertEmail(
               emailConfig.alertEmail,
               `🚨 Forensic Alert: Suspicious Activity — ${suspect.mobile_number}`,
@@ -105,6 +108,20 @@ export class ForensicAlertJob {
     }
 
     this.logger.log({ job: 'ForensicAlertJob', durationMs: Date.now() - start }, 'Forensic alert job complete');
+  }
+
+  private buildBodyFromTemplate(
+    template: string,
+    suspect: { customer_name: string; mobile_number: string },
+  ): string {
+    const body = template
+      .replace(/\{customername\}/gi, suspect.customer_name ?? 'N/A')
+      .replace(/\{phoneno\}/gi, suspect.mobile_number)
+      .replace(/\{date\}/gi, new Date().toLocaleString());
+
+    return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+  <p style="white-space:pre-wrap;font-size:14px;color:#374151;line-height:1.7;">${body}</p>
+</div>`;
   }
 
   private buildAlertEmailHtml(suspect: {
