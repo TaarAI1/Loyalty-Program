@@ -548,6 +548,8 @@ function SmsTab() {
 
 // ── Email Tab ─────────────────────────────────────────────────────────────────
 
+const PASS_SAVED = '__SAVED__';
+
 function EmailTab() {
   const qc = useQueryClient();
   const { data: config, isLoading } = useQuery({
@@ -581,7 +583,7 @@ function EmailTab() {
         alertEmail: config.alertEmail ?? '',
         emailBody:  config.emailBody  ?? '',
         isActive:   config.isActive   ?? true,
-        // smtpPass not pre-filled — user must type to change
+        smtpPass:   config.smtpPass   ? PASS_SAVED : '',
       }));
     }
   }, [config]);
@@ -592,7 +594,7 @@ function EmailTab() {
       if (form.smtpHost)   payload.smtpHost   = form.smtpHost;
       if (form.smtpPort)   payload.smtpPort   = Number(form.smtpPort);
       if (form.smtpUser)   payload.smtpUser   = form.smtpUser;
-      if (form.smtpPass) payload.smtpPass = form.smtpPass;
+      if (form.smtpPass && form.smtpPass !== PASS_SAVED) payload.smtpPass = form.smtpPass;
       if (form.smtpSecure) payload.smtpSecure = form.smtpSecure;
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
@@ -673,10 +675,16 @@ function EmailTab() {
               <Input
                 type="text"
                 autoComplete="off"
-                placeholder={config?.smtpPass ? 'Password saved — type to change' : 'Enter SMTP password'}
-                value={form.smtpPass}
+                placeholder="Enter SMTP password"
+                value={form.smtpPass === PASS_SAVED ? '●●●●●●●●●●●●' : form.smtpPass}
+                onFocus={() => {
+                  if (form.smtpPass === PASS_SAVED) setForm((f) => ({ ...f, smtpPass: '' }));
+                }}
                 onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
               />
+              {form.smtpPass === PASS_SAVED && (
+                <p className="text-xs text-green-600">Password saved. Click the field to enter a new one.</p>
+              )}
             </div>
           </div>
         </div>
