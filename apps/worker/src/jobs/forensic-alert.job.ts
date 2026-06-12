@@ -94,7 +94,7 @@ export class ForensicAlertJob {
   private async processSuspect(
     suspect: SuspectRow,
     rule: FraudRule,
-    emailConfig: Awaited<ReturnType<typeof this.prisma.emailConfig.findFirst>>,
+    emailConfig: Record<string, unknown> | null,
   ) {
     try {
       const dedupCutoff = new Date(Date.now() - rule.dedupHours * 3600000);
@@ -139,14 +139,17 @@ export class ForensicAlertJob {
         },
       });
 
-      if (emailConfig?.alertEmail && emailConfig.isActive) {
-        const customBody = (emailConfig as Record<string, unknown>).emailBody as string | null | undefined;
-        const html = customBody?.trim()
-          ? this.buildBodyFromTemplate(customBody.trim(), suspect, rule)
+      const alertEmail = emailConfig?.alertEmail as string | null | undefined;
+      const isActive = emailConfig?.isActive as boolean | null | undefined;
+      const emailBody = emailConfig?.emailBody as string | null | undefined;
+
+      if (alertEmail && isActive) {
+        const html = emailBody?.trim()
+          ? this.buildBodyFromTemplate(emailBody.trim(), suspect, rule)
           : this.buildAlertEmailHtml(suspect, rule);
 
         await this.email.sendAlertEmail(
-          emailConfig.alertEmail,
+          alertEmail,
           `Forensic Alert: ${rule.label} — ${suspect.customer_name ?? suspect.mobile_number}`,
           html,
         );
@@ -166,7 +169,7 @@ export class ForensicAlertJob {
           'Forensic alert email sent',
         );
       } else {
-        this.logger.warn({ rule: rule.id }, 'Email config inactive or alertEmail missing — alert logged but email not sent');
+        this.logger.warn({ rule: rule.id }, 'Email config inactive or alertEmail not configured — alert logged but email not sent');
       }
     } catch (err) {
       this.logger.error({ err, rule: rule.id, mobile: suspect.mobile_number }, 'Failed to process forensic suspect');

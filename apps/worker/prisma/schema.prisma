@@ -173,6 +173,7 @@ model EmailConfig {
   fromEmail   String?   @map("from_email") @db.VarChar(255)
   fromName    String?   @map("from_name") @db.VarChar(255)
   alertEmail  String?   @map("alert_email") @db.VarChar(255)
+  emailBody   String?   @map("email_body")
   isActive    Boolean   @default(true) @map("is_active")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -201,6 +202,7 @@ model NotificationLog {
 model ForensicAlert {
   id                    BigInt    @id @default(autoincrement())
   mobileNumber          String    @map("mobile_number") @db.VarChar(20)
+  rule                  String?   @db.VarChar(50)
   transactionCount      Int       @map("transaction_count")
   firstTransactionDate  DateTime  @map("first_transaction_date")
   lastTransactionDate   DateTime  @map("last_transaction_date")
@@ -209,6 +211,7 @@ model ForensicAlert {
   emailSent             Boolean   @default(false) @map("email_sent")
   alertDate             DateTime  @default(now()) @map("alert_date")
 
+  @@index([mobileNumber, rule, alertDate])
   @@map("forensic_alerts")
 }
 
