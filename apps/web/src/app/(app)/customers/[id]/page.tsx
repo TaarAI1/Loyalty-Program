@@ -19,7 +19,7 @@ import {
   formatDate,
   formatDateTime,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
 
@@ -72,6 +72,7 @@ export default function CustomerDetailPage() {
     region: '',
     store: '',
     dateOfBirth: '',
+    gender: '',
     status: 'active',
     isActive: true,
   });
@@ -118,6 +119,7 @@ export default function CustomerDetailPage() {
         region: customer.region ?? '',
         store: customer.store ?? '',
         dateOfBirth: customer.dateOfBirth ? customer.dateOfBirth.slice(0, 10) : '',
+        gender: (customer as any).gender ?? '',
         status: (customer as any).status ?? 'active',
         isActive: (customer as any).isActive !== false,
       });
@@ -433,11 +435,12 @@ export default function CustomerDetailPage() {
                 </div>
 
                 {/* Row 2: profile details */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   {[
                     { label: 'Store', value: customer.store ?? '—', icon: Building2, iconBg: 'bg-orange-50', iconColor: 'text-orange-500' },
                     { label: 'Region', value: customer.region ?? '—', icon: MapPin, iconBg: 'bg-pink-50', iconColor: 'text-pink-500' },
                     { label: 'Date of Birth', value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—', icon: Calendar, iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
+                    { label: 'Gender', value: (customer as any).gender ?? '—', icon: Users, iconBg: 'bg-teal-50', iconColor: 'text-teal-500' },
                   ].map((item, i) => (
                     <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
@@ -754,6 +757,19 @@ export default function CustomerDetailPage() {
               value={editForm.dateOfBirth}
               onChange={(e) => setEditForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
             />
+          </div>
+          <div className="space-y-1">
+            <Label>Gender</Label>
+            <select
+              value={editForm.gender}
+              onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Not specified</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
           <div className="space-y-1">
             <Label>Status</Label>

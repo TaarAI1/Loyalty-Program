@@ -31,6 +31,13 @@ const REPORTS = [
   { value: 'SSFR8', label: 'SSFR8 — Forensic Report' },
 ];
 
+const GENDER_OPTIONS = [
+  { value: '', label: 'All' },
+  { value: 'Male', label: 'Male' },
+  { value: 'Female', label: 'Female' },
+  { value: 'Other', label: 'Other' },
+];
+
 const AGE_BRACKETS = [
   { value: '', label: 'Any age' },
   { value: '18-24', label: '18–24' },
@@ -56,6 +63,7 @@ interface Filters {
   region: string;
   store: string;
   tierId: string;
+  gender: string;
   ageBracket: string;
   dateFrom: string;
   dateTo: string;
@@ -68,6 +76,7 @@ const defaultFilters: Filters = {
   region: '',
   store: '',
   tierId: '',
+  gender: '',
   ageBracket: '',
   dateFrom: '',
   dateTo: '',
@@ -91,6 +100,7 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
       region: filters.region || undefined,
       store: filters.store || undefined,
       tierId: filters.tierId || undefined,
+      gender: filters.gender || undefined,
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       month: filters.month || undefined,
@@ -225,6 +235,14 @@ export default function ReportsPage() {
                   options={tierOptions}
                   value={filters.tierId}
                   onChange={(e) => setFilters((f) => ({ ...f, tierId: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Gender</Label>
+                <Select
+                  options={GENDER_OPTIONS}
+                  value={filters.gender}
+                  onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
                 />
               </div>
               <div className="space-y-1">
