@@ -61,22 +61,17 @@ export class PointsExpiryJob {
 
     for (const row of expiringRows) {
       try {
-        if (config?.accessToken && config.templateExpiry) {
+        if (config?.apiUrl && config.templateExpiry) {
           const phone = formatPhoneNumber(row.customer.mobileNumber, row.customer.countryCode);
           await this.whatsapp.send({
             to: phone,
             templateName: config.templateExpiry,
-            components: [
-              {
-                type: 'body',
-                parameters: [
-                  { type: 'text', text: row.customer.name },
-                  { type: 'text', text: String(row.pointsAmount) },
-                  { type: 'text', text: String(daysAhead) },
-                  { type: 'text', text: dateStr },
-                ],
-              },
-            ],
+            customerName: row.customer.name,
+            vars: {
+              points:      String(row.pointsAmount),
+              days_ahead:  String(daysAhead),
+              expiry_date: dateStr,
+            },
             customerId: row.customerId,
             notificationType: `expiry_warning_${daysAhead}d`,
           });

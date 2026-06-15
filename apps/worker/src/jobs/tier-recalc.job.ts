@@ -68,21 +68,16 @@ export class TierRecalcJob {
 
         if (isUpgrade) {
           upgraded++;
-          if (config?.accessToken && config.templateTierUpgrade) {
+          if (config?.apiUrl && config.templateTierUpgrade) {
             try {
               const phone = formatPhoneNumber(customer.mobileNumber, customer.countryCode);
               await this.whatsapp.send({
                 to: phone,
                 templateName: config.templateTierUpgrade,
-                components: [
-                  {
-                    type: 'body',
-                    parameters: [
-                      { type: 'text', text: customer.name },
-                      { type: 'text', text: correctTier.name },
-                    ],
-                  },
-                ],
+                customerName: customer.name,
+                vars: {
+                  tier: correctTier.name,
+                },
                 customerId: customer.id,
                 notificationType: 'tier_upgrade',
               });
