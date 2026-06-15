@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { WhatsAppService } from '../services/whatsapp.service';
-import { formatPhoneNumber } from '@loyalty/shared';
+import { SmsService } from '../services/sms.service';
+import { formatPhoneNumber, generateBirthdayCode } from '@loyalty/shared';
 
 @Injectable()
 export class BirthdayJob {
@@ -10,7 +10,7 @@ export class BirthdayJob {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly whatsapp: WhatsAppService,
+    private readonly sms: SmsService,
   ) {}
 
   /** Run daily at 6 AM */
@@ -24,19 +24,6 @@ export class BirthdayJob {
     const day = today.getDate();
 
     try {
-      // Load WhatsApp config for birthday template and vars
-      const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
-
-      if (!waConfig?.apiUrl || !waConfig.apiKey) {
-        this.logger.warn('WhatsApp not configured or disabled — birthday job skipped');
-        return;
-      }
-
-      const templateName = waConfig.templateBirthday ?? 'birth_message_logo_opia';
-      const orderNumber = waConfig.birthdayVarsOrder ?? '';
-      const dispatchedOrder = waConfig.birthdayVarsWish ?? '';
-      const vars = JSON.stringify({ order_number: orderNumber, dispatched_order: dispatchedOrder });
-
       const customers = await this.prisma.$queryRaw<
         Array<{ id: string; name: string; mobile_number: string; country_code: string }>
       >`
@@ -51,21 +38,20 @@ export class BirthdayJob {
 
       for (const customer of customers) {
         try {
+          const code = generateBirthdayCode(customer.id, today);
           const phone = formatPhoneNumber(customer.mobile_number, customer.country_code);
+          const message = `Happy Birthday ${customer.name}! 🎉 Get 30% flat on all purchases today. Use code: ${code}. Valid today only. T&C apply.`;
 
-          await this.whatsapp.send({
+          await this.sms.send({
             to: phone,
-            customerName: customer.name,
-            templateName,
-            vars,
-            components: [],
+            message,
             customerId: customer.id,
             notificationType: 'birthday',
           });
 
-          this.logger.log({ customerId: customer.id, phone }, 'Birthday WhatsApp sent');
+          this.logger.log({ customerId: customer.id, phone, code }, 'Birthday SMS sent');
         } catch (err) {
-          this.logger.error({ err, customerId: customer.id }, 'Failed to send birthday WhatsApp');
+          this.logger.error({ err, customerId: customer.id }, 'Failed to send birthday SMS');
         }
       }
     } catch (err) {

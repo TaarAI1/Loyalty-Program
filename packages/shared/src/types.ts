@@ -93,8 +93,6 @@ export interface WhatsAppJobPayload {
   components: WhatsAppTemplateComponent[];
   customerId?: string;
   notificationType?: string;
-  customerName?: string;
-  vars?: string;
 }
 
 export interface SMSJobPayload {
