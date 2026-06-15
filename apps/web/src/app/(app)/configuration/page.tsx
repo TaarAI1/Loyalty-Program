@@ -319,9 +319,9 @@ function WhatsAppTab() {
   });
 
   const [form, setForm] = useState({
-    accessToken: '',
-    phoneNumberId: '',
-    businessAccountId: '',
+    apiUrl: '',
+    apiKey: '',
+    csrfToken: '',
     templateExpiry: '',
     templateBirthday: '',
     templatePointsEarned: '',
@@ -334,16 +334,24 @@ function WhatsAppTab() {
 
   const updateMutation = useMutation({
     mutationFn: () => {
-      const updateData: Record<string, unknown> = Object.fromEntries(
-        Object.entries(form as Record<string, unknown>).filter(([, v]) => v !== '')
-      );
+      const updateData: Record<string, unknown> = {
+        apiUrl: form.apiUrl || undefined,
+        templateExpiry: form.templateExpiry || undefined,
+        templateBirthday: form.templateBirthday || undefined,
+        templatePointsEarned: form.templatePointsEarned || undefined,
+        templateTierUpgrade: form.templateTierUpgrade || undefined,
+        isActive: form.isActive,
+      };
+      // Only send secrets if the user typed a new value
+      if (form.apiKey) updateData['apiKey'] = form.apiKey;
+      if (form.csrfToken) updateData['csrfToken'] = form.csrfToken;
       return configApi.updateWhatsApp(updateData);
     },
     onSuccess: () => {
       toast.success('WhatsApp config saved');
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
     },
-    onError: (err) => toast.error(String(err)),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const testMutation = useMutation({
@@ -360,34 +368,52 @@ function WhatsAppTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Meta WhatsApp Cloud API Settings</CardTitle>
+          <CardTitle>WhatsApp API Settings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* API URL */}
+          <div className="space-y-1">
+            <Label>WhatsApp API URL</Label>
+            <Input
+              placeholder={(displayConfig as Record<string, string>).apiUrl ?? 'https://...'}
+              value={form.apiUrl}
+              onChange={(e) => setForm((f) => ({ ...f, apiUrl: e.target.value }))}
+            />
+          </div>
+
+          {/* Accept header — hardcoded, read-only */}
+          <div className="space-y-1">
+            <Label>Header</Label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md border border-border">
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <code className="text-xs text-muted-foreground">accept: application/json</code>
+              <span className="ml-auto text-[11px] text-muted-foreground">(hardcoded)</span>
+            </div>
+          </div>
+
+          {/* X-Api-Key + X-CSRFTOKEN */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>Access Token</Label>
+              <Label>X-Api-Key</Label>
               <Input
-                type="password"
-                placeholder={displayConfig.accessToken ?? 'Enter access token...'}
-                value={form.accessToken}
-                onChange={(e) => setForm((f) => ({ ...f, accessToken: e.target.value }))}
+                placeholder={(displayConfig as Record<string, string>).apiKey === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter API key...'}
+                value={form.apiKey}
+                onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
               />
+              {(displayConfig as Record<string, string>).apiKey === '***SAVED***' && !form.apiKey && (
+                <p className="text-[11px] text-green-600">API key saved. Enter a new value to replace it.</p>
+              )}
             </div>
             <div className="space-y-1">
-              <Label>Phone Number ID</Label>
+              <Label>X-CSRFTOKEN</Label>
               <Input
-                placeholder={displayConfig.phoneNumberId ?? ''}
-                value={form.phoneNumberId}
-                onChange={(e) => setForm((f) => ({ ...f, phoneNumberId: e.target.value }))}
+                placeholder={(displayConfig as Record<string, string>).csrfToken === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter CSRF token...'}
+                value={form.csrfToken}
+                onChange={(e) => setForm((f) => ({ ...f, csrfToken: e.target.value }))}
               />
-            </div>
-            <div className="space-y-1">
-              <Label>Business Account ID</Label>
-              <Input
-                placeholder={displayConfig.businessAccountId ?? ''}
-                value={form.businessAccountId}
-                onChange={(e) => setForm((f) => ({ ...f, businessAccountId: e.target.value }))}
-              />
+              {(displayConfig as Record<string, string>).csrfToken === '***SAVED***' && !form.csrfToken && (
+                <p className="text-[11px] text-green-600">CSRF token saved. Enter a new value to replace it.</p>
+              )}
             </div>
           </div>
 

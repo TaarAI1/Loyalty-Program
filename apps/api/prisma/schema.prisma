@@ -153,6 +153,9 @@ model WhatsappConfig {
   templateTierUpgrade   String?   @map("template_tier_upgrade") @db.VarChar(100)
   isActive              Boolean   @default(true) @map("is_active")
   updatedAt             DateTime  @updatedAt @map("updated_at")
+  apiUrl                String?   @map("api_url")
+  apiKey                String?   @map("api_key")
+  csrfToken             String?   @map("csrf_token")
 
   @@map("whatsapp_config")
 }
