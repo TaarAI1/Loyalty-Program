@@ -319,95 +319,174 @@ function WhatsAppTab() {
   });
 
   const [form, setForm] = useState({
-    accessToken: '',
-    phoneNumberId: '',
-    businessAccountId: '',
-    templateExpiry: '',
+    apiUrl: '',
+    apiKey: '',
+    csrfToken: '',
     templateBirthday: '',
-    templatePointsEarned: '',
-    templateTierUpgrade: '',
+    birthdayVarsOrder: '',
+    birthdayVarsWish: '',
     isActive: true,
   });
 
+  const [varsModalOpen, setVarsModalOpen] = useState(false);
   const [testForm, setTestForm] = useState({ to: '', template_name: '' });
+
+  // Pre-populate form from saved config
+  const displayConfig = config ?? {};
+  useState(() => {
+    if (config) {
+      setForm({
+        apiUrl: (config as Record<string, string>).apiUrl ?? '',
+        apiKey: '',
+        csrfToken: '',
+        templateBirthday: (config as Record<string, string>).templateBirthday ?? '',
+        birthdayVarsOrder: (config as Record<string, string>).birthdayVarsOrder ?? '',
+        birthdayVarsWish: (config as Record<string, string>).birthdayVarsWish ?? '',
+        isActive: (config as Record<string, boolean>).isActive !== false,
+      });
+    }
+  });
 
   const updateMutation = useMutation({
     mutationFn: () => {
-      const updateData: Record<string, unknown> = Object.fromEntries(
-        Object.entries(form as Record<string, unknown>).filter(([, v]) => v !== '')
-      );
+      const updateData: Record<string, unknown> = {
+        apiUrl: form.apiUrl || undefined,
+        templateBirthday: form.templateBirthday || undefined,
+        birthdayVarsOrder: form.birthdayVarsOrder || undefined,
+        birthdayVarsWish: form.birthdayVarsWish || undefined,
+        isActive: form.isActive,
+      };
+      if (form.apiKey) updateData['apiKey'] = form.apiKey;
+      if (form.csrfToken) updateData['csrfToken'] = form.csrfToken;
       return configApi.updateWhatsApp(updateData);
     },
     onSuccess: () => {
       toast.success('WhatsApp config saved');
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
     },
-    onError: (err) => toast.error(String(err)),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const testMutation = useMutation({
     mutationFn: () => configApi.testWhatsApp(testForm),
     onSuccess: () => toast.success('Test message queued successfully'),
-    onError: (err) => toast.error(String(err)),
+    onError: (err: Error) => toast.error(err.message),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
 
-  const displayConfig = config ?? {};
+  const birthdayVars = {
+    order_number: form.birthdayVarsOrder || (displayConfig as Record<string, string>).birthdayVarsOrder || '',
+    dispatched_order: form.birthdayVarsWish || (displayConfig as Record<string, string>).birthdayVarsWish || '',
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Meta WhatsApp Cloud API Settings</CardTitle>
+          <CardTitle>WhatsApp API Settings</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label>Access Token</Label>
-              <Input
-                type="password"
-                placeholder={displayConfig.accessToken ?? 'Enter access token...'}
-                value={form.accessToken}
-                onChange={(e) => setForm((f) => ({ ...f, accessToken: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Phone Number ID</Label>
-              <Input
-                placeholder={displayConfig.phoneNumberId ?? ''}
-                value={form.phoneNumberId}
-                onChange={(e) => setForm((f) => ({ ...f, phoneNumberId: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Business Account ID</Label>
-              <Input
-                placeholder={displayConfig.businessAccountId ?? ''}
-                value={form.businessAccountId}
-                onChange={(e) => setForm((f) => ({ ...f, businessAccountId: e.target.value }))}
-              />
+        <CardContent className="space-y-5">
+          {/* API URL */}
+          <div className="space-y-1">
+            <Label>WhatsApp API URL</Label>
+            <Input
+              placeholder="https://communication-center-be.ginkgoretail.net/whatsapp/api/templates/send/"
+              value={form.apiUrl}
+              onChange={(e) => setForm((f) => ({ ...f, apiUrl: e.target.value }))}
+            />
+          </div>
+
+          {/* Hardcoded accept header */}
+          <div className="space-y-1">
+            <Label>Accept Header</Label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md border border-border">
+              <AlertCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <code className="text-xs text-muted-foreground">accept: application/json</code>
+              <span className="ml-auto text-[11px] text-muted-foreground">(hardcoded)</span>
             </div>
           </div>
 
-          <div>
-            <h4 className="text-sm font-medium mb-3">Message Templates</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { key: 'templatePointsEarned', label: 'Points Earned', current: displayConfig.templatePointsEarned },
-                { key: 'templateTierUpgrade', label: 'Tier Upgrade', current: displayConfig.templateTierUpgrade },
-                { key: 'templateExpiry', label: 'Points Expiry', current: displayConfig.templateExpiry },
-                { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
-              ].map(({ key, label, current }) => (
-                <div key={key} className="space-y-1">
-                  <Label>{label} Template</Label>
-                  <Input
-                    placeholder={current ?? `template_name`}
-                    value={(form as unknown as Record<string, string>)[key] ?? ''}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  />
-                </div>
-              ))}
+          {/* API Key + CSRF */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label>X-Api-Key</Label>
+              <Input
+                placeholder={(displayConfig as Record<string, string>).apiKey === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter API key...'}
+                value={form.apiKey}
+                onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
+              />
+              {(displayConfig as Record<string, string>).apiKey === '***SAVED***' && !form.apiKey && (
+                <p className="text-[11px] text-green-600">API key saved. Enter a new value to replace it.</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label>X-CSRFTOKEN</Label>
+              <Input
+                placeholder={(displayConfig as Record<string, string>).csrfToken === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter CSRF token...'}
+                value={form.csrfToken}
+                onChange={(e) => setForm((f) => ({ ...f, csrfToken: e.target.value }))}
+              />
+              {(displayConfig as Record<string, string>).csrfToken === '***SAVED***' && !form.csrfToken && (
+                <p className="text-[11px] text-green-600">CSRF token saved. Enter a new value to replace it.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Dynamic fields info */}
+          <div className="rounded-md border border-border bg-muted/40 px-4 py-3 space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Auto-filled at send time</p>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-700">
+                <code>customer_name</code> — from customer record
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-xs text-blue-700">
+                <code>phone_number</code> — from customer record
+              </span>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold">Birthday Template</h4>
+              <button
+                type="button"
+                onClick={() => setVarsModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-300 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Select Template Variables
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Template Name</Label>
+                <Input
+                  placeholder={(displayConfig as Record<string, string>).templateBirthday ?? 'birth_message_logo_opia'}
+                  value={form.templateBirthday}
+                  onChange={(e) => setForm((f) => ({ ...f, templateBirthday: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Birthday Message <span className="text-muted-foreground font-normal">(order_number)</span></Label>
+                <textarea
+                  className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Birthday! Celebrate your special day with LOGO with Flat 40% off! Valid for"
+                  value={form.birthdayVarsOrder}
+                  onChange={(e) => setForm((f) => ({ ...f, birthdayVarsOrder: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Birthday Wish <span className="text-muted-foreground font-normal">(dispatched_order)</span></Label>
+                <textarea
+                  className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Wish you a great year ahead"
+                  value={form.birthdayVarsWish}
+                  onChange={(e) => setForm((f) => ({ ...f, birthdayVarsWish: e.target.value }))}
+                />
+              </div>
             </div>
           </div>
 
@@ -464,6 +543,34 @@ function WhatsAppTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Template Variables Modal */}
+      <Dialog
+        open={varsModalOpen}
+        onClose={() => setVarsModalOpen(false)}
+        title="Birthday Template Variables"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            These are the <code className="text-xs bg-muted px-1 py-0.5 rounded">vars</code> JSON values sent with every birthday WhatsApp message. Edit them in the Birthday Template section above and save.
+          </p>
+          <div className="rounded-md border border-border bg-muted/40 p-4 space-y-3">
+            <div className="flex gap-3 items-start">
+              <code className="text-xs bg-background border border-border rounded px-2 py-1 text-indigo-600 whitespace-nowrap">order_number</code>
+              <p className="text-sm text-slate-700 leading-snug">{birthdayVars.order_number || <span className="text-muted-foreground italic">Not set</span>}</p>
+            </div>
+            <div className="flex gap-3 items-start">
+              <code className="text-xs bg-background border border-border rounded px-2 py-1 text-indigo-600 whitespace-nowrap">dispatched_order</code>
+              <p className="text-sm text-slate-700 leading-snug">{birthdayVars.dispatched_order || <span className="text-muted-foreground italic">Not set</span>}</p>
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-slate-900 p-3">
+            <p className="text-[11px] text-slate-400 mb-1">vars payload (JSON)</p>
+            <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap">{JSON.stringify(birthdayVars, null, 2)}</pre>
+          </div>
+          <Button variant="outline" onClick={() => setVarsModalOpen(false)} className="w-full">Close</Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -73,10 +73,11 @@ export class ConfigurationService {
   async getWhatsAppConfig() {
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1 } });
     if (!config) return null;
-    // Mask sensitive token
     return {
       ...config,
       accessToken: config.accessToken ? '***ENCRYPTED***' : null,
+      apiKey: config.apiKey ? '***SAVED***' : null,
+      csrfToken: config.csrfToken ? '***SAVED***' : null,
     };
   }
 
@@ -90,6 +91,11 @@ export class ConfigurationService {
       templatePointsEarned?: string;
       templateTierUpgrade?: string;
       isActive?: boolean;
+      apiUrl?: string;
+      apiKey?: string;
+      csrfToken?: string;
+      birthdayVarsOrder?: string;
+      birthdayVarsWish?: string;
     },
     changedBy?: string,
   ) {
@@ -97,8 +103,17 @@ export class ConfigurationService {
     if (data.accessToken) {
       updateData['accessToken'] = this.encryption.encrypt(data.accessToken);
     }
+    if (data.apiKey) {
+      updateData['apiKey'] = this.encryption.encrypt(data.apiKey);
+    }
+    if (data.csrfToken) {
+      updateData['csrfToken'] = this.encryption.encrypt(data.csrfToken);
+    }
+    if (data.apiUrl) {
+      updateData['apiUrl'] = data.apiUrl.trim();
+    }
 
-    const config = await this.prisma.whatsappConfig.upsert({
+    await this.prisma.whatsappConfig.upsert({
       where: { id: 1 },
       update: updateData,
       create: { id: 1, ...updateData },
@@ -107,6 +122,8 @@ export class ConfigurationService {
     await this.auditLog('whatsapp_config', '1', 'UPDATE', changedBy, null, {
       ...updateData,
       accessToken: '[REDACTED]',
+      apiKey: '[REDACTED]',
+      csrfToken: '[REDACTED]',
     });
     this.logger.log({ changedBy }, 'WhatsApp config updated');
     return { success: true };
