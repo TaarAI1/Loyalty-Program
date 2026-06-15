@@ -90,7 +90,8 @@ export interface TierDistributionItem {
 export interface WhatsAppJobPayload {
   to: string;
   templateName: string;
-  components: WhatsAppTemplateComponent[];
+  customerName: string;
+  vars?: Record<string, string>;
   customerId?: string;
   notificationType?: string;
 }
@@ -110,11 +111,3 @@ export interface EmailJobPayload {
   notificationType?: string;
 }
 
-export interface WhatsAppTemplateComponent {
-  type: 'header' | 'body' | 'button';
-  parameters: Array<{
-    type: 'text' | 'currency' | 'date_time' | 'image' | 'document' | 'video';
-    text?: string;
-    currency?: { fallback_value: string; code: string; amount_1000: number };
-  }>;
-}

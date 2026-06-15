@@ -54,7 +54,8 @@ export class NotificationsService {
       await this.queue.enqueueWhatsApp({
         to: formatPhoneNumber(log.recipient),
         templateName: log.content ?? 'default',
-        components: [],
+        customerName: '',
+        vars: {},
         customerId: log.customerId ?? undefined,
         notificationType: 'resend',
       });

@@ -1,5 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import axios from 'axios';
+import FormData from 'form-data';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from './encryption.service';
 import { QueueService } from '../queue/queue.service';
@@ -131,19 +133,43 @@ export class ConfigurationService {
 
   async testWhatsApp(to: string, templateName: string) {
     const phone = formatPhoneNumber(to);
-    await this.queue.enqueueWhatsApp({
-      to: phone,
-      templateName,
-      components: [
-        {
-          type: 'body',
-          parameters: [{ type: 'text', text: 'Test message from LoyaltyPlus' }],
+
+    const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1 } });
+    if (!config?.apiUrl || !config.apiKey || !config.csrfToken) {
+      throw new BadRequestException('WhatsApp API URL, X-Api-Key and X-CSRFTOKEN must be configured before sending a test.');
+    }
+
+    const apiKey = this.encryption.decrypt(config.apiKey);
+    const csrf   = this.encryption.decrypt(config.csrfToken);
+
+    const form = new FormData();
+    form.append('customer_name',  'Test User');
+    form.append('phone_number',   phone);
+    form.append('template_name',  templateName);
+    form.append('vars', JSON.stringify({
+      order_number:     config.birthdayVarOrder      ?? '',
+      dispatched_order: config.birthdayVarDispatched ?? '',
+    }));
+
+    try {
+      await axios.post(config.apiUrl, form, {
+        headers: {
+          ...form.getHeaders(),
+          accept:        'application/json',
+          'X-Api-Key':   apiKey,
+          'X-CSRFTOKEN': csrf,
         },
-      ],
-      notificationType: 'test',
-    });
-    this.logger.log({ to: phone, templateName }, 'Test WhatsApp queued');
-    return { success: true, message: `Test message queued to ${phone}` };
+        timeout: 15000,
+      });
+    } catch (err) {
+      const msg = axios.isAxiosError(err)
+        ? `WhatsApp API error ${err.response?.status}: ${JSON.stringify(err.response?.data)}`
+        : String(err);
+      throw new BadRequestException(msg);
+    }
+
+    this.logger.log({ to: phone, templateName }, 'Test WhatsApp sent directly');
+    return { success: true, message: `Test message sent to ${phone}` };
   }
 
   // ── SMS Config ─────────────────────────────────────────────────────────────

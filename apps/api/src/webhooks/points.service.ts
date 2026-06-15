@@ -379,23 +379,18 @@ export class PointsService {
     tierName: string,
   ) {
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
-    if (!config?.accessToken || !config.templatePointsEarned) return;
+    if (!config?.apiUrl || !config.templatePointsEarned) return;
 
     const phone = formatPhoneNumber(customer.mobileNumber, customer.countryCode);
     await this.queue.enqueueWhatsApp({
       to: phone,
       templateName: config.templatePointsEarned,
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: customer.name },
-            { type: 'text', text: String(pointsEarned) },
-            { type: 'text', text: String(totalPoints) },
-            { type: 'text', text: tierName },
-          ],
-        },
-      ],
+      customerName: customer.name,
+      vars: {
+        points_earned: String(pointsEarned),
+        total_points:  String(totalPoints),
+        tier:          tierName,
+      },
       customerId: customer.id,
       notificationType: 'points_earned',
     });
@@ -406,21 +401,16 @@ export class PointsService {
     newTierName: string,
   ) {
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
-    if (!config?.accessToken || !config.templateTierUpgrade) return;
+    if (!config?.apiUrl || !config.templateTierUpgrade) return;
 
     const phone = formatPhoneNumber(customer.mobileNumber, customer.countryCode);
     await this.queue.enqueueWhatsApp({
       to: phone,
       templateName: config.templateTierUpgrade,
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: customer.name },
-            { type: 'text', text: newTierName },
-          ],
-        },
-      ],
+      customerName: customer.name,
+      vars: {
+        tier: newTierName,
+      },
       customerId: customer.id,
       notificationType: 'tier_upgrade',
     });

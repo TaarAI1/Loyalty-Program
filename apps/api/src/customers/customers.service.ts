@@ -196,7 +196,7 @@ export class CustomersService {
   async sendManualWhatsApp(customerId: string, templateName: string, message?: string) {
     const customer = await this.findOne(customerId);
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
-    if (!config?.accessToken) {
+    if (!config?.apiUrl) {
       return { success: false, message: 'WhatsApp not configured' };
     }
 
@@ -204,9 +204,8 @@ export class CustomersService {
     await this.queue.enqueueWhatsApp({
       to: phone,
       templateName,
-      components: message
-        ? [{ type: 'body', parameters: [{ type: 'text', text: message }] }]
-        : [],
+      customerName: customer.name,
+      vars: message ? { message } : {},
       customerId,
       notificationType: 'manual',
     });
