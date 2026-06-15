@@ -412,16 +412,6 @@ function WhatsAppTab() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setVarsModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
-            >
-              Select Template Variables
-            </button>
-          </div>
-
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -434,10 +424,19 @@ function WhatsAppTab() {
             </label>
           </div>
 
-          <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
-            <Save className="w-4 h-4" />
-            Save Configuration
-          </Button>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Button loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>
+              <Save className="w-4 h-4" />
+              Save Configuration
+            </Button>
+            <button
+              type="button"
+              onClick={() => setVarsModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors"
+            >
+              Select Template Variables
+            </button>
+          </div>
         </CardContent>
       </Card>
 
@@ -448,17 +447,27 @@ function WhatsAppTab() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Template</p>
             <code className="text-sm font-medium">birth_message_logo_opia</code>
           </div>
+          <p className="text-xs text-muted-foreground">Click a variable to copy its key name.</p>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Variables</p>
             <div className="rounded-md border bg-muted/40 divide-y">
-              <div className="flex gap-3 p-3">
-                <code className="text-xs text-indigo-600 w-36 shrink-0">order_number</code>
-                <p className="text-sm text-slate-700">Birthday! Celebrate your special day with LOGO with Flat 40% off! Valid for</p>
-              </div>
-              <div className="flex gap-3 p-3">
-                <code className="text-xs text-indigo-600 w-36 shrink-0">dispatched_order</code>
-                <p className="text-sm text-slate-700">wish you a great year ahead</p>
-              </div>
+              {[
+                { key: 'order_number', value: 'Birthday! Celebrate your special day with LOGO with Flat 40% off! Valid for' },
+                { key: 'dispatched_order', value: 'wish you a great year ahead' },
+              ].map(({ key, value }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="w-full flex gap-3 p-3 text-left hover:bg-indigo-50 transition-colors group"
+                  onClick={() => {
+                    navigator.clipboard.writeText(key);
+                    toast.success(`Copied: ${key}`);
+                  }}
+                >
+                  <code className="text-xs text-indigo-600 w-36 shrink-0 group-hover:text-indigo-700">{key}</code>
+                  <p className="text-sm text-slate-700">{value}</p>
+                </button>
+              ))}
             </div>
           </div>
           <Button variant="outline" onClick={() => setVarsModalOpen(false)} className="w-full">Close</Button>
