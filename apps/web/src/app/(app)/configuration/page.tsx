@@ -329,6 +329,7 @@ function WhatsAppTab() {
     isActive: true,
   });
 
+  const [varsModalOpen, setVarsModalOpen] = useState(false);
   const [testForm, setTestForm] = useState({ to: '', template_name: '' });
 
   const updateMutation = useMutation({
@@ -411,6 +412,16 @@ function WhatsAppTab() {
             </div>
           </div>
 
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setVarsModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+            >
+              Select Template Variables
+            </button>
+          </div>
+
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -429,6 +440,30 @@ function WhatsAppTab() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Template Variables Modal */}
+      <Dialog open={varsModalOpen} onClose={() => setVarsModalOpen(false)} title="Template Variables">
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Template</p>
+            <code className="text-sm font-medium">birth_message_logo_opia</code>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Variables</p>
+            <div className="rounded-md border bg-muted/40 divide-y">
+              <div className="flex gap-3 p-3">
+                <code className="text-xs text-indigo-600 w-36 shrink-0">order_number</code>
+                <p className="text-sm text-slate-700">Birthday! Celebrate your special day with LOGO with Flat 40% off! Valid for</p>
+              </div>
+              <div className="flex gap-3 p-3">
+                <code className="text-xs text-indigo-600 w-36 shrink-0">dispatched_order</code>
+                <p className="text-sm text-slate-700">wish you a great year ahead</p>
+              </div>
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => setVarsModalOpen(false)} className="w-full">Close</Button>
+        </div>
+      </Dialog>
 
       {/* Test Send */}
       <Card>
