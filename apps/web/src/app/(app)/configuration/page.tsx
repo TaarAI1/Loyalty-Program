@@ -330,6 +330,7 @@ function WhatsAppTab() {
   });
 
   const [varsModalOpen, setVarsModalOpen] = useState(false);
+  const [birthdayVars, setBirthdayVars] = useState({ order_number: '', dispatched_order: '' });
   const [testForm, setTestForm] = useState({ to: '', template_name: '' });
 
   const updateMutation = useMutation({
@@ -358,6 +359,20 @@ function WhatsAppTab() {
     mutationFn: () => configApi.testWhatsApp(testForm),
     onSuccess: () => toast.success('Test message queued successfully'),
     onError: (err) => toast.error(String(err)),
+  });
+
+  const saveVarsMutation = useMutation({
+    mutationFn: () =>
+      configApi.updateWhatsApp({
+        birthdayVarOrder: birthdayVars.order_number || undefined,
+        birthdayVarDispatched: birthdayVars.dispatched_order || undefined,
+      }),
+    onSuccess: () => {
+      toast.success('Birthday template variables saved');
+      qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
+      setVarsModalOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
@@ -457,7 +472,14 @@ function WhatsAppTab() {
             </Button>
             <button
               type="button"
-              onClick={() => setVarsModalOpen(true)}
+              onClick={() => {
+                const dc = displayConfig as Record<string, string>;
+                setBirthdayVars({
+                  order_number: dc.birthdayVarOrder ?? '',
+                  dispatched_order: dc.birthdayVarDispatched ?? '',
+                });
+                setVarsModalOpen(true);
+              }}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors"
             >
               Select Template Variables
@@ -468,35 +490,44 @@ function WhatsAppTab() {
 
       {/* Template Variables Modal */}
       <Dialog open={varsModalOpen} onClose={() => setVarsModalOpen(false)} title="Template Variables">
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Birthday section */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Template</p>
-            <code className="text-sm font-medium">birth_message_logo_opia</code>
-          </div>
-          <p className="text-xs text-muted-foreground">Click a variable to copy its key name.</p>
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Variables</p>
-            <div className="rounded-md border bg-muted/40 divide-y">
-              {[
-                { key: 'order_number', value: 'Birthday! Celebrate your special day with LOGO with Flat 40% off! Valid for' },
-                { key: 'dispatched_order', value: 'wish you a great year ahead' },
-              ].map(({ key, value }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className="w-full flex gap-3 p-3 text-left hover:bg-indigo-50 transition-colors group"
-                  onClick={() => {
-                    navigator.clipboard.writeText(key);
-                    toast.success(`Copied: ${key}`);
-                  }}
-                >
-                  <code className="text-xs text-indigo-600 w-36 shrink-0 group-hover:text-indigo-700">{key}</code>
-                  <p className="text-sm text-slate-700">{value}</p>
-                </button>
-              ))}
+            <p className="text-sm font-semibold mb-3">Birthday</p>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="var-order-number">order_number</Label>
+                <Input
+                  id="var-order-number"
+                  placeholder="e.g. Birthday! Celebrate your special day with LOGO with Flat 40% off!"
+                  value={birthdayVars.order_number}
+                  onChange={(e) => setBirthdayVars((v) => ({ ...v, order_number: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="var-dispatched-order">dispatched_order</Label>
+                <Input
+                  id="var-dispatched-order"
+                  placeholder="e.g. wish you a great year ahead"
+                  value={birthdayVars.dispatched_order}
+                  onChange={(e) => setBirthdayVars((v) => ({ ...v, dispatched_order: e.target.value }))}
+                />
+              </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setVarsModalOpen(false)} className="w-full">Close</Button>
+
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              loading={saveVarsMutation.isPending}
+              onClick={() => saveVarsMutation.mutate()}
+            >
+              Save
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={() => setVarsModalOpen(false)}>
+              Cancel
+            </Button>
+          </div>
         </div>
       </Dialog>
 

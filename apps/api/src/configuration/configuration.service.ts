@@ -94,6 +94,8 @@ export class ConfigurationService {
       apiUrl?: string;
       apiKey?: string;
       csrfToken?: string;
+      birthdayVarOrder?: string;
+      birthdayVarDispatched?: string;
     },
     changedBy?: string,
   ) {
