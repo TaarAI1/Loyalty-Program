@@ -13,8 +13,8 @@ export class BirthdayJob {
     private readonly whatsapp: WhatsAppService,
   ) {}
 
-  /** Run every 5 minutes */
-  @Cron('*/5 * * * *', { name: 'birthday-discount' })
+  /** Run daily at 6 AM */
+  @Cron('0 6 * * *', { name: 'birthday-discount' })
   async handle() {
     this.logger.log({ job: 'BirthdayJob' }, 'Starting birthday job');
     const start = Date.now();
