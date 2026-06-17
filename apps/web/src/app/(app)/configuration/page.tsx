@@ -330,7 +330,9 @@ function WhatsAppTab() {
   });
 
   const [varsModalOpen, setVarsModalOpen] = useState(false);
+  const [activeVarsTab, setActiveVarsTab] = useState<'birthday' | 'registration'>('birthday');
   const [birthdayVars, setBirthdayVars] = useState({ order_number: '', dispatched_order: '' });
+  const [regVars, setRegVars] = useState({ order_no_1: '', dispatched_order1: '' });
   const [testForm, setTestForm] = useState({ to: '', template_name: '' });
 
   const updateMutation = useMutation({
@@ -362,13 +364,21 @@ function WhatsAppTab() {
   });
 
   const saveVarsMutation = useMutation({
-    mutationFn: () =>
-      configApi.updateWhatsApp({
-        birthdayVarOrder: birthdayVars.order_number || undefined,
-        birthdayVarDispatched: birthdayVars.dispatched_order || undefined,
-      }),
+    mutationFn: () => {
+      if (activeVarsTab === 'birthday') {
+        return configApi.updateWhatsApp({
+          birthdayVarOrder:     birthdayVars.order_number    || undefined,
+          birthdayVarDispatched: birthdayVars.dispatched_order || undefined,
+        });
+      } else {
+        return configApi.updateWhatsApp({
+          regVarOrderNo1:    regVars.order_no_1        || undefined,
+          regVarDispatched1: regVars.dispatched_order1 || undefined,
+        });
+      }
+    },
     onSuccess: () => {
-      toast.success('Birthday template variables saved');
+      toast.success(`${activeVarsTab === 'birthday' ? 'Birthday' : 'Registration'} variables saved`);
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
       setVarsModalOpen(false);
     },
@@ -475,9 +485,14 @@ function WhatsAppTab() {
               onClick={() => {
                 const dc = displayConfig as Record<string, string>;
                 setBirthdayVars({
-                  order_number: dc.birthdayVarOrder ?? '',
+                  order_number:     dc.birthdayVarOrder      ?? '',
                   dispatched_order: dc.birthdayVarDispatched ?? '',
                 });
+                setRegVars({
+                  order_no_1:       dc.regVarOrderNo1    ?? '',
+                  dispatched_order1: dc.regVarDispatched1 ?? '',
+                });
+                setActiveVarsTab('birthday');
                 setVarsModalOpen(true);
               }}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors"
@@ -490,10 +505,26 @@ function WhatsAppTab() {
 
       {/* Template Variables Modal */}
       <Dialog open={varsModalOpen} onClose={() => setVarsModalOpen(false)} title="Template Variables">
-        <div className="space-y-5">
-          {/* Birthday section */}
-          <div>
-            <p className="text-sm font-semibold mb-3">Birthday</p>
+        <div className="space-y-4">
+          {/* Tab headers */}
+          <div className="flex gap-0 border-b">
+            {(['birthday', 'registration'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveVarsTab(tab)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px
+                  ${activeVarsTab === tab
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+              >
+                {tab === 'birthday' ? 'Birthday' : 'Registration Message'}
+              </button>
+            ))}
+          </div>
+
+          {/* Birthday fields */}
+          {activeVarsTab === 'birthday' && (
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="var-order-number">order_number</Label>
@@ -514,9 +545,33 @@ function WhatsAppTab() {
                 />
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex gap-2">
+          {/* Registration fields */}
+          {activeVarsTab === 'registration' && (
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="var-order-no-1">order_no_1</Label>
+                <Input
+                  id="var-order-no-1"
+                  placeholder="e.g. enrolling in"
+                  value={regVars.order_no_1}
+                  onChange={(e) => setRegVars((v) => ({ ...v, order_no_1: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="var-dispatched-order1">dispatched_order1</Label>
+                <Input
+                  id="var-dispatched-order1"
+                  placeholder="e.g. value loyalty and will reward"
+                  value={regVars.dispatched_order1}
+                  onChange={(e) => setRegVars((v) => ({ ...v, dispatched_order1: e.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
             <Button
               className="flex-1"
               loading={saveVarsMutation.isPending}

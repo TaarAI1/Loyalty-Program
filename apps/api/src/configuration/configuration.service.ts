@@ -98,6 +98,8 @@ export class ConfigurationService {
       csrfToken?: string;
       birthdayVarOrder?: string;
       birthdayVarDispatched?: string;
+      regVarOrderNo1?: string;
+      regVarDispatched1?: string;
     },
     changedBy?: string,
   ) {

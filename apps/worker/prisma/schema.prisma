@@ -151,6 +151,8 @@ model WhatsappConfig {
   csrfToken             String?   @map("csrf_token")
   birthdayVarOrder      String?   @map("birthday_var_order")
   birthdayVarDispatched String?   @map("birthday_var_dispatched")
+  regVarOrderNo1        String?   @map("reg_var_order_no_1")
+  regVarDispatched1     String?   @map("reg_var_dispatched_order1")
 
   @@map("whatsapp_config")
 }
