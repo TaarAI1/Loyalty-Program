@@ -78,8 +78,8 @@ export class ConfigurationService {
     return {
       ...config,
       accessToken: config.accessToken ? '***ENCRYPTED***' : null,
-      apiKey: config.apiKey ? '***SAVED***' : null,
-      csrfToken: config.csrfToken ? '***SAVED***' : null,
+      apiKey: config.apiKey ? this.encryption.decrypt(config.apiKey) : null,
+      csrfToken: config.csrfToken ? this.encryption.decrypt(config.csrfToken) : null,
     };
   }
 
@@ -154,7 +154,8 @@ export class ConfigurationService {
     }));
 
     try {
-      await axios.post(config.apiUrl, form, {
+      const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
+      await axios.post(apiUrl, form, {
         headers: {
           ...form.getHeaders(),
           accept:        'application/json',

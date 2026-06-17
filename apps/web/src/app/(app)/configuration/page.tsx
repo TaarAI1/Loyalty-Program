@@ -334,8 +334,8 @@ function WhatsAppTab() {
     const c = config as Record<string, unknown>;
     setForm({
       apiUrl:               (c.apiUrl               as string)  ?? '',
-      apiKey:               '',
-      csrfToken:            '',
+      apiKey:               (c.apiKey               as string)  ?? '',
+      csrfToken:            (c.csrfToken            as string)  ?? '',
       templateExpiry:       (c.templateExpiry        as string)  ?? '',
       templateBirthday:     (c.templateBirthday      as string)  ?? '',
       templatePointsEarned: (c.templatePointsEarned  as string)  ?? '',
@@ -436,24 +436,18 @@ function WhatsAppTab() {
             <div className="space-y-1">
               <Label>X-Api-Key</Label>
               <Input
-                placeholder={(displayConfig as Record<string, string>).apiKey === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter API key...'}
+                placeholder="Enter API key..."
                 value={form.apiKey}
                 onChange={(e) => setForm((f) => ({ ...f, apiKey: e.target.value }))}
               />
-              {(displayConfig as Record<string, string>).apiKey === '***SAVED***' && !form.apiKey && (
-                <p className="text-[11px] text-green-600">API key saved. Enter a new value to replace it.</p>
-              )}
             </div>
             <div className="space-y-1">
               <Label>X-CSRFTOKEN</Label>
               <Input
-                placeholder={(displayConfig as Record<string, string>).csrfToken === '***SAVED***' ? '●●●●●●●● (saved)' : 'Enter CSRF token...'}
+                placeholder="Enter CSRF token..."
                 value={form.csrfToken}
                 onChange={(e) => setForm((f) => ({ ...f, csrfToken: e.target.value }))}
               />
-              {(displayConfig as Record<string, string>).csrfToken === '***SAVED***' && !form.csrfToken && (
-                <p className="text-[11px] text-green-600">CSRF token saved. Enter a new value to replace it.</p>
-              )}
             </div>
           </div>
 

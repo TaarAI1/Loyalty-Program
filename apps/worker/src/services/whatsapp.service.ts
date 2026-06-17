@@ -31,9 +31,10 @@ export class WhatsAppService {
     form.append('template_name',  payload.templateName);
     form.append('vars', JSON.stringify(payload.vars ?? {}));
 
+    const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
     const startMs = Date.now();
     try {
-      await axios.post(config.apiUrl, form, {
+      await axios.post(apiUrl, form, {
         headers: {
           ...form.getHeaders(),
           accept:        'application/json',
