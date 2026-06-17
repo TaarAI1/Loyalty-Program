@@ -446,7 +446,7 @@ function WhatsAppTab() {
             <h4 className="text-sm font-medium mb-3">Message Templates</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
-                { key: 'templatePointsEarned', label: 'Points Earned', current: displayConfig.templatePointsEarned },
+                { key: 'templatePointsEarned', label: 'Registration', current: displayConfig.templatePointsEarned },
                 { key: 'templateTierUpgrade', label: 'Tier Upgrade', current: displayConfig.templateTierUpgrade },
                 { key: 'templateExpiry', label: 'Points Expiry', current: displayConfig.templateExpiry },
                 { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
