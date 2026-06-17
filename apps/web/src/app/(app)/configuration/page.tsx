@@ -329,6 +329,21 @@ function WhatsAppTab() {
     isActive: true,
   });
 
+  useEffect(() => {
+    if (!config) return;
+    const c = config as Record<string, unknown>;
+    setForm({
+      apiUrl:               (c.apiUrl               as string)  ?? '',
+      apiKey:               '',
+      csrfToken:            '',
+      templateExpiry:       (c.templateExpiry        as string)  ?? '',
+      templateBirthday:     (c.templateBirthday      as string)  ?? '',
+      templatePointsEarned: (c.templatePointsEarned  as string)  ?? '',
+      templateTierUpgrade:  (c.templateTierUpgrade   as string)  ?? '',
+      isActive:             (c.isActive              as boolean) ?? true,
+    });
+  }, [config]);
+
   const [varsModalOpen, setVarsModalOpen] = useState(false);
   const [activeVarsTab, setActiveVarsTab] = useState<'birthday' | 'registration'>('birthday');
   const [birthdayVars, setBirthdayVars] = useState({ order_number: '', dispatched_order: '' });
