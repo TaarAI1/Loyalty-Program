@@ -1,7 +1,8 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from './points.service';
-import { WebhookTransactionDto, WebhookCustomerDto, normalizeLocalPhone } from '@loyalty/shared';
+import { QueueService } from '../queue/queue.service';
+import { WebhookTransactionDto, WebhookCustomerDto, normalizeLocalPhone, formatPhoneNumber } from '@loyalty/shared';
 
 @Injectable()
 export class WebhooksService {
@@ -10,6 +11,7 @@ export class WebhooksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly points: PointsService,
+    private readonly queue: QueueService,
   ) {}
 
   async handleTransaction(dto: WebhookTransactionDto) {
@@ -124,6 +126,29 @@ export class WebhooksService {
     });
 
     this.logger.log({ customerId: customer.id }, 'Customer created via webhook');
+
+    // Send registration WhatsApp message
+    try {
+      const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+      if (waConfig?.apiUrl && waConfig.templatePointsEarned) {
+        const phone = formatPhoneNumber(customer.mobileNumber, customer.countryCode);
+        await this.queue.enqueueWhatsApp({
+          to: phone,
+          templateName: waConfig.templatePointsEarned,
+          customerName: customer.name,
+          vars: {
+            order_no_1:        waConfig.regVarOrderNo1    ?? '',
+            dispatched_order1: waConfig.regVarDispatched1 ?? '',
+          },
+          customerId: customer.id,
+          notificationType: 'registration',
+        });
+        this.logger.log({ customerId: customer.id, phone }, 'Registration WhatsApp queued');
+      }
+    } catch (err) {
+      this.logger.error({ err, customerId: customer.id }, 'Failed to queue registration WhatsApp');
+    }
+
     return this.buildCustomerResponse('created', customer.id);
   }
 

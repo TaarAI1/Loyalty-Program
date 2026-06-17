@@ -259,10 +259,35 @@ export class PointsService {
         newTier,
         previousTierName: currentTierName,
         newTotalPoints,
+        isNewCustomer,
       };
     });
 
     const tierUpgraded = result.newTier.name !== result.previousTierName;
+
+    // Enqueue registration WhatsApp for brand-new customers
+    if (result.isNewCustomer) {
+      try {
+        const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+        if (waConfig?.apiUrl && waConfig.templatePointsEarned) {
+          const phone = formatPhoneNumber(result.customer.mobileNumber, result.customer.countryCode);
+          await this.queue.enqueueWhatsApp({
+            to: phone,
+            templateName: waConfig.templatePointsEarned,
+            customerName: result.customer.name,
+            vars: {
+              order_no_1:        waConfig.regVarOrderNo1    ?? '',
+              dispatched_order1: waConfig.regVarDispatched1 ?? '',
+            },
+            customerId: result.customer.id,
+            notificationType: 'registration',
+          });
+          this.logger.log({ customerId: result.customer.id, phone }, 'Registration WhatsApp queued');
+        }
+      } catch (err) {
+        this.logger.error({ err, customerId: result.customer.id }, 'Failed to queue registration WhatsApp');
+      }
+    }
 
     // Enqueue WhatsApp points-earned notification
     await this.enqueuePointsEarnedNotification(result.customer, result.pointsEarned, result.newTotalPoints, result.newTier.name);
