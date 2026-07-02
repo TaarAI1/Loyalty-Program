@@ -289,6 +289,29 @@ export class PointsService {
       }
     }
 
+    // Enqueue transaction WhatsApp notification
+    try {
+      const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+      if (waConfig?.apiUrl && waConfig.templateTierUpgrade) {
+        const phone = formatPhoneNumber(result.customer.mobileNumber, result.customer.countryCode);
+        await this.queue.enqueueWhatsApp({
+          to: phone,
+          templateName: waConfig.templateTierUpgrade,
+          customerName: result.customer.name,
+          vars: {
+            sms_invoice:       result.transaction.receiptNo ?? result.transaction.retailproTransactionId,
+            sms_no:            result.transaction.retailproTransactionId,
+            remaining_balance: String(result.newTotalPoints),
+          },
+          customerId: result.customer.id,
+          notificationType: 'transaction',
+        });
+        this.logger.log({ customerId: result.customer.id, phone }, 'Transaction WhatsApp queued');
+      }
+    } catch (err) {
+      this.logger.error({ err, customerId: result.customer.id }, 'Failed to queue transaction WhatsApp');
+    }
+
     // Enqueue WhatsApp points-earned notification
     await this.enqueuePointsEarnedNotification(result.customer, result.pointsEarned, result.newTotalPoints, result.newTier.name);
 

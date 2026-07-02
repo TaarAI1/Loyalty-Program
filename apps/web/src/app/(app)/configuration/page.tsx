@@ -345,7 +345,7 @@ function WhatsAppTab() {
   }, [config]);
 
   const [varsModalOpen, setVarsModalOpen] = useState(false);
-  const [activeVarsTab, setActiveVarsTab] = useState<'birthday' | 'registration'>('birthday');
+  const [activeVarsTab, setActiveVarsTab] = useState<'birthday' | 'registration' | 'transaction'>('birthday');
   const [birthdayVars, setBirthdayVars] = useState({ order_number: '', dispatched_order: '' });
   const [regVars, setRegVars] = useState({ order_no_1: '', dispatched_order1: '' });
   const [testForm, setTestForm] = useState({ to: '', template_name: '' });
@@ -517,7 +517,7 @@ function WhatsAppTab() {
         <div className="space-y-4">
           {/* Tab headers */}
           <div className="flex gap-0 border-b">
-            {(['birthday', 'registration'] as const).map((tab) => (
+            {(['birthday', 'registration', 'transaction'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -527,7 +527,7 @@ function WhatsAppTab() {
                     ? 'border-indigo-600 text-indigo-600'
                     : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
-                {tab === 'birthday' ? 'Birthday' : 'Registration Message'}
+                {tab === 'birthday' ? 'Birthday' : tab === 'registration' ? 'Registration Message' : 'Transaction'}
               </button>
             ))}
           </div>
@@ -580,16 +580,37 @@ function WhatsAppTab() {
             </div>
           )}
 
+          {/* Transaction fields — read-only, values are dynamic per transaction */}
+          {activeVarsTab === 'transaction' && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                These variables are filled automatically from each transaction.
+              </p>
+              {[
+                { key: 'sms_invoice',       desc: 'Receipt / invoice number' },
+                { key: 'sms_no',            desc: 'Transaction ID' },
+                { key: 'remaining_balance', desc: 'Customer remaining points' },
+              ].map(({ key, desc }) => (
+                <div key={key} className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2">
+                  <code className="text-xs text-indigo-600 w-40 shrink-0">{key}</code>
+                  <span className="text-sm text-muted-foreground">{desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2 pt-1">
-            <Button
-              className="flex-1"
-              loading={saveVarsMutation.isPending}
-              onClick={() => saveVarsMutation.mutate()}
-            >
-              Save
-            </Button>
+            {activeVarsTab !== 'transaction' && (
+              <Button
+                className="flex-1"
+                loading={saveVarsMutation.isPending}
+                onClick={() => saveVarsMutation.mutate()}
+              >
+                Save
+              </Button>
+            )}
             <Button variant="outline" className="flex-1" onClick={() => setVarsModalOpen(false)}>
-              Cancel
+              {activeVarsTab === 'transaction' ? 'Close' : 'Cancel'}
             </Button>
           </div>
         </div>
