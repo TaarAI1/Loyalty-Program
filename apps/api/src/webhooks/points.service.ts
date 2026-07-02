@@ -312,13 +312,8 @@ export class PointsService {
       this.logger.error({ err, customerId: result.customer.id }, 'Failed to queue transaction WhatsApp');
     }
 
-    // Enqueue WhatsApp points-earned notification
-    await this.enqueuePointsEarnedNotification(result.customer, result.pointsEarned, result.newTotalPoints, result.newTier.name);
-
-    // Enqueue tier-upgrade notification if applicable
-    if (tierUpgraded && result.previousTierName !== null) {
-      await this.enqueueTierUpgradeNotification(result.customer, result.newTier.name);
-    }
+    // Tier-upgrade notification (no longer sending points-earned or tier-upgrade WhatsApp
+    // since the transaction WhatsApp above covers the per-transaction notification)
 
     return {
       success: true,

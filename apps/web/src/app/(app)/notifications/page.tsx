@@ -208,7 +208,7 @@ export default function NotificationsPage() {
                               <div className="flex flex-col gap-1">
                                 <Badge className={statusColor(log.status)}>{log.status}</Badge>
                                 {log.errorMessage && (
-                                  <span className="text-xs text-red-600 max-w-32 truncate">
+                                  <span className="text-xs text-red-600 max-w-xs break-all whitespace-normal">
                                     {log.errorMessage}
                                   </span>
                                 )}
