@@ -456,7 +456,7 @@ function WhatsAppTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
                 { key: 'templatePointsEarned', label: 'Registration', current: displayConfig.templatePointsEarned },
-                { key: 'templateTierUpgrade', label: 'Tier Upgrade', current: displayConfig.templateTierUpgrade },
+                { key: 'templateTierUpgrade', label: 'Transaction', current: displayConfig.templateTierUpgrade },
                 { key: 'templateExpiry', label: 'Points Expiry', current: displayConfig.templateExpiry },
                 { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
               ].map(({ key, label, current }) => (
