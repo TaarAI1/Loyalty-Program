@@ -51,10 +51,14 @@ export class NotificationsService {
       const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
       if (!config) return { success: false, message: 'WhatsApp not configured' };
 
+      const customer = log.customerId
+        ? await this.prisma.customer.findUnique({ where: { id: log.customerId }, select: { name: true } })
+        : null;
+
       await this.queue.enqueueWhatsApp({
         to: formatPhoneNumber(log.recipient),
         templateName: log.content ?? 'default',
-        customerName: '',
+        customerName: customer?.name ?? '',
         vars: {},
         customerId: log.customerId ?? undefined,
         notificationType: 'resend',
