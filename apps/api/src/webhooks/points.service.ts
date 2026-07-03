@@ -299,9 +299,9 @@ export class PointsService {
           templateName: waConfig.templateTierUpgrade,
           customerName: result.customer.name,
           vars: {
-            sms_invoice:     result.transaction.receiptNo ?? result.transaction.retailproTransactionId,
-            sms_no:          result.transaction.retailproTransactionId,
-            remaing_balance: String(result.newTotalPoints),
+            sms_invoice:     result.transaction.receiptNo ?? result.transaction.retailproTransactionId ?? 'N/A',
+            sms_no:          result.transaction.retailproTransactionId ?? 'N/A',
+            remaing_balance: String(result.newTotalPoints ?? 0),
           },
           customerId: result.customer.id,
           notificationType: 'transaction',
