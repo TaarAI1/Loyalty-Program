@@ -27,7 +27,7 @@ export const WebhookTransactionSchema = z.object({
   transaction_date: z.string().datetime({ offset: true }).optional(),
   store:            z.string().max(100).default(''),
   region:           z.string().max(100).default(''),
-  receipt_no:       z.string().min(1).max(100).optional(),
+  receipt_no:       z.string().max(100).optional(),
   outlet:           z.string().max(100).optional(),
   country_code:     z.string().max(5).default('92'),
   redeem_points:    z.number().int().nonnegative().default(0),
