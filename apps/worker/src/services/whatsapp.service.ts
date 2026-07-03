@@ -25,11 +25,22 @@ export class WhatsAppService {
     const apiKey = this.decrypt(config.apiKey);
     const csrf   = this.decrypt(config.csrfToken);
 
+    const rawVars = payload.vars ?? {};
+    const safeVars: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawVars)) {
+      safeVars[k] = v || 'N/A';
+    }
+
+    this.logger.debug(
+      { to: payload.to, template: payload.templateName, vars: safeVars },
+      'Sending WhatsApp — vars payload',
+    );
+
     const form = new FormData();
     form.append('customer_name',  payload.customerName);
     form.append('phone_number',   payload.to);
     form.append('template_name',  payload.templateName);
-    form.append('vars', JSON.stringify(payload.vars ?? {}));
+    form.append('vars', JSON.stringify(safeVars));
 
     const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
     const startMs = Date.now();
