@@ -30,6 +30,10 @@ export class WhatsAppService {
     form.append('phone_number',   payload.to);
     form.append('template_name',  payload.templateName);
     form.append('vars', JSON.stringify(payload.vars ?? {}));
+    // Also send each var as an individual field (some templates expect direct params)
+    for (const [key, value] of Object.entries(payload.vars ?? {})) {
+      form.append(key, value);
+    }
 
     const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
     const startMs = Date.now();
