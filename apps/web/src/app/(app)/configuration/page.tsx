@@ -902,58 +902,62 @@ function EmailTab() {
                 onChange={(e) => setForm((f) => ({ ...f, fromName: e.target.value }))}
               />
             </div>
-            <div className="space-y-1 md:col-span-2">
-              <Label>Forensic Alert Email</Label>
-              <Input
-                type="email"
-                placeholder={String(c?.alertEmail ?? 'security@yourbrand.com')}
-                value={form.alertEmail}
-                onChange={(e) => setForm((f) => ({ ...f, alertEmail: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground">Receives automated fraud / forensic alert emails.</p>
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <Label>Points Expiry Email</Label>
-              <Input
-                type="email"
-                placeholder={String(c?.expiryEmail ?? 'loyalty@yourbrand.com')}
-                value={form.expiryEmail}
-                onChange={(e) => setForm((f) => ({ ...f, expiryEmail: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground">Receives automated points expiry warning emails (D-7, D-3, D-1).</p>
-            </div>
           </div>
         </div>
 
-        {/* Email Body */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Email Body</p>
+        {/* Forensic Alert Email — recipient + body together */}
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Forensic Alert Email</p>
           <div className="space-y-1">
-            <Label>Email Body Text</Label>
+            <Label>Recipient Address</Label>
+            <Input
+              type="email"
+              placeholder={String(c?.alertEmail ?? 'security@yourbrand.com')}
+              value={form.alertEmail}
+              onChange={(e) => setForm((f) => ({ ...f, alertEmail: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">Receives automated fraud / forensic alert emails.</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Email Body</Label>
             <textarea
-              className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Enter the body text for outgoing emails. Leave blank to use the default message."
+              className="w-full min-h-[100px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Enter the body text for forensic alert emails. Leave blank to use the default message."
               value={form.emailBody}
               onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
             />
-            <p className="text-xs text-muted-foreground">Used as the body of the test email. Supports plain text.</p>
+            <p className="text-xs text-muted-foreground">
+              Supports plain text. Available variables: <code className="text-indigo-600">{'{customername}'}</code>,{' '}
+              <code className="text-indigo-600">{'{phoneno}'}</code>,{' '}
+              <code className="text-indigo-600">{'{date}'}</code>.
+            </p>
           </div>
         </div>
 
-        {/* Points Expiry Email Body */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Points Expiry Email Body</p>
+        {/* Points Expiry Email — recipient + body together */}
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Email</p>
           <div className="space-y-1">
-            <Label>Points Expiry Email Body</Label>
+            <Label>Recipient Address</Label>
+            <Input
+              type="email"
+              placeholder={String(c?.expiryEmail ?? 'loyalty@yourbrand.com')}
+              value={form.expiryEmail}
+              onChange={(e) => setForm((f) => ({ ...f, expiryEmail: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">Receives automated points expiry warning emails (D-7, D-3, D-1).</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Email Body</Label>
             <textarea
-              className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full min-h-[100px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Dear {customername}, your {points} points will expire on {expiry_date}. Visit us to redeem them before they expire."
               value={form.expiryEmailBody}
               onChange={(e) => setForm((f) => ({ ...f, expiryEmailBody: e.target.value }))}
             />
             <p className="text-xs text-muted-foreground">
-              Sent to the Points Expiry Email when points are about to expire (D-7, D-3, D-1).
-              Available variables: <code className="text-indigo-600">{'{customername}'}</code>,{' '}
+              Leave blank to use the default message. Available variables:{' '}
+              <code className="text-indigo-600">{'{customername}'}</code>,{' '}
               <code className="text-indigo-600">{'{points}'}</code>,{' '}
               <code className="text-indigo-600">{'{expiry_date}'}</code>.
             </p>
