@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { formatPhoneNumber } from '@loyalty/shared';
+import { formatPhoneNumber, getExpiryDate } from '@loyalty/shared';
 
 @Injectable()
 export class CustomersService {
@@ -219,6 +219,8 @@ export class CustomersService {
 
     const newBalance = customer.totalPoints + points;
     const newLifetime = customer.lifetimePoints + points;
+    const today = new Date();
+    const expiryDate = getExpiryDate(today);
 
     await this.prisma.$transaction([
       this.prisma.customer.update({
@@ -234,6 +236,17 @@ export class CustomersService {
           reason: 'MANUAL_AWARD',
           referenceId: `MANUAL-${Date.now()}-${awardedBy}`,
           notes: reason,
+        },
+      }),
+      // Create an expiry row so manually awarded points expire after 365 days,
+      // and are included correctly in FIFO redemption consumption
+      this.prisma.pointsExpiry.create({
+        data: {
+          customerId: id,
+          pointsAmount: points,
+          pointsRemaining: points,
+          earningDate: today,
+          expiryDate,
         },
       }),
     ]);

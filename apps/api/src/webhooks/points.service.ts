@@ -212,6 +212,9 @@ export class PointsService {
             referenceId: retailproTransactionId,
           },
         });
+        // FIFO: consume oldest-expiring batches first so the expiry job never
+        // deducts points the customer has already spent
+        await this.consumePointsFIFO(tx, c.id, redeemPoints);
       }
 
       // Points ledger: earned entry
@@ -226,13 +229,14 @@ export class PointsService {
         },
       });
 
-      // Points expiry entry (365 days rolling)
+      // Points expiry entry (365 days rolling); pointsRemaining tracks unconsumed points
       const today = new Date();
       const expiryDate = getExpiryDate(today);
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,
           pointsAmount: pointsEarned,
+          pointsRemaining: pointsEarned,
           earningDate: today,
           expiryDate,
         },
@@ -367,6 +371,9 @@ export class PointsService {
         },
       });
 
+      // FIFO: consume oldest-expiring batches so the expiry job never double-deducts
+      await this.consumePointsFIFO(tx, params.customerId, params.pointsToRedeem);
+
       this.logger.log(
         {
           customerId: params.customerId,
@@ -380,6 +387,56 @@ export class PointsService {
     });
 
     return { success: true, newBalance: result };
+  }
+
+  /**
+   * FIFO expiry batch consumption.
+   * When a customer redeems points, reduce pointsRemaining on the oldest-expiring
+   * active batches first. This ensures the nightly expiry job only ever deducts
+   * points that have NOT already been spent.
+   *
+   * Must be called inside an active Prisma $transaction.
+   */
+  private async consumePointsFIFO(
+    tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
+    customerId: string,
+    pointsToConsume: number,
+  ): Promise<void> {
+    if (pointsToConsume <= 0) return;
+
+    // Fetch active batches with remaining points, oldest expiry date first
+    const batches = await tx.pointsExpiry.findMany({
+      where: {
+        customerId,
+        isExpired: false,
+        pointsRemaining: { gt: 0 },
+      },
+      orderBy: { expiryDate: 'asc' },
+    });
+
+    let remaining = pointsToConsume;
+
+    for (const batch of batches) {
+      if (remaining <= 0) break;
+
+      const consume = Math.min(batch.pointsRemaining, remaining);
+
+      await tx.pointsExpiry.update({
+        where: { id: batch.id },
+        data: { pointsRemaining: { decrement: consume } },
+      });
+
+      remaining -= consume;
+    }
+
+    // If remaining > 0 after consuming all batches it means something is
+    // inconsistent (should not happen since balance is validated before redeem)
+    if (remaining > 0) {
+      this.logger.warn(
+        { customerId, pointsToConsume, unaccounted: remaining },
+        'FIFO consumption: could not fully account for redeemed points across expiry batches',
+      );
+    }
   }
 
   /** RFM-based segmentation */

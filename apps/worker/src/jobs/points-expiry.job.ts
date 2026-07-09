@@ -41,10 +41,12 @@ export class PointsExpiryJob {
     targetDate.setDate(targetDate.getDate() + daysAhead);
     const dateStr = targetDate.toISOString().slice(0, 10);
 
+    // Only warn about batches that still have points to expire (pointsRemaining > 0)
     const expiringRows = await this.prisma.pointsExpiry.findMany({
       where: {
         isExpired: false,
         [sentFlag]: false,
+        pointsRemaining: { gt: 0 },
         expiryDate: new Date(dateStr),
       },
       include: {
@@ -68,7 +70,8 @@ export class PointsExpiryJob {
             templateName: config.templateExpiry,
             customerName: row.customer.name,
             vars: {
-              points:      String(row.pointsAmount),
+              // Use pointsRemaining so the customer sees the actual amount at risk
+              points:      String(row.pointsRemaining),
               days_ahead:  String(daysAhead),
               expiry_date: dateStr,
             },
@@ -83,7 +86,7 @@ export class PointsExpiryJob {
         });
 
         this.logger.log(
-          { customerId: row.customerId, pointsAmount: row.pointsAmount, daysAhead },
+          { customerId: row.customerId, pointsRemaining: row.pointsRemaining, daysAhead },
           `Expiry warning D-${daysAhead} sent`,
         );
       } catch (err) {
@@ -96,9 +99,12 @@ export class PointsExpiryJob {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Only process batches with pointsRemaining > 0 — batches fully consumed by
+    // redemptions have nothing left to expire
     const expiredRows = await this.prisma.pointsExpiry.findMany({
       where: {
         isExpired: false,
+        pointsRemaining: { gt: 0 },
         expiryDate: { lte: today },
       },
       include: { customer: true },
@@ -110,7 +116,10 @@ export class PointsExpiryJob {
       try {
         await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const customer = await tx.customer.findUniqueOrThrow({ where: { id: row.customerId } });
-          const newBalance = Math.max(0, customer.totalPoints - row.pointsAmount);
+
+          // Deduct only pointsRemaining — the portion never consumed by redemptions
+          const pointsToExpire = row.pointsRemaining;
+          const newBalance = Math.max(0, customer.totalPoints - pointsToExpire);
 
           await tx.customer.update({
             where: { id: row.customerId },
@@ -120,21 +129,27 @@ export class PointsExpiryJob {
           await tx.pointsLedger.create({
             data: {
               customerId: row.customerId,
-              pointsChange: -row.pointsAmount,
+              pointsChange: -pointsToExpire,
               runningBalance: newBalance,
               reason: 'EXPIRY',
               referenceId: String(row.id),
+              notes: `Batch earned ${row.earningDate.toISOString().slice(0, 10)}: ${row.pointsAmount} earned, ${row.pointsAmount - pointsToExpire} redeemed, ${pointsToExpire} expired`,
             },
           });
 
           await tx.pointsExpiry.update({
             where: { id: row.id },
-            data: { isExpired: true },
+            data: { isExpired: true, pointsRemaining: 0 },
           });
         });
 
         this.logger.log(
-          { customerId: row.customerId, pointsExpired: row.pointsAmount },
+          {
+            customerId: row.customerId,
+            pointsExpired: row.pointsRemaining,
+            originalAmount: row.pointsAmount,
+            alreadyRedeemed: row.pointsAmount - row.pointsRemaining,
+          },
           'Points expired',
         );
       } catch (err) {
