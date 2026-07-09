@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsAppService } from '../services/whatsapp.service';
+import { EmailService } from '../services/email.service';
 import { formatPhoneNumber } from '@loyalty/shared';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class PointsExpiryJob {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsapp: WhatsAppService,
+    private readonly email: EmailService,
   ) {}
 
   /** Run daily at 2 AM */
@@ -21,9 +23,10 @@ export class PointsExpiryJob {
     const start = Date.now();
 
     try {
-      await this.sendExpiryWarnings(7, 'notification_sent_7d', 'template_expiry');
-      await this.sendExpiryWarnings(3, 'notification_sent_3d', 'template_expiry');
-      await this.sendExpiryWarnings(1, 'notification_sent_1d', 'template_expiry');
+      const emailConfig = await this.prisma.emailConfig.findFirst({ where: { id: 1, isActive: true } });
+      await this.sendExpiryWarnings(7, 'notification_sent_7d', 'template_expiry', emailConfig);
+      await this.sendExpiryWarnings(3, 'notification_sent_3d', 'template_expiry', emailConfig);
+      await this.sendExpiryWarnings(1, 'notification_sent_1d', 'template_expiry', emailConfig);
       await this.expirePoints();
     } catch (err) {
       this.logger.error({ err, durationMs: Date.now() - start }, 'PointsExpiryJob failed');
@@ -36,6 +39,7 @@ export class PointsExpiryJob {
     daysAhead: number,
     sentFlag: 'notification_sent_7d' | 'notification_sent_3d' | 'notification_sent_1d',
     _templateField: string,
+    emailConfig: { expiryEmail?: string | null; expiryEmailBody?: string | null; smtpHost?: string | null } | null,
   ) {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + daysAhead);
@@ -59,15 +63,16 @@ export class PointsExpiryJob {
       `Found ${expiringRows.length} expiry warnings for D-${daysAhead}`,
     );
 
-    const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+    const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
 
     for (const row of expiringRows) {
       try {
-        if (config?.apiUrl && config.templateExpiry) {
+        // WhatsApp warning
+        if (waConfig?.apiUrl && waConfig.templateExpiry) {
           const phone = formatPhoneNumber(row.customer.mobileNumber, row.customer.countryCode);
           await this.whatsapp.send({
             to: phone,
-            templateName: config.templateExpiry,
+            templateName: waConfig.templateExpiry,
             customerName: row.customer.name,
             vars: {
               // Use pointsRemaining so the customer sees the actual amount at risk
@@ -75,6 +80,24 @@ export class PointsExpiryJob {
               days_ahead:  String(daysAhead),
               expiry_date: dateStr,
             },
+            customerId: row.customerId,
+            notificationType: `expiry_warning_${daysAhead}d`,
+          });
+        }
+
+        // Email warning — sent to the configured expiryEmail address
+        if (emailConfig?.expiryEmail && emailConfig.smtpHost) {
+          const html = this.buildExpiryEmailHtml(
+            row.customer.name,
+            row.pointsRemaining,
+            dateStr,
+            daysAhead,
+            emailConfig.expiryEmailBody ?? null,
+          );
+          await this.email.send({
+            to: emailConfig.expiryEmail,
+            subject: `Points Expiry Alert — ${row.customer.name} (${row.pointsRemaining} pts expiring in ${daysAhead} day${daysAhead === 1 ? '' : 's'})`,
+            html,
             customerId: row.customerId,
             notificationType: `expiry_warning_${daysAhead}d`,
           });
@@ -93,6 +116,63 @@ export class PointsExpiryJob {
         this.logger.error({ err, rowId: String(row.id) }, `Failed to send expiry warning D-${daysAhead}`);
       }
     }
+  }
+
+  /**
+   * Build HTML email body for a points expiry warning.
+   * If a custom template body is configured it is used with variable substitution;
+   * otherwise a rich default layout is rendered.
+   */
+  private buildExpiryEmailHtml(
+    customerName: string,
+    points: number,
+    expiryDate: string,
+    daysAhead: number,
+    templateBody: string | null,
+  ): string {
+    if (templateBody?.trim()) {
+      const body = templateBody
+        .replace(/\{customername\}/gi, customerName)
+        .replace(/\{points\}/gi, String(points))
+        .replace(/\{expiry_date\}/gi, expiryDate);
+      return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+  <p style="white-space:pre-wrap;font-size:14px;color:#374151;line-height:1.7;">${body}</p>
+</div>`;
+    }
+
+    const generatedAt = new Date().toLocaleString();
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr><td style="background:#d97706;padding:24px 32px;text-align:center;">
+          <p style="margin:0;font-size:13px;color:#fef3c7;letter-spacing:2px;text-transform:uppercase;">LoyaltyPlus</p>
+          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">Points Expiry Alert</h1>
+          <p style="margin:6px 0 0;color:#fef3c7;font-size:14px;">Action required in ${daysAhead} day${daysAhead === 1 ? '' : 's'}</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear Admin,</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+            The following customer has <strong>${points} loyalty points</strong> expiring on <strong>${expiryDate}</strong>.
+          </p>
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Customer Name</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${customerName}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Points Expiring</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#d97706;font-weight:bold;">${points}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Expiry Date</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${expiryDate}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Days Remaining</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${daysAhead}</td></tr>
+          </table>
+          <p style="margin:0;font-size:14px;color:#374151;">Regards,<br><strong>LoyaltyPlus Points Monitor</strong></p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;">
+            This is an automated alert generated by LoyaltyPlus on ${generatedAt}.<br>Do not reply.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
   }
 
   private async expirePoints() {

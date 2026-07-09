@@ -223,17 +223,21 @@ export class ConfigurationService {
       fromName?: string;
       alertEmail?: string;
       emailBody?: string;
+      expiryEmail?: string;
+      expiryEmailBody?: string;
       isActive?: boolean;
     },
     changedBy?: string,
   ) {
     const updateData: Record<string, unknown> = {
       ...data,
-      ...(data.smtpHost   && { smtpHost:   data.smtpHost.trim() }),
-      ...(data.smtpUser   && { smtpUser:   data.smtpUser.trim() }),
-      ...(data.fromEmail  && { fromEmail:  data.fromEmail.trim() }),
-      ...(data.alertEmail && { alertEmail: data.alertEmail.trim() }),
-      ...(data.emailBody !== undefined && { emailBody: data.emailBody }),
+      ...(data.smtpHost        && { smtpHost:        data.smtpHost.trim() }),
+      ...(data.smtpUser        && { smtpUser:        data.smtpUser.trim() }),
+      ...(data.fromEmail       && { fromEmail:       data.fromEmail.trim() }),
+      ...(data.alertEmail      && { alertEmail:      data.alertEmail.trim() }),
+      ...(data.expiryEmail     && { expiryEmail:     data.expiryEmail.trim() }),
+      ...(data.emailBody       !== undefined && { emailBody:      data.emailBody }),
+      ...(data.expiryEmailBody !== undefined && { expiryEmailBody: data.expiryEmailBody }),
     };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);
