@@ -16,8 +16,8 @@ export class PointsExpiryJob {
     private readonly email: EmailService,
   ) {}
 
-  /** Run daily at 2 AM */
-  @Cron('0 2 * * *', { name: 'points-expiry' })
+  /** Production: daily at 2 AM. Non-production: every minute for quick expiry testing. */
+  @Cron(process.env['NODE_ENV'] !== 'production' ? '* * * * *' : '0 2 * * *', { name: 'points-expiry' })
   async handle() {
     this.logger.log({ job: 'PointsExpiryJob' }, 'Starting points expiry job');
     const start = Date.now();

@@ -249,6 +249,108 @@ export class ConfigurationService {
     return { success: true };
   }
 
+  // ── Points Expiry Manual Trigger (dev/test only) ──────────────────────────
+
+  async triggerExpiryJob(asOf?: string) {
+    if (process.env['NODE_ENV'] === 'production') {
+      throw new BadRequestException('This endpoint is not available in production.');
+    }
+
+    const today = asOf ? new Date(asOf) : new Date();
+    today.setHours(23, 59, 59, 999);
+
+    const expiredRows = await this.prisma.pointsExpiry.findMany({
+      where: {
+        isExpired: false,
+        pointsRemaining: { gt: 0 },
+        expiryDate: { lte: today },
+      },
+      include: { customer: true },
+    });
+
+    const emailConfig = await this.prisma.emailConfig.findFirst({
+      where: { id: 1, isActive: true },
+    });
+
+    let processed = 0;
+    let emailsQueued = 0;
+    const results: Array<{
+      customerId: string;
+      customerName: string;
+      customerEmail: string | null;
+      pointsExpired: number;
+      expiryDate: string;
+    }> = [];
+
+    for (const row of expiredRows) {
+      const pointsToExpire = row.pointsRemaining;
+      const expiryDateStr = row.expiryDate.toISOString().slice(0, 10);
+
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          const customer = await tx.customer.findUniqueOrThrow({
+            where: { id: row.customerId },
+          });
+
+          const newBalance = Math.max(0, customer.totalPoints - pointsToExpire);
+
+          await tx.customer.update({
+            where: { id: row.customerId },
+            data: { totalPoints: newBalance },
+          });
+
+          await tx.pointsLedger.create({
+            data: {
+              customerId: row.customerId,
+              pointsChange: -pointsToExpire,
+              runningBalance: newBalance,
+              reason: 'EXPIRY',
+              referenceId: String(row.id),
+              notes: `DEV TRIGGER — Batch earned ${row.earningDate.toISOString().slice(0, 10)}: ${row.pointsAmount} earned, ${row.pointsAmount - pointsToExpire} redeemed, ${pointsToExpire} expired`,
+            },
+          });
+
+          await tx.pointsExpiry.update({
+            where: { id: row.id },
+            data: { isExpired: true, pointsRemaining: 0 },
+          });
+        });
+
+        processed++;
+
+        if (row.customer.email && emailConfig?.smtpHost) {
+          const html = this.buildExpiryEmailHtml(
+            row.customer.name,
+            pointsToExpire,
+            expiryDateStr,
+            emailConfig.expiryEmailBody ?? null,
+          );
+          await this.queue.enqueueEmail({
+            to: row.customer.email,
+            subject: `Your ${pointsToExpire} loyalty points have expired`,
+            html,
+            customerId: row.customerId,
+            notificationType: 'points_expired',
+          });
+          emailsQueued++;
+        }
+
+        results.push({
+          customerId: row.customerId,
+          customerName: row.customer.name,
+          customerEmail: row.customer.email ?? null,
+          pointsExpired: pointsToExpire,
+          expiryDate: expiryDateStr,
+        });
+      } catch (err) {
+        this.logger.error({ err, rowId: String(row.id) }, 'DEV trigger: failed to expire row');
+      }
+    }
+
+    this.logger.log({ processed, emailsQueued, asOf: today.toISOString() }, 'DEV expiry trigger completed');
+    return { processed, emailsQueued, results };
+  }
+
   // ── Forensic Alert Manual Trigger ─────────────────────────────────────────
 
   async triggerForensicCheck() {
@@ -441,6 +543,60 @@ export class ConfigurationService {
       },
     });
     return rows.map((r) => ({ ...r, id: r.id.toString() }));
+  }
+
+  // ── Expiry Email Helper ───────────────────────────────────────────────────
+
+  private buildExpiryEmailHtml(
+    customerName: string,
+    points: number,
+    expiryDate: string,
+    templateBody: string | null,
+  ): string {
+    if (templateBody?.trim()) {
+      const body = templateBody
+        .replace(/\{customername\}/gi, customerName)
+        .replace(/\{points\}/gi, String(points))
+        .replace(/\{expiry_date\}/gi, expiryDate);
+      return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+  <p style="white-space:pre-wrap;font-size:14px;color:#374151;line-height:1.7;">${body}</p>
+</div>`;
+    }
+
+    const generatedAt = new Date().toLocaleString();
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr><td style="background:#d97706;padding:24px 32px;text-align:center;">
+          <p style="margin:0;font-size:13px;color:#fef3c7;letter-spacing:2px;text-transform:uppercase;">LoyaltyPlus</p>
+          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">Points Expired</h1>
+          <p style="margin:6px 0 0;color:#fef3c7;font-size:14px;">Your loyalty points have expired</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear ${customerName},</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+            We want to let you know that <strong>${points} loyalty points</strong> in your account expired on <strong>${expiryDate}</strong>.
+          </p>
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Points Expired</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#d97706;font-weight:bold;">${points}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Expiry Date</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${expiryDate}</td></tr>
+          </table>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+            Keep shopping with us to earn new points and enjoy exclusive rewards. We look forward to seeing you again soon!
+          </p>
+          <p style="margin:0;font-size:14px;color:#374151;">Warm regards,<br><strong>LoyaltyPlus Team</strong></p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;">
+            This is an automated notification from LoyaltyPlus sent on ${generatedAt}.<br>Do not reply to this email.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
   }
 
   // ── Forensic Email Helpers ────────────────────────────────────────────────

@@ -121,4 +121,9 @@ export class ConfigurationController {
     return this.configurationService.triggerForensicCheck();
   }
 
+  @Post('trigger-expiry-job')
+  triggerExpiryJob(@Body() body: { asOf?: string }) {
+    return this.configurationService.triggerExpiryJob(body?.asOf);
+  }
+
 }

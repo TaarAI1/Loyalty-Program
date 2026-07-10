@@ -1,0 +1,216 @@
+{
+  "info": {
+    "name": "Loyalty Program — Expiry Test",
+    "_postman_id": "loyalty-expiry-test-v1",
+    "description": "End-to-end test for the points expiry feature.\n\nFlow:\n1. Register a customer with an email address.\n2. Post a transaction to earn points.\n3. Check the customer balance to confirm points were awarded.\n4. Trigger the expiry job using `asOf` set to a future date (1+ year ahead) so the\n   365-day expiry window has already passed — no waiting required.\n5. Check email logs to confirm the expiry notification was queued.\n\nEdit the collection variables before running:\n  • base_url — default: http://localhost:3001\n  • mobile   — any 10-digit mobile number\n  • email    — a real inbox you can check\n  • asOf     — leave as 2027-07-11 (1 year ahead) or adjust as needed",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3001", "type": "string" },
+    { "key": "mobile",   "value": "3001234567",            "type": "string" },
+    { "key": "email",    "value": "test@example.com",      "type": "string" },
+    { "key": "asOf",     "value": "2027-07-11",            "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1 — Register Customer (with email)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/webhooks/customer",
+          "host": ["{{base_url}}"],
+          "path": ["api", "webhooks", "customer"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_id\": \"TEST-CUST-001\",\n  \"name\": \"Test Customer\",\n  \"mobile\": \"{{mobile}}\",\n  \"email\": \"{{email}}\",\n  \"country_code\": \"92\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Customer registered successfully', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('id');",
+              "    pm.collectionVariables.set('customerId', json.id);",
+              "    console.log('Customer ID:', json.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 — Post Transaction (earn points)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/webhooks/transaction",
+          "host": ["{{base_url}}"],
+          "path": ["api", "webhooks", "transaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transaction_id\": \"TEST-TX-001\",\n  \"customer_mobile\": \"{{mobile}}\",\n  \"customer_name\": \"Test Customer\",\n  \"sale_amount\": 5000,\n  \"store\": \"Test Store\",\n  \"country_code\": \"92\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Transaction processed successfully', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const json = pm.response.json();",
+              "    console.log('Points earned:', json.pointsEarned ?? json.points_earned ?? '(see response)');",
+              "    console.log('Full response:', JSON.stringify(json, null, 2));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 — Check Customer Balance (before expiry)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/customers?search={{mobile}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "customers"],
+          "query": [{ "key": "search", "value": "{{mobile}}" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Customer found with positive balance', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const json = pm.response.json();",
+              "    const customers = json.data ?? json.customers ?? json;",
+              "    const list = Array.isArray(customers) ? customers : [customers];",
+              "    const cust = list.find(c => String(c.mobileNumber ?? c.mobile_number ?? '').includes(pm.collectionVariables.get('mobile')));",
+              "    if (cust) {",
+              "        console.log('Balance before expiry:', cust.totalPoints ?? cust.total_points);",
+              "        pm.expect(cust.totalPoints ?? cust.total_points).to.be.above(0);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 — Trigger Expiry Job (asOf = future date)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/configuration/trigger-expiry-job",
+          "host": ["{{base_url}}"],
+          "path": ["api", "configuration", "trigger-expiry-job"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"asOf\": \"{{asOf}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Expiry job ran successfully', function () {",
+              "    pm.response.to.have.status(201);",
+              "    const json = pm.response.json();",
+              "    console.log('Rows processed:', json.processed);",
+              "    console.log('Emails queued:', json.emailsQueued);",
+              "    console.log('Results:', JSON.stringify(json.results, null, 2));",
+              "    pm.expect(json.processed).to.be.above(0, 'Expected at least 1 expired row — check that the transaction was posted and asOf is far enough in the future');",
+              "    pm.expect(json.emailsQueued).to.be.above(0, 'No emails queued — make sure SMTP is configured and the customer has an email address');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 — Check Customer Balance (after expiry)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/customers?search={{mobile}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "customers"],
+          "query": [{ "key": "search", "value": "{{mobile}}" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Customer balance reduced after expiry', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const json = pm.response.json();",
+              "    const customers = json.data ?? json.customers ?? json;",
+              "    const list = Array.isArray(customers) ? customers : [customers];",
+              "    const cust = list.find(c => String(c.mobileNumber ?? c.mobile_number ?? '').includes(pm.collectionVariables.get('mobile')));",
+              "    if (cust) {",
+              "        console.log('Balance after expiry:', cust.totalPoints ?? cust.total_points);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 — Check Email Logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/configuration/email-logs",
+          "host": ["{{base_url}}"],
+          "path": ["api", "configuration", "email-logs"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Email log contains expiry notification', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const logs = pm.response.json();",
+              "    console.log('Recent email logs:', JSON.stringify(logs, null, 2));",
+              "    const expiryLog = logs.find(l => (l.notificationType ?? l.notification_type ?? l.content ?? '').toString().includes('expired'));",
+              "    if (expiryLog) {",
+              "        console.log('Expiry email found:', expiryLog);",
+              "    } else {",
+              "        console.warn('No expiry email found in logs yet — the worker may still be processing the queue');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
