@@ -128,8 +128,8 @@ model PointsExpiry {
   customerId            String    @map("customer_id") @db.Uuid
   pointsAmount          Int       @map("points_amount")
   pointsRemaining       Int       @default(0) @map("points_remaining")
-  earningDate           DateTime  @map("earning_date") @db.Date
-  expiryDate            DateTime  @map("expiry_date") @db.Date
+  earningDate           DateTime  @map("earning_date")
+  expiryDate            DateTime  @map("expiry_date")
   isExpired             Boolean   @default(false) @map("is_expired")
   notificationSent7d    Boolean   @default(false) @map("notification_sent_7d")
   notificationSent3d    Boolean   @default(false) @map("notification_sent_3d")
