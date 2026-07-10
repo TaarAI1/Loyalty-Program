@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { calculatePoints, getExpiryDate, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
+import { calculatePoints, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
 export interface ProcessTransactionResult {
@@ -231,14 +231,13 @@ export class PointsService {
       });
 
       // Points expiry entry; pointsRemaining tracks unconsumed points.
-      // If EXPIRY_TEST_MINUTES env var is set, use that as the expiry window (for testing on any environment).
-      // Otherwise: standard 365-day rolling expiry.
+      // Expiry window: EXPIRY_TEST_MINUTES env var (if set) → hardcoded 5-minute test window → 365-day default.
       const today = new Date();
       const envTestMinutes = parseInt(process.env['EXPIRY_TEST_MINUTES'] ?? '', 10);
-      const expiryDate =
-        !isNaN(envTestMinutes) && envTestMinutes > 0
-          ? new Date(today.getTime() + (params.testExpiryMinutes ?? envTestMinutes) * 60 * 1000)
-          : getExpiryDate(today);
+      const testMinutes = !isNaN(envTestMinutes) && envTestMinutes > 0
+        ? envTestMinutes
+        : (params.testExpiryMinutes ?? 5);
+      const expiryDate = new Date(today.getTime() + testMinutes * 60 * 1000);
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,

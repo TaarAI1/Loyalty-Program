@@ -16,8 +16,8 @@ export class PointsExpiryJob {
     private readonly email: EmailService,
   ) {}
 
-  /** Default: daily at 2 AM. When EXPIRY_TEST_MINUTES is set: every minute for quick expiry testing. */
-  @Cron(process.env['EXPIRY_TEST_MINUTES'] ? '* * * * *' : '0 2 * * *', { name: 'points-expiry' })
+  /** Runs every minute — expires batches whose expiryDate has passed (default: 5 min after transaction). */
+  @Cron('* * * * *', { name: 'points-expiry' })
   async handle() {
     this.logger.log({ job: 'PointsExpiryJob' }, 'Starting points expiry job');
     const start = Date.now();
