@@ -237,7 +237,7 @@ export class PointsService {
       const expiryDate =
         process.env['NODE_ENV'] === 'production'
           ? getExpiryDate(today)
-          : new Date(today.getTime() + (params.testExpiryMinutes ?? 7) * 60 * 1000);
+          : new Date(today.getTime() + (params.testExpiryMinutes ?? 15) * 60 * 1000);
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,
