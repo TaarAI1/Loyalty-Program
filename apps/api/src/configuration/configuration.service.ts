@@ -325,13 +325,11 @@ export class ConfigurationService {
             expiryDateStr,
             emailConfig.expiryEmailBody ?? null,
           );
-          await this.queue.enqueueEmail({
-            to: row.customer.email,
-            subject: `Your ${pointsToExpire} loyalty points have expired`,
+          await this.sendEmailDirect(
+            row.customer.email,
+            `Your ${pointsToExpire} loyalty points have expired`,
             html,
-            customerId: row.customerId,
-            notificationType: 'points_expired',
-          });
+          );
           emailsQueued++;
         }
 
@@ -423,12 +421,11 @@ export class ConfigurationService {
         ? this.buildBodyFromTemplate(customBody, { customer_name: s.customer_name, mobile_number: s.mobile_number })
         : this.buildDefaultForensicHtml(s);
 
-      await this.queue.enqueueEmail({
-        to: emailConfig.alertEmail,
-        subject: `Forensic Alert: Suspicious Activity — ${name} (${mobile})`,
+      await this.sendEmailDirect(
+        emailConfig.alertEmail,
+        `Forensic Alert: Suspicious Activity — ${name} (${mobile})`,
         html,
-        notificationType: 'alert',
-      });
+      );
 
       alertsSent++;
     }
@@ -543,6 +540,33 @@ export class ConfigurationService {
       },
     });
     return rows.map((r) => ({ ...r, id: r.id.toString() }));
+  }
+
+  // ── Direct SMTP Send (bypasses Bull queue) ────────────────────────────────
+
+  private async sendEmailDirect(to: string, subject: string, html: string): Promise<void> {
+    const config = await this.prisma.emailConfig.findFirst({ where: { id: 1 } });
+    if (!config?.smtpHost || !config.smtpUser || !config.smtpPass || !config.fromEmail) {
+      this.logger.warn({ to }, 'sendEmailDirect: SMTP not fully configured, skipping');
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: config.smtpHost.trim(),
+      port: config.smtpPort ?? 587,
+      secure: config.smtpSecure === 'ssl',
+      auth: { user: config.smtpUser.trim(), pass: this.encryption.decrypt(config.smtpPass) },
+      ...(config.smtpSecure === 'tls' ? { requireTLS: true } : {}),
+    });
+
+    await transporter.sendMail({
+      from: `"${(config.fromName ?? 'LoyaltyPlus').trim()}" <${config.fromEmail.trim()}>`,
+      to,
+      subject,
+      html,
+    });
+
+    this.logger.log({ to, subject }, 'Direct SMTP email sent');
   }
 
   // ── Expiry Email Helper ───────────────────────────────────────────────────
