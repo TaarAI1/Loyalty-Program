@@ -155,8 +155,7 @@ export class PointsExpiryJob {
   }
 
   private async expirePoints() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); // use current time so same-day short-window expiries are caught
 
     // Only process batches with pointsRemaining > 0 — batches fully consumed by
     // redemptions have nothing left to expire

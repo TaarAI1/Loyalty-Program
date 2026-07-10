@@ -392,16 +392,20 @@ export class ConfigurationService {
     let skipped = 0;
 
     for (const s of suspects) {
+      // Only skip if a successful email was already sent in the last 24 hours.
+      // If a previous attempt created a record but failed to send, retry this time.
       const existing = await this.prisma.forensicAlert.findFirst({
         where: {
           mobileNumber: s.mobile_number,
+          emailSent: true,
           alertDate: { gte: new Date(Date.now() - 86400000) },
         },
       });
 
       if (existing) { skipped++; continue; }
 
-      await this.prisma.forensicAlert.create({
+      // Create the record first with emailSent:false, update to true only after successful send
+      const alert = await this.prisma.forensicAlert.create({
         data: {
           mobileNumber: s.mobile_number,
           transactionCount: s.tx_count,
@@ -409,7 +413,7 @@ export class ConfigurationService {
           lastTransactionDate: s.last_tx_date,
           stores: s.stores ?? [],
           totalAmount: s.total_amount,
-          emailSent: true,
+          emailSent: false,
         },
       });
 
@@ -426,6 +430,12 @@ export class ConfigurationService {
         `Forensic Alert: Suspicious Activity — ${name} (${mobile})`,
         html,
       );
+
+      // Mark email as successfully sent
+      await this.prisma.forensicAlert.update({
+        where: { id: alert.id },
+        data: { emailSent: true },
+      });
 
       alertsSent++;
     }
