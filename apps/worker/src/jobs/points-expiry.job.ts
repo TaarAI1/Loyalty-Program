@@ -16,19 +16,28 @@ export class PointsExpiryJob {
     private readonly email: EmailService,
   ) {}
 
-  /** Runs every 5 minutes — expires batches whose expiryDate has passed (set to now + 5 min on transaction). */
+  /** Runs every 5 minutes — expires batches whose expiryDate has passed (set to now + configured window on transaction). */
   @Cron('*/5 * * * *', { name: 'points-expiry' })
   async handle() {
-    this.logger.log({ job: 'PointsExpiryJob' }, 'Starting points expiry job');
     const start = Date.now();
+    this.logger.log({ job: 'PointsExpiryJob' }, 'Starting points expiry job');
+
+    for (const [days, flag] of [
+      [7, 'notificationSent7d'],
+      [3, 'notificationSent3d'],
+      [1, 'notificationSent1d'],
+    ] as const) {
+      try {
+        await this.sendExpiryWarnings(days, flag, 'template_expiry');
+      } catch (err) {
+        this.logger.error({ err }, `sendExpiryWarnings D-${days} failed`);
+      }
+    }
 
     try {
-      await this.sendExpiryWarnings(7, 'notification_sent_7d', 'template_expiry');
-      await this.sendExpiryWarnings(3, 'notification_sent_3d', 'template_expiry');
-      await this.sendExpiryWarnings(1, 'notification_sent_1d', 'template_expiry');
       await this.expirePoints();
     } catch (err) {
-      this.logger.error({ err, durationMs: Date.now() - start }, 'PointsExpiryJob failed');
+      this.logger.error({ err }, 'expirePoints failed');
     }
 
     this.logger.log({ job: 'PointsExpiryJob', durationMs: Date.now() - start }, 'Points expiry job complete');
@@ -36,7 +45,7 @@ export class PointsExpiryJob {
 
   private async sendExpiryWarnings(
     daysAhead: number,
-    sentFlag: 'notification_sent_7d' | 'notification_sent_3d' | 'notification_sent_1d',
+    sentFlag: 'notificationSent7d' | 'notificationSent3d' | 'notificationSent1d',
     _templateField: string,
   ) {
     const targetDate = new Date();
