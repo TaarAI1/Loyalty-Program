@@ -58,6 +58,7 @@ export class WebhooksService {
       outlet: dto.outlet,
       countryCode: cc,
       items: dto.items,
+      testExpiryMinutes: dto.test_expiry_minutes,
     });
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);

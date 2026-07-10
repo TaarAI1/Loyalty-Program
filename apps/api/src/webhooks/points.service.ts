@@ -47,6 +47,7 @@ export class PointsService {
     outlet?: string;
     countryCode?: string;
     items?: TransactionItemDto[];
+    testExpiryMinutes?: number;
   }): Promise<ProcessTransactionResult> {
     const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
@@ -230,13 +231,13 @@ export class PointsService {
       });
 
       // Points expiry entry; pointsRemaining tracks unconsumed points.
-      // In non-production: defaults to 7 minutes (overridable via test_expiry_minutes) for quick testing.
+      // In non-production: defaults to 7 minutes (overridable via testExpiryMinutes) for quick testing.
       // In production: standard 365-day rolling expiry.
       const today = new Date();
       const expiryDate =
         process.env['NODE_ENV'] === 'production'
           ? getExpiryDate(today)
-          : new Date(today.getTime() + (dto.test_expiry_minutes ?? 7) * 60 * 1000);
+          : new Date(today.getTime() + (params.testExpiryMinutes ?? 7) * 60 * 1000);
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,
