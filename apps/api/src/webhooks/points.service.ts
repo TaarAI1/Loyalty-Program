@@ -231,13 +231,14 @@ export class PointsService {
       });
 
       // Points expiry entry; pointsRemaining tracks unconsumed points.
-      // In non-production: defaults to 7 minutes (overridable via testExpiryMinutes) for quick testing.
-      // In production: standard 365-day rolling expiry.
+      // If EXPIRY_TEST_MINUTES env var is set, use that as the expiry window (for testing on any environment).
+      // Otherwise: standard 365-day rolling expiry.
       const today = new Date();
+      const envTestMinutes = parseInt(process.env['EXPIRY_TEST_MINUTES'] ?? '', 10);
       const expiryDate =
-        process.env['NODE_ENV'] === 'production'
-          ? getExpiryDate(today)
-          : new Date(today.getTime() + (params.testExpiryMinutes ?? 15) * 60 * 1000);
+        !isNaN(envTestMinutes) && envTestMinutes > 0
+          ? new Date(today.getTime() + (params.testExpiryMinutes ?? envTestMinutes) * 60 * 1000)
+          : getExpiryDate(today);
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,
