@@ -183,7 +183,6 @@ model EmailConfig {
   fromName         String?   @map("from_name") @db.VarChar(255)
   alertEmail       String?   @map("alert_email") @db.VarChar(255)
   emailBody        String?   @map("email_body")
-  expiryEmail      String?   @map("expiry_email") @db.VarChar(255)
   expiryEmailBody  String?   @map("expiry_email_body")
   isActive         Boolean   @default(true) @map("is_active")
   updatedAt        DateTime  @updatedAt @map("updated_at")

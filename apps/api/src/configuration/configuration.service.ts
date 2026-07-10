@@ -223,7 +223,6 @@ export class ConfigurationService {
       fromName?: string;
       alertEmail?: string;
       emailBody?: string;
-      expiryEmail?: string;
       expiryEmailBody?: string;
       isActive?: boolean;
     },
@@ -235,7 +234,6 @@ export class ConfigurationService {
       ...(data.smtpUser        && { smtpUser:        data.smtpUser.trim() }),
       ...(data.fromEmail       && { fromEmail:       data.fromEmail.trim() }),
       ...(data.alertEmail      && { alertEmail:      data.alertEmail.trim() }),
-      ...(data.expiryEmail     && { expiryEmail:     data.expiryEmail.trim() }),
       ...(data.emailBody       !== undefined && { emailBody:      data.emailBody }),
       ...(data.expiryEmailBody !== undefined && { expiryEmailBody: data.expiryEmailBody }),
     };

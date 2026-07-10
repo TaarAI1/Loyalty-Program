@@ -753,7 +753,6 @@ function EmailTab() {
     fromName: '',
     alertEmail: '',
     emailBody: '',
-    expiryEmail: '',
     expiryEmailBody: '',
     isActive: true,
   });
@@ -770,7 +769,6 @@ function EmailTab() {
         fromName:        config.fromName        ?? '',
         alertEmail:      config.alertEmail      ?? '',
         emailBody:       config.emailBody       ?? '',
-        expiryEmail:     config.expiryEmail     ?? '',
         expiryEmailBody: config.expiryEmailBody ?? '',
         isActive:        config.isActive        ?? true,
         smtpPass:        config.smtpPass        ? PASS_SAVED : '',
@@ -789,7 +787,6 @@ function EmailTab() {
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
       if (form.alertEmail)  payload.alertEmail  = form.alertEmail;
-      if (form.expiryEmail) payload.expiryEmail = form.expiryEmail;
       payload.emailBody       = form.emailBody;
       payload.expiryEmailBody = form.expiryEmailBody;
       payload.isActive = form.isActive;
@@ -934,24 +931,17 @@ function EmailTab() {
           </div>
         </div>
 
-        {/* Points Expiry Email — recipient + body together */}
+        {/* Points Expiry Email — body template only; recipient is the customer's own email */}
         <div className="rounded-lg border border-border p-4 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Email</p>
-          <div className="space-y-1">
-            <Label>Recipient Address</Label>
-            <Input
-              type="email"
-              placeholder={String(c?.expiryEmail ?? 'loyalty@yourbrand.com')}
-              value={form.expiryEmail}
-              onChange={(e) => setForm((f) => ({ ...f, expiryEmail: e.target.value }))}
-            />
-            <p className="text-xs text-muted-foreground">Receives automated points expiry warning emails (D-7, D-3, D-1).</p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Email</p>
+            <p className="text-xs text-muted-foreground mt-1">Sent automatically to each customer when their points expire. Recipient is the customer&apos;s own email address.</p>
           </div>
           <div className="space-y-1">
             <Label>Email Body</Label>
             <textarea
               className="w-full min-h-[100px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Dear {customername}, your {points} points will expire on {expiry_date}. Visit us to redeem them before they expire."
+              placeholder="Dear {customername}, your {points} loyalty points expired on {expiry_date}. Keep shopping with us to earn new points."
               value={form.expiryEmailBody}
               onChange={(e) => setForm((f) => ({ ...f, expiryEmailBody: e.target.value }))}
             />

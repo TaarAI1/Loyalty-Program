@@ -23,10 +23,9 @@ export class PointsExpiryJob {
     const start = Date.now();
 
     try {
-      const emailConfig = await this.prisma.emailConfig.findFirst({ where: { id: 1, isActive: true } });
-      await this.sendExpiryWarnings(7, 'notification_sent_7d', 'template_expiry', emailConfig);
-      await this.sendExpiryWarnings(3, 'notification_sent_3d', 'template_expiry', emailConfig);
-      await this.sendExpiryWarnings(1, 'notification_sent_1d', 'template_expiry', emailConfig);
+      await this.sendExpiryWarnings(7, 'notification_sent_7d', 'template_expiry');
+      await this.sendExpiryWarnings(3, 'notification_sent_3d', 'template_expiry');
+      await this.sendExpiryWarnings(1, 'notification_sent_1d', 'template_expiry');
       await this.expirePoints();
     } catch (err) {
       this.logger.error({ err, durationMs: Date.now() - start }, 'PointsExpiryJob failed');
@@ -39,7 +38,6 @@ export class PointsExpiryJob {
     daysAhead: number,
     sentFlag: 'notification_sent_7d' | 'notification_sent_3d' | 'notification_sent_1d',
     _templateField: string,
-    emailConfig: { expiryEmail?: string | null; expiryEmailBody?: string | null; smtpHost?: string | null } | null,
   ) {
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + daysAhead);
@@ -67,7 +65,7 @@ export class PointsExpiryJob {
 
     for (const row of expiringRows) {
       try {
-        // WhatsApp warning
+        // WhatsApp warning only — email is sent on actual expiry, not during warnings
         if (waConfig?.apiUrl && waConfig.templateExpiry) {
           const phone = formatPhoneNumber(row.customer.mobileNumber, row.customer.countryCode);
           await this.whatsapp.send({
@@ -75,29 +73,10 @@ export class PointsExpiryJob {
             templateName: waConfig.templateExpiry,
             customerName: row.customer.name,
             vars: {
-              // Use pointsRemaining so the customer sees the actual amount at risk
               points:      String(row.pointsRemaining),
               days_ahead:  String(daysAhead),
               expiry_date: dateStr,
             },
-            customerId: row.customerId,
-            notificationType: `expiry_warning_${daysAhead}d`,
-          });
-        }
-
-        // Email warning — sent to the configured expiryEmail address
-        if (emailConfig?.expiryEmail && emailConfig.smtpHost) {
-          const html = this.buildExpiryEmailHtml(
-            row.customer.name,
-            row.pointsRemaining,
-            dateStr,
-            daysAhead,
-            emailConfig.expiryEmailBody ?? null,
-          );
-          await this.email.send({
-            to: emailConfig.expiryEmail,
-            subject: `Points Expiry Alert — ${row.customer.name} (${row.pointsRemaining} pts expiring in ${daysAhead} day${daysAhead === 1 ? '' : 's'})`,
-            html,
             customerId: row.customerId,
             notificationType: `expiry_warning_${daysAhead}d`,
           });
@@ -119,7 +98,7 @@ export class PointsExpiryJob {
   }
 
   /**
-   * Build HTML email body for a points expiry warning.
+   * Build a customer-facing HTML email confirming that their points have expired.
    * If a custom template body is configured it is used with variable substitution;
    * otherwise a rich default layout is rendered.
    */
@@ -127,7 +106,6 @@ export class PointsExpiryJob {
     customerName: string,
     points: number,
     expiryDate: string,
-    daysAhead: number,
     templateBody: string | null,
   ): string {
     if (templateBody?.trim()) {
@@ -148,25 +126,26 @@ export class PointsExpiryJob {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <tr><td style="background:#d97706;padding:24px 32px;text-align:center;">
           <p style="margin:0;font-size:13px;color:#fef3c7;letter-spacing:2px;text-transform:uppercase;">LoyaltyPlus</p>
-          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">Points Expiry Alert</h1>
-          <p style="margin:6px 0 0;color:#fef3c7;font-size:14px;">Action required in ${daysAhead} day${daysAhead === 1 ? '' : 's'}</p>
+          <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px;">Points Expired</h1>
+          <p style="margin:6px 0 0;color:#fef3c7;font-size:14px;">Your loyalty points have expired</p>
         </td></tr>
         <tr><td style="padding:32px;">
-          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear Admin,</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear ${customerName},</p>
           <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
-            The following customer has <strong>${points} loyalty points</strong> expiring on <strong>${expiryDate}</strong>.
+            We want to let you know that <strong>${points} loyalty points</strong> in your account expired on <strong>${expiryDate}</strong>.
           </p>
           <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;margin-bottom:24px;">
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Customer Name</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${customerName}</td></tr>
-            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Points Expiring</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#d97706;font-weight:bold;">${points}</td></tr>
-            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;">Expiry Date</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${expiryDate}</td></tr>
-            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Days Remaining</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${daysAhead}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;width:45%;">Points Expired</td><td style="padding:10px 14px;border:1px solid #e5e7eb;color:#d97706;font-weight:bold;">${points}</td></tr>
+            <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Expiry Date</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${expiryDate}</td></tr>
           </table>
-          <p style="margin:0;font-size:14px;color:#374151;">Regards,<br><strong>LoyaltyPlus Points Monitor</strong></p>
+          <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+            Keep shopping with us to earn new points and enjoy exclusive rewards. We look forward to seeing you again soon!
+          </p>
+          <p style="margin:0;font-size:14px;color:#374151;">Warm regards,<br><strong>LoyaltyPlus Team</strong></p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
           <p style="margin:0;font-size:11px;color:#9ca3af;">
-            This is an automated alert generated by LoyaltyPlus on ${generatedAt}.<br>Do not reply.
+            This is an automated notification from LoyaltyPlus sent on ${generatedAt}.<br>Do not reply to this email.
           </p>
         </td></tr>
       </table>
@@ -192,13 +171,18 @@ export class PointsExpiryJob {
 
     this.logger.log({ count: expiredRows.length }, 'Processing point expirations');
 
+    // Fetch email config once for all rows
+    const emailConfig = await this.prisma.emailConfig.findFirst({ where: { id: 1, isActive: true } });
+
     for (const row of expiredRows) {
+      const pointsToExpire = row.pointsRemaining;
+      const expiryDateStr = row.expiryDate.toISOString().slice(0, 10);
+
       try {
         await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const customer = await tx.customer.findUniqueOrThrow({ where: { id: row.customerId } });
 
           // Deduct only pointsRemaining — the portion never consumed by redemptions
-          const pointsToExpire = row.pointsRemaining;
           const newBalance = Math.max(0, customer.totalPoints - pointsToExpire);
 
           await tx.customer.update({
@@ -226,12 +210,37 @@ export class PointsExpiryJob {
         this.logger.log(
           {
             customerId: row.customerId,
-            pointsExpired: row.pointsRemaining,
+            pointsExpired: pointsToExpire,
             originalAmount: row.pointsAmount,
-            alreadyRedeemed: row.pointsAmount - row.pointsRemaining,
+            alreadyRedeemed: row.pointsAmount - pointsToExpire,
           },
           'Points expired',
         );
+
+        // Send expiry email directly to the customer who lost points
+        if (row.customer.email && emailConfig?.smtpHost) {
+          try {
+            const html = this.buildExpiryEmailHtml(
+              row.customer.name,
+              pointsToExpire,
+              expiryDateStr,
+              emailConfig.expiryEmailBody ?? null,
+            );
+            await this.email.send({
+              to: row.customer.email,
+              subject: `Your ${pointsToExpire} loyalty points have expired`,
+              html,
+              customerId: row.customerId,
+              notificationType: 'points_expired',
+            });
+            this.logger.log(
+              { customerId: row.customerId, to: row.customer.email, pointsExpired: pointsToExpire },
+              'Points expired email sent to customer',
+            );
+          } catch (emailErr) {
+            this.logger.error({ emailErr, customerId: row.customerId }, 'Failed to send points expired email');
+          }
+        }
       } catch (err) {
         this.logger.error({ err, rowId: String(row.id) }, 'Failed to expire points row');
       }
