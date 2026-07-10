@@ -16,8 +16,8 @@ export class PointsExpiryJob {
     private readonly email: EmailService,
   ) {}
 
-  /** Runs every minute — expires batches whose expiryDate has passed (default: 5 min after transaction). */
-  @Cron('* * * * *', { name: 'points-expiry' })
+  /** Runs every 5 minutes — expires batches whose expiryDate has passed (set to now + 5 min on transaction). */
+  @Cron('*/5 * * * *', { name: 'points-expiry' })
   async handle() {
     this.logger.log({ job: 'PointsExpiryJob' }, 'Starting points expiry job');
     const start = Date.now();
