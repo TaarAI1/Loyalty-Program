@@ -224,6 +224,8 @@ export class ConfigurationService {
       alertEmail?: string;
       emailBody?: string;
       expiryEmailBody?: string;
+      expiryWindowValue?: number;
+      expiryWindowUnit?: string;
       isActive?: boolean;
     },
     changedBy?: string,
@@ -234,8 +236,10 @@ export class ConfigurationService {
       ...(data.smtpUser        && { smtpUser:        data.smtpUser.trim() }),
       ...(data.fromEmail       && { fromEmail:       data.fromEmail.trim() }),
       ...(data.alertEmail      && { alertEmail:      data.alertEmail.trim() }),
-      ...(data.emailBody       !== undefined && { emailBody:      data.emailBody }),
+      ...(data.emailBody       !== undefined && { emailBody:       data.emailBody }),
       ...(data.expiryEmailBody !== undefined && { expiryEmailBody: data.expiryEmailBody }),
+      ...(data.expiryWindowValue !== undefined && { expiryWindowValue: data.expiryWindowValue }),
+      ...(data.expiryWindowUnit  !== undefined && { expiryWindowUnit:  data.expiryWindowUnit }),
     };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);

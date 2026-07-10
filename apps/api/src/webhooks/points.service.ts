@@ -47,7 +47,6 @@ export class PointsService {
     outlet?: string;
     countryCode?: string;
     items?: TransactionItemDto[];
-    testExpiryMinutes?: number;
   }): Promise<ProcessTransactionResult> {
     const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
@@ -231,13 +230,18 @@ export class PointsService {
       });
 
       // Points expiry entry; pointsRemaining tracks unconsumed points.
-      // Expiry window: EXPIRY_TEST_MINUTES env var (if set) → hardcoded 5-minute test window → 365-day default.
+      // Expiry window is read from EmailConfig (configurable via admin UI).
+      // Falls back to 365 days if not configured.
       const today = new Date();
-      const envTestMinutes = parseInt(process.env['EXPIRY_TEST_MINUTES'] ?? '', 10);
-      const testMinutes = !isNaN(envTestMinutes) && envTestMinutes > 0
-        ? envTestMinutes
-        : (params.testExpiryMinutes ?? 5);
-      const expiryDate = new Date(today.getTime() + testMinutes * 60 * 1000);
+      const emailCfg = await tx.emailConfig.findFirst({ where: { id: 1 } });
+      const windowValue = emailCfg?.expiryWindowValue ?? 365;
+      const windowUnit  = emailCfg?.expiryWindowUnit  ?? 'days';
+      const msMap: Record<string, number> = {
+        minutes: 60 * 1000,
+        hours:   60 * 60 * 1000,
+        days:    24 * 60 * 60 * 1000,
+      };
+      const expiryDate = new Date(today.getTime() + windowValue * (msMap[windowUnit] ?? msMap['days']));
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,

@@ -754,6 +754,8 @@ function EmailTab() {
     alertEmail: '',
     emailBody: '',
     expiryEmailBody: '',
+    expiryWindowValue: '365',
+    expiryWindowUnit: 'days',
     isActive: true,
   });
 
@@ -761,17 +763,19 @@ function EmailTab() {
     if (config) {
       setForm((f) => ({
         ...f,
-        smtpHost:        config.smtpHost        ?? '',
-        smtpPort:        config.smtpPort        ? String(config.smtpPort) : '',
-        smtpUser:        config.smtpUser        ?? '',
-        smtpSecure:      config.smtpSecure      ?? 'tls',
-        fromEmail:       config.fromEmail       ?? '',
-        fromName:        config.fromName        ?? '',
-        alertEmail:      config.alertEmail      ?? '',
-        emailBody:       config.emailBody       ?? '',
-        expiryEmailBody: config.expiryEmailBody ?? '',
-        isActive:        config.isActive        ?? true,
-        smtpPass:        config.smtpPass        ? PASS_SAVED : '',
+        smtpHost:          config.smtpHost          ?? '',
+        smtpPort:          config.smtpPort          ? String(config.smtpPort) : '',
+        smtpUser:          config.smtpUser          ?? '',
+        smtpSecure:        config.smtpSecure        ?? 'tls',
+        fromEmail:         config.fromEmail         ?? '',
+        fromName:          config.fromName          ?? '',
+        alertEmail:        config.alertEmail        ?? '',
+        emailBody:         config.emailBody         ?? '',
+        expiryEmailBody:   config.expiryEmailBody   ?? '',
+        expiryWindowValue: config.expiryWindowValue ? String(config.expiryWindowValue) : '365',
+        expiryWindowUnit:  config.expiryWindowUnit  ?? 'days',
+        isActive:          config.isActive          ?? true,
+        smtpPass:          config.smtpPass          ? PASS_SAVED : '',
       }));
     }
   }, [config]);
@@ -787,8 +791,10 @@ function EmailTab() {
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
       if (form.alertEmail)  payload.alertEmail  = form.alertEmail;
-      payload.emailBody       = form.emailBody;
-      payload.expiryEmailBody = form.expiryEmailBody;
+      payload.emailBody         = form.emailBody;
+      payload.expiryEmailBody   = form.expiryEmailBody;
+      payload.expiryWindowValue = form.expiryWindowValue ? Number(form.expiryWindowValue) : 365;
+      payload.expiryWindowUnit  = form.expiryWindowUnit;
       payload.isActive = form.isActive;
       return configApi.updateEmail(payload);
     },
@@ -952,6 +958,44 @@ function EmailTab() {
               <code className="text-indigo-600">{'{expiry_date}'}</code>.
             </p>
           </div>
+        </div>
+
+        {/* Points Expiry Window — configurable duration */}
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Window</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Points earned on a transaction will expire after this duration. The worker checks every 5 minutes and deducts expired points automatically.
+            </p>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="space-y-1 w-36">
+              <Label>Duration</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="365"
+                value={form.expiryWindowValue}
+                onChange={(e) => setForm((f) => ({ ...f, expiryWindowValue: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1 flex-1">
+              <Label>Unit</Label>
+              <select
+                className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={form.expiryWindowUnit}
+                onChange={(e) => setForm((f) => ({ ...f, expiryWindowUnit: e.target.value }))}
+              >
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Example: set <strong>5 Minutes</strong> for testing, then change to <strong>365 Days</strong> for production.
+          </p>
         </div>
 
         <label className="flex items-center gap-2 text-sm cursor-pointer">
