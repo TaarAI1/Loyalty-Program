@@ -153,6 +153,7 @@ model WhatsappConfig {
   templateBirthday      String?   @map("template_birthday") @db.VarChar(100)
   templatePointsEarned  String?   @map("template_points_earned") @db.VarChar(100)
   templateTierUpgrade   String?   @map("template_tier_upgrade") @db.VarChar(100)
+  templateOtp           String?   @map("template_otp") @db.VarChar(100)
   isActive              Boolean   @default(true) @map("is_active")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   apiUrl                String?   @map("api_url")

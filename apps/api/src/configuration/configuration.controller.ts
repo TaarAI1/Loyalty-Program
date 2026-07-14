@@ -71,6 +71,11 @@ export class ConfigurationController {
     return this.configurationService.testWhatsApp(body.to, body.template_name);
   }
 
+  @Post('whatsapp/send-otp')
+  sendOtp(@Body() body: { to: string; code: string }) {
+    return this.configurationService.sendOtp(body.to, body.code);
+  }
+
   // ── SMS ────────────────────────────────────────────────────────────────────
 
   @Get('sms')

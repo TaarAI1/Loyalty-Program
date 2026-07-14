@@ -92,6 +92,7 @@ export class ConfigurationService {
       templateBirthday?: string;
       templatePointsEarned?: string;
       templateTierUpgrade?: string;
+      templateOtp?: string;
       isActive?: boolean;
       apiUrl?: string;
       apiKey?: string;
@@ -173,6 +174,23 @@ export class ConfigurationService {
 
     this.logger.log({ to: phone, templateName }, 'Test WhatsApp sent directly');
     return { success: true, message: `Test message sent to ${phone}` };
+  }
+
+  async sendOtp(to: string, code: string) {
+    const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+    if (!config?.apiUrl || !config.templateOtp) {
+      throw new BadRequestException('OTP WhatsApp template not configured. Set it in Configuration → WhatsApp → OTP Verification Template.');
+    }
+    const phone = formatPhoneNumber(to);
+    await this.queue.enqueueWhatsApp({
+      to: phone,
+      templateName: config.templateOtp,
+      customerName: '',
+      vars: { Code: code },
+      notificationType: 'otp',
+    });
+    this.logger.log({ to: phone }, 'OTP WhatsApp queued');
+    return { success: true, sentTo: phone };
   }
 
   // ── SMS Config ─────────────────────────────────────────────────────────────
