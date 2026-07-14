@@ -460,9 +460,8 @@ function WhatsAppTab() {
               {[
                 { key: 'templatePointsEarned', label: 'Registration', current: displayConfig.templatePointsEarned },
                 { key: 'templateTierUpgrade', label: 'Transaction', current: displayConfig.templateTierUpgrade },
-                { key: 'templateExpiry', label: 'Points Expiry', current: displayConfig.templateExpiry },
-                { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
                 { key: 'templateOtp', label: 'OTP Verification', current: displayConfig.templateOtp },
+                { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
               ].map(({ key, label, current }) => (
                 <div key={key} className="space-y-1">
                   <Label>{label} Template</Label>
