@@ -327,6 +327,7 @@ function WhatsAppTab() {
     templatePointsEarned: '',
     templateTierUpgrade: '',
     templateOtp: '',
+    templateOtpRedemption: '',
     isActive: true,
   });
 
@@ -342,6 +343,7 @@ function WhatsAppTab() {
       templatePointsEarned: (c.templatePointsEarned  as string)  ?? '',
       templateTierUpgrade:  (c.templateTierUpgrade   as string)  ?? '',
       templateOtp:          (c.templateOtp           as string)  ?? '',
+      templateOtpRedemption: (c.templateOtpRedemption as string)  ?? '',
       isActive:             (c.isActive              as boolean) ?? true,
     });
   }, [config]);
@@ -361,6 +363,7 @@ function WhatsAppTab() {
         templatePointsEarned: form.templatePointsEarned || undefined,
         templateTierUpgrade: form.templateTierUpgrade || undefined,
         templateOtp: form.templateOtp || undefined,
+        templateOtpRedemption: form.templateOtpRedemption || undefined,
         isActive: form.isActive,
       };
       // Only send secrets if the user typed a new value
@@ -462,6 +465,7 @@ function WhatsAppTab() {
                 { key: 'templateTierUpgrade', label: 'Transaction', current: displayConfig.templateTierUpgrade },
                 { key: 'templateOtp', label: 'OTP Verification', current: displayConfig.templateOtp },
                 { key: 'templateBirthday', label: 'Birthday', current: displayConfig.templateBirthday },
+                { key: 'templateOtpRedemption', label: 'Points Redemption OTP', current: displayConfig.templateOtpRedemption },
               ].map(({ key, label, current }) => (
                 <div key={key} className="space-y-1">
                   <Label>{label} Template</Label>

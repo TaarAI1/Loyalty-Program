@@ -76,6 +76,11 @@ export class ConfigurationController {
     return this.configurationService.sendOtp(body.to, body.code, body.customer_name);
   }
 
+  @Post('whatsapp/send-redemption-otp')
+  sendRedemptionOtp(@Body() body: { to: string; code: string; customer_name?: string }) {
+    return this.configurationService.sendRedemptionOtp(body.to, body.code, body.customer_name);
+  }
+
   // ── SMS ────────────────────────────────────────────────────────────────────
 
   @Get('sms')
