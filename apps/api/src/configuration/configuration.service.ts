@@ -234,7 +234,7 @@ export class ConfigurationService {
     form.append('customer_name',  customerName || 'Customer');
     form.append('phone_number',   phone);
     form.append('template_name',  config.templateOtpRedemption);
-    form.append('vars', JSON.stringify({ Code: code }));
+    form.append('vars', JSON.stringify({ body_1: code, url_1: code }));
 
     try {
       const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
