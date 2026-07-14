@@ -178,18 +178,42 @@ export class ConfigurationService {
 
   async sendOtp(to: string, code: string) {
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
-    if (!config?.apiUrl || !config.templateOtp) {
+    if (!config?.apiUrl || !config.apiKey || !config.csrfToken) {
+      throw new BadRequestException('WhatsApp API URL, X-Api-Key and X-CSRFTOKEN must be configured before sending OTP.');
+    }
+    if (!config.templateOtp) {
       throw new BadRequestException('OTP WhatsApp template not configured. Set it in Configuration → WhatsApp → OTP Verification Template.');
     }
+
     const phone = formatPhoneNumber(to);
-    await this.queue.enqueueWhatsApp({
-      to: phone,
-      templateName: config.templateOtp,
-      customerName: '',
-      vars: { Code: code },
-      notificationType: 'otp',
-    });
-    this.logger.log({ to: phone }, 'OTP WhatsApp queued');
+    const apiKey = this.encryption.decrypt(config.apiKey);
+    const csrf   = this.encryption.decrypt(config.csrfToken);
+
+    const form = new FormData();
+    form.append('customer_name',  'Customer');
+    form.append('phone_number',   phone);
+    form.append('template_name',  config.templateOtp);
+    form.append('vars', JSON.stringify({ Code: code }));
+
+    try {
+      const apiUrl = config.apiUrl.endsWith('/') ? config.apiUrl : `${config.apiUrl}/`;
+      await axios.post(apiUrl, form, {
+        headers: {
+          ...form.getHeaders(),
+          accept:        'application/json',
+          'X-Api-Key':   apiKey,
+          'X-CSRFTOKEN': csrf,
+        },
+        timeout: 15000,
+      });
+    } catch (err) {
+      const msg = axios.isAxiosError(err)
+        ? `WhatsApp API error ${err.response?.status}: ${JSON.stringify(err.response?.data)}`
+        : String(err);
+      throw new BadRequestException(msg);
+    }
+
+    this.logger.log({ to: phone, template: config.templateOtp }, 'OTP WhatsApp sent directly');
     return { success: true, sentTo: phone };
   }
 
