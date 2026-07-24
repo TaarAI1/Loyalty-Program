@@ -116,9 +116,9 @@ export class PointsService {
         );
       }
 
-      // Points earning base: read from email_config, default to sale_amount
+      // Read email config once — used for both earning base and expiry window
       const emailCfg = await tx.emailConfig.findFirst({ where: { id: 1 } });
-      const earningBase = emailCfg?.pointsEarningBase ?? 'sale_amount';
+      const earningBase = emailCfg?.pointsEarningBase ?? 'net_amount';
       const earningAmount =
         earningBase === 'gross_amount' ? (grossAmount ?? saleAmount) :
         earningBase === 'net_amount'   ? (netAmount   ?? saleAmount) :
@@ -241,7 +241,6 @@ export class PointsService {
       // Expiry window is read from EmailConfig (configurable via admin UI).
       // Falls back to 365 days if not configured.
       const today = new Date();
-      const emailCfg = await tx.emailConfig.findFirst({ where: { id: 1 } });
       const windowValue = emailCfg?.expiryWindowValue ?? 365;
       const windowUnit  = emailCfg?.expiryWindowUnit  ?? 'days';
       const msMap: Record<string, number> = {
