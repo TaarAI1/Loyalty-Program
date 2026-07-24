@@ -42,8 +42,10 @@ export class WebhooksService {
     const cc = dto.country_code ?? '92';
     const customerMobile = normalizeLocalPhone(dto.customer_mobile, cc);
 
-    const grossAmount = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : (dto.gross_amount ?? null);
-    const netAmount   = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : (dto.net_amount   ?? null);
+    const itemsGross  = dto.items ? dto.items.reduce((sum, i) => sum + (i.gross_amount ?? 0), 0) : 0;
+    const itemsNet    = dto.items ? dto.items.reduce((sum, i) => sum + (i.net_amount   ?? 0), 0) : 0;
+    const grossAmount = itemsGross > 0 ? itemsGross : (dto.gross_amount ?? null);
+    const netAmount   = itemsNet   > 0 ? itemsNet   : (dto.net_amount   ?? null);
 
     const result = await this.points.processTransaction({
       retailproTransactionId: transactionId,
@@ -51,7 +53,7 @@ export class WebhooksService {
       customerMobile,
       customerName: dto.customer_name,
       saleAmount: dto.sale_amount,
-      grossAmount: grossAmount ?? dto.gross_amount,
+      grossAmount: grossAmount ?? undefined,
       netAmount: netAmount ?? undefined,
       taxAmount: txTaxAmount,
       redeemPoints: dto.redeem_points ?? 0,
