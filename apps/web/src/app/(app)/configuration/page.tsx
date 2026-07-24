@@ -98,11 +98,11 @@ function TiersTab() {
     queryFn: configApi.getEmail,
   });
 
-  const [earningBase, setEarningBase] = useState('sale_amount');
+  const [earningBase, setEarningBase] = useState('net_amount');
 
   useEffect(() => {
     if (emailConfig) {
-      setEarningBase((emailConfig as Record<string, unknown>).pointsEarningBase as string ?? 'sale_amount');
+      setEarningBase((emailConfig as Record<string, unknown>).pointsEarningBase as string ?? 'net_amount');
     }
   }, [emailConfig]);
 
@@ -130,9 +130,9 @@ function TiersTab() {
                 value={earningBase}
                 onChange={(e) => setEarningBase(e.target.value)}
               >
-                <option value="sale_amount">Sale Amount (default)</option>
-                <option value="gross_amount">Gross Amount (with tax)</option>
-                <option value="net_amount">Net Amount (without tax)</option>
+                <option value="sale_amount">Sale Amount (base price)</option>
+                <option value="gross_amount">With Tax (total incl. tax)</option>
+                <option value="net_amount">Without Tax (excl. tax)</option>
               </select>
               <Button
                 size="sm"
