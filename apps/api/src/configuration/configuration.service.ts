@@ -309,6 +309,7 @@ export class ConfigurationService {
       expiryEmailBody?: string;
       expiryWindowValue?: number;
       expiryWindowUnit?: string;
+      pointsEarningBase?: string;
       isActive?: boolean;
     },
     changedBy?: string,
@@ -323,6 +324,7 @@ export class ConfigurationService {
       ...(data.expiryEmailBody !== undefined && { expiryEmailBody: data.expiryEmailBody }),
       ...(data.expiryWindowValue !== undefined && { expiryWindowValue: data.expiryWindowValue }),
       ...(data.expiryWindowUnit  !== undefined && { expiryWindowUnit:  data.expiryWindowUnit }),
+      ...(data.pointsEarningBase !== undefined && { pointsEarningBase: data.pointsEarningBase }),
     };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);

@@ -38,6 +38,7 @@ export class PointsService {
     customerName: string;
     saleAmount: number;
     grossAmount?: number;
+    netAmount?: number;
     taxAmount?: number | null;
     redeemPoints?: number;
     transactionDate: Date;
@@ -48,7 +49,7 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
   }): Promise<ProcessTransactionResult> {
-    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
+    const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, netAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Look up customer: prefer cust_sid (retailproId) for accuracy, fall back to mobile
@@ -115,9 +116,16 @@ export class PointsService {
         );
       }
 
-      // Points earned on full sale_amount — redemption is a discount, not deducted from earning base
+      // Points earning base: read from email_config, default to sale_amount
+      const emailCfg = await tx.emailConfig.findFirst({ where: { id: 1 } });
+      const earningBase = emailCfg?.pointsEarningBase ?? 'sale_amount';
+      const earningAmount =
+        earningBase === 'gross_amount' ? (grossAmount ?? saleAmount) :
+        earningBase === 'net_amount'   ? (netAmount   ?? saleAmount) :
+        saleAmount;
+
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
-      const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
+      const pointsEarned = rewardPct > 0 ? calculatePoints(earningAmount, rewardPct) : 0;
 
       // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });

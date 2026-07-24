@@ -93,8 +93,60 @@ function TiersTab() {
     setDialogOpen(true);
   };
 
+  const { data: emailConfig } = useQuery({
+    queryKey: ['email-config'],
+    queryFn: configApi.getEmail,
+  });
+
+  const [earningBase, setEarningBase] = useState('sale_amount');
+
+  useEffect(() => {
+    if (emailConfig) {
+      setEarningBase((emailConfig as Record<string, unknown>).pointsEarningBase as string ?? 'sale_amount');
+    }
+  }, [emailConfig]);
+
+  const earningBaseMutation = useMutation({
+    mutationFn: (base: string) => configApi.updateEmail({ pointsEarningBase: base }),
+    onSuccess: () => {
+      toast.success('Points earning base updated');
+      qc.invalidateQueries({ queryKey: ['email-config'] });
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+
   return (
     <>
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
+              <Label className="text-sm font-medium">Points Earning Base</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Choose which transaction amount is used to calculate loyalty points.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                className="border rounded-md px-3 py-1.5 text-sm bg-background"
+                value={earningBase}
+                onChange={(e) => setEarningBase(e.target.value)}
+              >
+                <option value="sale_amount">Sale Amount (default)</option>
+                <option value="gross_amount">Gross Amount (with tax)</option>
+                <option value="net_amount">Net Amount (without tax)</option>
+              </select>
+              <Button
+                size="sm"
+                onClick={() => earningBaseMutation.mutate(earningBase)}
+                disabled={earningBaseMutation.isPending}
+              >
+                <Save className="w-4 h-4 mr-1" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">Manage loyalty tiers and reward percentages.</p>
         <Button
