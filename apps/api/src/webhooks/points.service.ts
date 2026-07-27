@@ -12,6 +12,9 @@ export interface ProcessTransactionResult {
   previousTier: string | null;
   tierUpgraded: boolean;
   customerId: string;
+  isNewCustomer: boolean;
+  enrollmentDiscountPct: number;
+  enrollmentDiscountAmount: number;
 }
 
 @Injectable()
@@ -126,6 +129,14 @@ export class PointsService {
 
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
       const pointsEarned = rewardPct > 0 ? calculatePoints(earningAmount, rewardPct) : 0;
+
+      // Enrollment discount: applies only to brand-new customers on their first purchase
+      const enrollmentDiscountPct = (isNewCustomer && emailCfg?.enrollmentDiscountActive && (emailCfg.enrollmentDiscountPct ?? 0) > 0)
+        ? emailCfg.enrollmentDiscountPct
+        : 0;
+      const enrollmentDiscountAmount = enrollmentDiscountPct > 0
+        ? Math.round(saleAmount * enrollmentDiscountPct / 100)
+        : 0;
 
       // Count prior transactions for engagement score calculation
       const txCount = await tx.transaction.count({ where: { customerId: c.id } });
@@ -281,6 +292,8 @@ export class PointsService {
         previousTierName: currentTierName,
         newTotalPoints,
         isNewCustomer,
+        enrollmentDiscountPct,
+        enrollmentDiscountAmount,
       };
     });
 
@@ -344,6 +357,9 @@ export class PointsService {
       previousTier: result.previousTierName,
       tierUpgraded,
       customerId: result.customer.id,
+      isNewCustomer: result.isNewCustomer,
+      enrollmentDiscountPct: result.enrollmentDiscountPct,
+      enrollmentDiscountAmount: result.enrollmentDiscountAmount,
     };
   }
 

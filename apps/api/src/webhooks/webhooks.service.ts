@@ -70,12 +70,15 @@ export class WebhooksService {
 
     return {
       ...customerSummary,
-      points_earned:   result.pointsEarned,
-      points_redeemed: result.pointsRedeemed,
-      tier_upgraded:   result.tierUpgraded,
-      tax_amount:      txTaxAmount,
-      gross_amount:    grossAmount,
-      net_amount:      netAmount,
+      points_earned:               result.pointsEarned,
+      points_redeemed:             result.pointsRedeemed,
+      tier_upgraded:               result.tierUpgraded,
+      tax_amount:                  txTaxAmount,
+      gross_amount:                grossAmount,
+      net_amount:                  netAmount,
+      is_new_customer:             result.isNewCustomer,
+      enrollment_discount_pct:     result.enrollmentDiscountPct,
+      enrollment_discount_amount:  result.enrollmentDiscountAmount,
       action: undefined,
     };
   }

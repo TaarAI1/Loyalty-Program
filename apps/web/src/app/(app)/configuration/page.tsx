@@ -99,10 +99,15 @@ function TiersTab() {
   });
 
   const [earningBase, setEarningBase] = useState('net_amount');
+  const [enrollDiscountPct, setEnrollDiscountPct] = useState(0);
+  const [enrollDiscountActive, setEnrollDiscountActive] = useState(false);
 
   useEffect(() => {
     if (emailConfig) {
-      setEarningBase((emailConfig as Record<string, unknown>).pointsEarningBase as string ?? 'net_amount');
+      const c = emailConfig as Record<string, unknown>;
+      setEarningBase(c.pointsEarningBase as string ?? 'net_amount');
+      setEnrollDiscountPct(Number(c.enrollmentDiscountPct ?? 0));
+      setEnrollDiscountActive(Boolean(c.enrollmentDiscountActive ?? false));
     }
   }, [emailConfig]);
 
@@ -110,6 +115,18 @@ function TiersTab() {
     mutationFn: (base: string) => configApi.updateEmail({ pointsEarningBase: base }),
     onSuccess: () => {
       toast.success('Points earning base updated');
+      qc.invalidateQueries({ queryKey: ['email-config'] });
+    },
+    onError: (err) => toast.error(String(err)),
+  });
+
+  const enrollDiscountMutation = useMutation({
+    mutationFn: () => configApi.updateEmail({
+      enrollmentDiscountPct:    enrollDiscountPct,
+      enrollmentDiscountActive: enrollDiscountActive,
+    }),
+    onSuccess: () => {
+      toast.success('Enrollment discount saved');
       qc.invalidateQueries({ queryKey: ['email-config'] });
     },
     onError: (err) => toast.error(String(err)),
@@ -138,6 +155,50 @@ function TiersTab() {
                 size="sm"
                 onClick={() => earningBaseMutation.mutate(earningBase)}
                 disabled={earningBaseMutation.isPending}
+              >
+                <Save className="w-4 h-4 mr-1" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+            <div className="flex-1">
+              <Label className="text-sm font-medium">Enrollment Discount</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Give a one-time percentage discount to new customers on their first purchase.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="w-20 h-8 text-sm"
+                  value={enrollDiscountPct}
+                  onChange={(e) => setEnrollDiscountPct(Math.min(100, Math.max(0, Number(e.target.value))))}
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enrollDiscountActive}
+                  onClick={() => setEnrollDiscountActive((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enrollDiscountActive ? 'bg-yellow-500' : 'bg-muted'}`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${enrollDiscountActive ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className="text-xs text-muted-foreground">{enrollDiscountActive ? 'Active' : 'Inactive'}</span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => enrollDiscountMutation.mutate()}
+                disabled={enrollDiscountMutation.isPending}
               >
                 <Save className="w-4 h-4 mr-1" />
                 Save

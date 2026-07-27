@@ -188,8 +188,10 @@ model EmailConfig {
   expiryEmailBody   String?   @map("expiry_email_body")
   expiryWindowValue Int?      @map("expiry_window_value")
   expiryWindowUnit  String?   @default("days") @map("expiry_window_unit") @db.VarChar(10)
-  pointsEarningBase String    @default("net_amount") @map("points_earning_base") @db.VarChar(50)
-  isActive          Boolean   @default(true) @map("is_active")
+  pointsEarningBase        String  @default("net_amount") @map("points_earning_base") @db.VarChar(50)
+  enrollmentDiscountPct    Int     @default(0)     @map("enrollment_discount_pct")
+  enrollmentDiscountActive Boolean @default(false) @map("enrollment_discount_active")
+  isActive                 Boolean @default(true)  @map("is_active")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   @@map("email_config")

@@ -310,6 +310,8 @@ export class ConfigurationService {
       expiryWindowValue?: number;
       expiryWindowUnit?: string;
       pointsEarningBase?: string;
+      enrollmentDiscountPct?: number;
+      enrollmentDiscountActive?: boolean;
       isActive?: boolean;
     },
     changedBy?: string,
@@ -325,6 +327,8 @@ export class ConfigurationService {
       ...(data.expiryWindowValue !== undefined && { expiryWindowValue: data.expiryWindowValue }),
       ...(data.expiryWindowUnit  !== undefined && { expiryWindowUnit:  data.expiryWindowUnit }),
       ...(data.pointsEarningBase !== undefined && { pointsEarningBase: data.pointsEarningBase }),
+      ...(data.enrollmentDiscountPct    !== undefined && { enrollmentDiscountPct:    data.enrollmentDiscountPct }),
+      ...(data.enrollmentDiscountActive !== undefined && { enrollmentDiscountActive: data.enrollmentDiscountActive }),
     };
     if (data.smtpPass) {
       updateData['smtpPass'] = this.encryption.encrypt(data.smtpPass);
