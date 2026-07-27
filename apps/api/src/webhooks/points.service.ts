@@ -129,8 +129,11 @@ export class PointsService {
 
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
 
-      // For new customers: use enrollment bonus % instead of tier % on first transaction
-      const enrollmentBonusPct = (isNewCustomer && (emailCfg?.enrollmentDiscountPct ?? 0) > 0)
+      // Count prior transactions — used for enrollment discount and engagement score
+      const txCount = await tx.transaction.count({ where: { customerId: c.id } });
+
+      // Apply enrollment bonus on first purchase (txCount === 0), regardless of how customer was created
+      const enrollmentBonusPct = (txCount === 0 && (emailCfg?.enrollmentDiscountPct ?? 0) > 0)
         ? (emailCfg?.enrollmentDiscountPct ?? 0)
         : 0;
 
@@ -142,9 +145,6 @@ export class PointsService {
       const enrollmentDiscountAmount = enrollmentDiscountPct > 0
         ? Math.round(saleAmount * enrollmentDiscountPct / 100)
         : 0;
-
-      // Count prior transactions for engagement score calculation
-      const txCount = await tx.transaction.count({ where: { customerId: c.id } });
 
       // Calculate new lifetime values — use gross_amount for spend tracking if provided, else sale_amount
       const newLifetimeSale = Number(c.lifetimeSale) + (grossAmount ?? saleAmount);
