@@ -128,12 +128,17 @@ export class PointsService {
         saleAmount;
 
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
-      const pointsEarned = rewardPct > 0 ? calculatePoints(earningAmount, rewardPct) : 0;
 
-      // Enrollment discount: applies only to brand-new customers on their first purchase
-      const enrollmentDiscountPct = (isNewCustomer && emailCfg?.enrollmentDiscountActive && (emailCfg.enrollmentDiscountPct ?? 0) > 0)
+      // For new customers: use enrollment bonus % instead of tier % on first transaction
+      const enrollmentBonusPct = (isNewCustomer && emailCfg?.enrollmentDiscountActive && (emailCfg.enrollmentDiscountPct ?? 0) > 0)
         ? emailCfg.enrollmentDiscountPct
         : 0;
+
+      const effectivePct = enrollmentBonusPct > 0 ? enrollmentBonusPct : rewardPct;
+      const pointsEarned = effectivePct > 0 ? calculatePoints(earningAmount, effectivePct) : 0;
+
+      // Keep discount fields for webhook response (POS info)
+      const enrollmentDiscountPct = enrollmentBonusPct;
       const enrollmentDiscountAmount = enrollmentDiscountPct > 0
         ? Math.round(saleAmount * enrollmentDiscountPct / 100)
         : 0;
