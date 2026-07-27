@@ -130,7 +130,7 @@ export class PointsService {
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
 
       // For new customers: use enrollment bonus % instead of tier % on first transaction
-      const enrollmentBonusPct = (isNewCustomer && emailCfg?.enrollmentDiscountActive && (emailCfg.enrollmentDiscountPct ?? 0) > 0)
+      const enrollmentBonusPct = (isNewCustomer && (emailCfg?.enrollmentDiscountPct ?? 0) > 0)
         ? emailCfg.enrollmentDiscountPct
         : 0;
 
