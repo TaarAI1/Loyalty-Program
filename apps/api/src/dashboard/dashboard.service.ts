@@ -132,7 +132,7 @@ export class DashboardService {
     const tiers = await this.prisma.loyaltyTier.findMany({
       include: { _count: { select: { customers: true } } },
     });
-    const totalCustomers = await this.prisma.customer.count({ where: { isActive: true } });
+    const totalCustomers = await this.prisma.customer.count();
 
     return tiers.map((t) => ({
       tier: t.name,
