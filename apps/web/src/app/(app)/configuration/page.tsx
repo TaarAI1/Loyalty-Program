@@ -753,23 +753,30 @@ function EmailTab() {
     fromName: '',
     alertEmail: '',
     emailBody: '',
+    expiryEmailBody: '',
+    expiryWindowValue: '365',
+    expiryWindowUnit: 'days',
     isActive: true,
   });
 
   useEffect(() => {
     if (config) {
+      const cfg = config as Record<string, unknown>;
       setForm((f) => ({
         ...f,
-        smtpHost:   config.smtpHost   ?? '',
-        smtpPort:   config.smtpPort   ? String(config.smtpPort) : '',
-        smtpUser:   config.smtpUser   ?? '',
-        smtpSecure: config.smtpSecure ?? 'tls',
-        fromEmail:  config.fromEmail  ?? '',
-        fromName:   config.fromName   ?? '',
-        alertEmail: config.alertEmail ?? '',
-        emailBody:  config.emailBody  ?? '',
-        isActive:   config.isActive   ?? true,
-        smtpPass:   config.smtpPass   ? PASS_SAVED : '',
+        smtpHost:          cfg.smtpHost          as string ?? '',
+        smtpPort:          cfg.smtpPort           ? String(cfg.smtpPort) : '',
+        smtpUser:          cfg.smtpUser          as string ?? '',
+        smtpSecure:        cfg.smtpSecure        as string ?? 'tls',
+        fromEmail:         cfg.fromEmail         as string ?? '',
+        fromName:          cfg.fromName          as string ?? '',
+        alertEmail:        cfg.alertEmail        as string ?? '',
+        emailBody:         cfg.emailBody         as string ?? '',
+        expiryEmailBody:   cfg.expiryEmailBody   as string ?? '',
+        expiryWindowValue: cfg.expiryWindowValue  ? String(cfg.expiryWindowValue) : '365',
+        expiryWindowUnit:  cfg.expiryWindowUnit  as string ?? 'days',
+        isActive:          cfg.isActive          as boolean ?? true,
+        smtpPass:          cfg.smtpPass           ? PASS_SAVED : '',
       }));
     }
   }, [config]);
@@ -785,7 +792,10 @@ function EmailTab() {
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
       if (form.alertEmail) payload.alertEmail = form.alertEmail;
-      payload.emailBody = form.emailBody;
+      payload.emailBody        = form.emailBody;
+      payload.expiryEmailBody  = form.expiryEmailBody;
+      payload.expiryWindowValue = form.expiryWindowValue ? Number(form.expiryWindowValue) : 365;
+      payload.expiryWindowUnit  = form.expiryWindowUnit;
       payload.isActive = form.isActive;
       return configApi.updateEmail(payload);
     },
@@ -913,14 +923,55 @@ function EmailTab() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Email Body</p>
           <div className="space-y-1">
-            <Label>Email Body Text</Label>
+            <Label>Forensic Alert Email Body</Label>
             <textarea
               className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Enter the body text for outgoing emails. Leave blank to use the default message."
+              placeholder="Enter the body text for forensic alert emails. Leave blank to use the default message."
               value={form.emailBody}
               onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
             />
-            <p className="text-xs text-muted-foreground">Used as the body of the test email. Supports plain text.</p>
+            <p className="text-xs text-muted-foreground">Used for fraud/forensic alert emails. Supports {'{customername}'}, {'{phoneno}'}, {'{date}'}.</p>
+          </div>
+        </div>
+
+        {/* Points Expiry */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Points Expiry</p>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 space-y-1">
+                <Label>Expiry Window</Label>
+                <p className="text-xs text-muted-foreground">Points earned on each transaction will expire after this period.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-24 h-9 text-sm"
+                  value={form.expiryWindowValue}
+                  onChange={(e) => setForm((f) => ({ ...f, expiryWindowValue: e.target.value }))}
+                />
+                <select
+                  className="border rounded-md px-3 py-1.5 text-sm bg-background h-9"
+                  value={form.expiryWindowUnit}
+                  onChange={(e) => setForm((f) => ({ ...f, expiryWindowUnit: e.target.value }))}
+                >
+                  <option value="days">Days</option>
+                  <option value="hours">Hours</option>
+                  <option value="minutes">Minutes</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Points Expiry Email Body</Label>
+              <textarea
+                className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Enter the body text for points expiry emails sent to customers. Leave blank to use the default message."
+                value={form.expiryEmailBody}
+                onChange={(e) => setForm((f) => ({ ...f, expiryEmailBody: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">Sent to the customer when their points expire. Supports {'{customername}'}, {'{points}'}, {'{expiry_date}'}.</p>
+            </div>
           </div>
         </div>
 

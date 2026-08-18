@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { calculatePoints, getExpiryDate, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
+import { calculatePoints, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
 export interface ProcessTransactionResult {
@@ -115,6 +115,9 @@ export class PointsService {
         );
       }
 
+      // Read email config — used for expiry window
+      const emailCfg = await tx.emailConfig.findFirst({ where: { id: 1 } });
+
       // Points earned on full sale_amount — redemption is a discount, not deducted from earning base
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
       const pointsEarned = rewardPct > 0 ? calculatePoints(saleAmount, rewardPct) : 0;
@@ -212,6 +215,9 @@ export class PointsService {
             referenceId: retailproTransactionId,
           },
         });
+        // FIFO: consume oldest-expiring batches first so the expiry job never
+        // deducts points the customer has already spent
+        await this.consumePointsFIFO(tx, c.id, redeemPoints);
       }
 
       // Points ledger: earned entry
@@ -226,13 +232,23 @@ export class PointsService {
         },
       });
 
-      // Points expiry entry (365 days rolling)
+      // Points expiry entry; pointsRemaining tracks unconsumed points.
+      // Expiry window is read from EmailConfig (configurable via admin UI).
+      // Falls back to 365 days if not configured.
       const today = new Date();
-      const expiryDate = getExpiryDate(today);
+      const windowValue = emailCfg?.expiryWindowValue ?? 365;
+      const windowUnit  = emailCfg?.expiryWindowUnit  ?? 'days';
+      const msMap: Record<string, number> = {
+        minutes: 60 * 1000,
+        hours:   60 * 60 * 1000,
+        days:    24 * 60 * 60 * 1000,
+      };
+      const expiryDate = new Date(today.getTime() + windowValue * (msMap[windowUnit] ?? msMap['days']));
       await tx.pointsExpiry.create({
         data: {
           customerId: c.id,
           pointsAmount: pointsEarned,
+          pointsRemaining: pointsEarned,
           earningDate: today,
           expiryDate,
         },
@@ -457,5 +473,51 @@ export class PointsService {
       customerId: customer.id,
       notificationType: 'tier_upgrade',
     });
+  }
+
+  /**
+   * FIFO expiry batch consumption.
+   * When a customer redeems points, reduce pointsRemaining on the oldest-expiring
+   * active batches first. This ensures the expiry job only ever deducts
+   * points that have NOT already been spent.
+   *
+   * Must be called inside an active Prisma $transaction.
+   */
+  private async consumePointsFIFO(
+    tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
+    customerId: string,
+    pointsToConsume: number,
+  ) {
+    if (pointsToConsume <= 0) return;
+
+    const batches = await tx.pointsExpiry.findMany({
+      where: {
+        customerId,
+        isExpired: false,
+        pointsRemaining: { gt: 0 },
+      },
+      orderBy: { expiryDate: 'asc' },
+    });
+
+    let remaining = pointsToConsume;
+    for (const batch of batches) {
+      if (remaining <= 0) break;
+
+      const consume = Math.min(batch.pointsRemaining, remaining);
+
+      await tx.pointsExpiry.update({
+        where: { id: batch.id },
+        data: { pointsRemaining: { decrement: consume } },
+      });
+
+      remaining -= consume;
+    }
+
+    if (remaining > 0) {
+      this.logger.warn(
+        { customerId, pointsToConsume, unaccounted: remaining },
+        'FIFO consumption: could not fully account for redeemed points across expiry batches',
+      );
+    }
   }
 }
