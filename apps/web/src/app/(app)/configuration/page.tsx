@@ -923,56 +923,80 @@ function EmailTab() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Email Body</p>
           <div className="space-y-1">
-            <Label>Forensic Alert Email Body</Label>
+            <Label>Email Body Text</Label>
             <textarea
               className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Enter the body text for forensic alert emails. Leave blank to use the default message."
+              placeholder="Enter the body text for outgoing emails. Leave blank to use the default message."
               value={form.emailBody}
               onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
             />
-            <p className="text-xs text-muted-foreground">Used for fraud/forensic alert emails. Supports {'{customername}'}, {'{phoneno}'}, {'{date}'}.</p>
+            <p className="text-xs text-muted-foreground">
+              Supports plain text. Available variables: <code className="text-indigo-600">{'{customername}'}</code>,{' '}
+              <code className="text-indigo-600">{'{phoneno}'}</code>,{' '}
+              <code className="text-indigo-600">{'{date}'}</code>.
+            </p>
           </div>
         </div>
 
-        {/* Points Expiry */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Points Expiry</p>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-end">
-              <div className="flex-1 space-y-1">
-                <Label>Expiry Window</Label>
-                <p className="text-xs text-muted-foreground">Points earned on each transaction will expire after this period.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  className="w-24 h-9 text-sm"
-                  value={form.expiryWindowValue}
-                  onChange={(e) => setForm((f) => ({ ...f, expiryWindowValue: e.target.value }))}
-                />
-                <select
-                  className="border rounded-md px-3 py-1.5 text-sm bg-background h-9"
-                  value={form.expiryWindowUnit}
-                  onChange={(e) => setForm((f) => ({ ...f, expiryWindowUnit: e.target.value }))}
-                >
-                  <option value="days">Days</option>
-                  <option value="hours">Hours</option>
-                  <option value="minutes">Minutes</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label>Points Expiry Email Body</Label>
-              <textarea
-                className="w-full min-h-[120px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Enter the body text for points expiry emails sent to customers. Leave blank to use the default message."
-                value={form.expiryEmailBody}
-                onChange={(e) => setForm((f) => ({ ...f, expiryEmailBody: e.target.value }))}
+        {/* Points Expiry Email — body template only; recipient is the customer's own email */}
+        <div className="rounded-lg border border-border p-4 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Email</p>
+            <p className="text-xs text-muted-foreground mt-1">Sent automatically to each customer when their points expire. Recipient is the customer&apos;s own email address.</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Email Body</Label>
+            <textarea
+              className="w-full min-h-[100px] resize-y rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Dear {customername}, your {points} loyalty points expired on {expiry_date}. Keep shopping with us to earn new points."
+              value={form.expiryEmailBody}
+              onChange={(e) => setForm((f) => ({ ...f, expiryEmailBody: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the default message. Available variables:{' '}
+              <code className="text-indigo-600">{'{customername}'}</code>,{' '}
+              <code className="text-indigo-600">{'{points}'}</code>,{' '}
+              <code className="text-indigo-600">{'{expiry_date}'}</code>.
+            </p>
+          </div>
+        </div>
+
+        {/* Points Expiry Window — configurable duration */}
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Points Expiry Window</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Points earned on a transaction will expire after this duration. The worker checks every 5 minutes and deducts expired points automatically.
+            </p>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="space-y-1 w-36">
+              <Label>Duration</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="365"
+                value={form.expiryWindowValue}
+                onChange={(e) => setForm((f) => ({ ...f, expiryWindowValue: e.target.value }))}
               />
-              <p className="text-xs text-muted-foreground">Sent to the customer when their points expire. Supports {'{customername}'}, {'{points}'}, {'{expiry_date}'}.</p>
+            </div>
+            <div className="space-y-1 flex-1">
+              <Label>Unit</Label>
+              <select
+                className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                value={form.expiryWindowUnit}
+                onChange={(e) => setForm((f) => ({ ...f, expiryWindowUnit: e.target.value }))}
+              >
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Example: set <strong>5 Minutes</strong> for testing, then change to <strong>365 Days</strong> for production.
+          </p>
         </div>
 
         <label className="flex items-center gap-2 text-sm cursor-pointer">
