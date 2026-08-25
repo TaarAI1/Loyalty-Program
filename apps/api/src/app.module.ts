@@ -19,6 +19,7 @@ import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { SeedModule } from './seed/seed.module';
+import { SegmentsModule } from './segments/segments.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { SeedModule } from './seed/seed.module';
     ReportsModule,
     NotificationsModule,
     DashboardModule,
+    SegmentsModule,
     HealthModule,
   ],
   providers: [

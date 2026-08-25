@@ -97,6 +97,12 @@ export const notificationsApi = {
   resend: (id: string | number) => api.post(`/notifications/${id}/resend`).then((r) => r.data),
 };
 
+// Segments
+export const segmentsApi = {
+  getCustomers: (params: Record<string, unknown>) =>
+    api.get('/segments/customers', { params }).then((r) => r.data),
+};
+
 // Users
 export const usersApi = {
   getAll: () => api.get('/users').then((r) => r.data),
