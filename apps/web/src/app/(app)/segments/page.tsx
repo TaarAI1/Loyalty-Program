@@ -434,7 +434,7 @@ export default function SegmentsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {c.tier ? <TierBadge tier={c.tier} /> : <span className="text-muted-foreground">—</span>}
+                          <TierBadge name={c.tier} />
                         </td>
                         <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
                           {c.totalPoints.toLocaleString()}
