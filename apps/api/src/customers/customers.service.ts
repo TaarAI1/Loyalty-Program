@@ -118,7 +118,58 @@ export class CustomersService {
       avgVisitsPerMonth,
     };
 
-    return { ...customer, tierProgress, nextTier, stats };
+    // Persona computation
+    const now = Date.now();
+    const lastVisitMs = customer.lastVisitDate ? customer.lastVisitDate.getTime() : 0;
+    const daysSinceVisit = lastVisitMs ? Math.floor((now - lastVisitMs) / 86400000) : null;
+    const enrolledDaysAgo = Math.floor((now - customer.createdAt.getTime()) / 86400000);
+    const redemptionRate = stats.totalPointsEarned > 0
+      ? Math.round((stats.totalPointsRedeemed / stats.totalPointsEarned) * 100)
+      : 0;
+
+    let personaLabel = 'New';
+    if (daysSinceVisit === null || txCount === 0) {
+      personaLabel = 'New';
+    } else if (daysSinceVisit > 180) {
+      personaLabel = stats.totalSpent > 50000 ? 'Cannot Lose' : 'Lost';
+    } else if (daysSinceVisit > 90) {
+      personaLabel = 'At Risk';
+    } else if (enrolledDaysAgo <= 30 && txCount <= 3) {
+      personaLabel = 'Promising';
+    } else if (daysSinceVisit <= 30 && txCount >= 5 && stats.totalSpent > 20000) {
+      personaLabel = 'Champion';
+    } else {
+      personaLabel = 'Loyal';
+    }
+
+    // Preferred store from transactions
+    const storeCounts = await this.prisma.transaction.groupBy({
+      by: ['store'],
+      where: { customerId: id, store: { not: null } },
+      _count: { store: true },
+      orderBy: { _count: { store: 'desc' } },
+      take: 1,
+    });
+    const preferredStore = storeCounts[0]?.store ?? customer.store ?? null;
+
+    // Next expiry
+    const nextExpiry = await this.prisma.pointsExpiry.findFirst({
+      where: { customerId: id, isExpired: false, pointsRemaining: { gt: 0 } },
+      orderBy: { expiryDate: 'asc' },
+      select: { expiryDate: true, pointsRemaining: true },
+    });
+
+    const persona = {
+      label: personaLabel,
+      daysSinceVisit,
+      enrolledDaysAgo,
+      redemptionRate,
+      preferredStore,
+      nextExpiryDate: nextExpiry?.expiryDate ?? null,
+      nextExpiryPoints: nextExpiry?.pointsRemaining ?? null,
+    };
+
+    return { ...customer, tierProgress, nextTier, stats, persona };
   }
 
   async getTransactionHistory(
@@ -253,6 +304,62 @@ export class CustomersService {
 
     this.logger.log({ customerId: id, points, reason, awardedBy }, 'Manual points award');
     return { success: true, newBalance };
+  }
+
+  async getActivity(customerId: string) {
+    await this.assertExists(customerId);
+    const since = new Date();
+    since.setMonth(since.getMonth() - 11);
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: { customerId, transactionDate: { gte: since } },
+      select: { transactionDate: true, saleAmount: true, pointsEarned: true, pointsRedeemed: true },
+      orderBy: { transactionDate: 'asc' },
+    });
+
+    const monthMap: Record<string, { month: string; spend: number; earned: number; redeemed: number }> = {};
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+      monthMap[key] = { month: label, spend: 0, earned: 0, redeemed: 0 };
+    }
+
+    for (const tx of transactions) {
+      const key = `${tx.transactionDate.getFullYear()}-${String(tx.transactionDate.getMonth() + 1).padStart(2, '0')}`;
+      if (monthMap[key]) {
+        monthMap[key].spend += Number(tx.saleAmount);
+        monthMap[key].earned += tx.pointsEarned;
+        monthMap[key].redeemed += tx.pointsRedeemed;
+      }
+    }
+
+    return { data: Object.values(monthMap) };
+  }
+
+  async getNotes(customerId: string) {
+    await this.assertExists(customerId);
+    const notes = await this.prisma.customerNote.findMany({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { data: notes };
+  }
+
+  async addNote(customerId: string, body: string, addedBy: string) {
+    await this.assertExists(customerId);
+    const note = await this.prisma.customerNote.create({
+      data: { customerId, body, addedBy },
+    });
+    return note;
+  }
+
+  async deleteNote(noteId: number) {
+    await this.prisma.customerNote.delete({ where: { id: noteId } });
+    return { success: true };
   }
 
   private async assertExists(id: string) {

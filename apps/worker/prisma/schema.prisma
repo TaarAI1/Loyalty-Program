@@ -51,10 +51,24 @@ model Customer {
   pointsLedger      PointsLedger[]
   pointsExpiry      PointsExpiry[]
   notificationLogs  NotificationLog[]
+  customerNotes     CustomerNote[]
 
   @@unique([mobileNumber, countryCode])
   @@index([tierId])
   @@map("customers")
+}
+
+model CustomerNote {
+  id         Int      @id @default(autoincrement())
+  customerId String   @map("customer_id") @db.Uuid
+  body       String
+  addedBy    String   @default("admin") @map("added_by") @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@map("customer_notes")
 }
 
 model Transaction {

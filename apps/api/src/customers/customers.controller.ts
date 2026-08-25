@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -96,5 +97,31 @@ export class CustomersController {
     @Body() body: { points: number; reason: string; awardedBy?: string },
   ) {
     return this.customersService.awardPoints(id, body.points, body.reason, body.awardedBy ?? 'admin');
+  }
+
+  @Get(':id/activity')
+  getActivity(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.getActivity(id);
+  }
+
+  @Get(':id/notes')
+  getNotes(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.getNotes(id);
+  }
+
+  @Post(':id/notes')
+  addNote(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { body: string; addedBy?: string },
+  ) {
+    return this.customersService.addNote(id, body.body, body.addedBy ?? 'admin');
+  }
+
+  @Delete(':id/notes/:noteId')
+  deleteNote(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('noteId', ParseIntPipe) noteId: number,
+  ) {
+    return this.customersService.deleteNote(noteId);
   }
 }

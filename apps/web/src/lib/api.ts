@@ -49,6 +49,12 @@ export const customersApi = {
     api.post(`/customers/${id}/award-points`, data).then((r) => r.data),
   getTransactionItems: (customerId: string, txId: string) =>
     api.get(`/customers/${customerId}/transactions/${txId}/items`).then((r) => r.data),
+  getActivity: (id: string) => api.get(`/customers/${id}/activity`).then((r) => r.data),
+  getNotes: (id: string) => api.get(`/customers/${id}/notes`).then((r) => r.data),
+  addNote: (id: string, body: string, addedBy?: string) =>
+    api.post(`/customers/${id}/notes`, { body, addedBy }).then((r) => r.data),
+  deleteNote: (customerId: string, noteId: number) =>
+    api.delete(`/customers/${customerId}/notes/${noteId}`).then((r) => r.data),
 };
 
 // Configuration

@@ -19,7 +19,10 @@ import {
   formatDate,
   formatDateTime,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck } from 'lucide-react';
+import {
+  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
 
@@ -34,6 +37,8 @@ export default function CustomerDetailPage() {
   const [ledgerPage, setLedgerPage] = useState(1);
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
   const [txItems, setTxItems] = useState<Record<string, { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[]>>({});
+  const [personaOpen, setPersonaOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
@@ -57,6 +62,30 @@ export default function CustomerDetailPage() {
     queryFn: () => customersApi.getLedger(id, { page: ledgerPage, pageSize: 10 }),
     enabled: !!customer,
     staleTime: 0,
+  });
+
+  const { data: activityData } = useQuery({
+    queryKey: ['customer-activity', id],
+    queryFn: () => customersApi.getActivity(id),
+    enabled: !!customer && personaOpen,
+  });
+
+  const { data: notesData, refetch: refetchNotes } = useQuery({
+    queryKey: ['customer-notes', id],
+    queryFn: () => customersApi.getNotes(id),
+    enabled: !!customer && personaOpen,
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: (body: string) => customersApi.addNote(id, body),
+    onSuccess: () => { setNoteText(''); refetchNotes(); },
+    onError: () => toast.error('Failed to add note'),
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: number) => customersApi.deleteNote(id, noteId),
+    onSuccess: () => refetchNotes(),
+    onError: () => toast.error('Failed to delete note'),
   });
 
   function refreshAll() {
@@ -712,6 +741,161 @@ export default function CustomerDetailPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Customer Persona Section */}
+      <div className="border border-border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setPersonaOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4 text-[#FFD000]" />
+            <span className="font-bold text-[14px]">Customer Persona</span>
+            {customer?.persona && (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/20 text-[#b89b00]">
+                {customer.persona.label}
+              </span>
+            )}
+          </div>
+          {personaOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+
+        {personaOpen && customer?.persona && (
+          <div className="p-5 space-y-6 bg-background">
+
+            {/* Top row: Persona badge + insight pills */}
+            <div className="flex flex-wrap gap-3 items-start">
+              {/* Big persona badge */}
+              {(() => {
+                const label = customer.persona.label;
+                const config: Record<string, { icon: React.ReactNode; color: string }> = {
+                  'Champion':     { icon: <Trophy className="w-5 h-5" />,    color: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
+                  'Loyal':        { icon: <UserCheck className="w-5 h-5" />, color: 'bg-green-100 text-green-700 border-green-300' },
+                  'Promising':    { icon: <Sparkles className="w-5 h-5" />,  color: 'bg-blue-100 text-blue-700 border-blue-300' },
+                  'At Risk':      { icon: <AlertTriangle className="w-5 h-5" />, color: 'bg-orange-100 text-orange-700 border-orange-300' },
+                  'Cannot Lose':  { icon: <Flame className="w-5 h-5" />,     color: 'bg-purple-100 text-purple-700 border-purple-300' },
+                  'Lost':         { icon: <UserX className="w-5 h-5" />,     color: 'bg-red-100 text-red-700 border-red-300' },
+                  'New':          { icon: <Star className="w-5 h-5" />,      color: 'bg-sky-100 text-sky-700 border-sky-300' },
+                };
+                const c = config[label] ?? config['New'];
+                return (
+                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-sm ${c.color}`}>
+                    {c.icon} {label}
+                  </span>
+                );
+              })()}
+
+              {/* Insight pills */}
+              <div className="flex flex-wrap gap-2">
+                {customer.persona.daysSinceVisit !== null && (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                    Last visit: <strong>{customer.persona.daysSinceVisit}d ago</strong>
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
+                  <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+                  Redemption rate: <strong>{customer.persona.redemptionRate}%</strong>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  Member for: <strong>{customer.persona.enrolledDaysAgo}d</strong>
+                </span>
+                {customer.persona.preferredStore && (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
+                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    Preferred store: <strong>{customer.persona.preferredStore}</strong>
+                  </span>
+                )}
+                {customer.persona.nextExpiryDate && (
+                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700">
+                    <Zap className="w-3.5 h-3.5" />
+                    <strong>{customer.persona.nextExpiryPoints} pts</strong> expiring {formatDate(customer.persona.nextExpiryDate)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Charts + Notes */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+              {/* Spend chart */}
+              <div className="lg:col-span-2 space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Monthly Spend (last 12 months)</p>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={activityData?.data ?? []} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <Bar dataKey="spend" name="Spend" fill="#FFD000" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Points Earned vs Redeemed</p>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <AreaChart data={activityData?.data ?? []} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Area type="monotone" dataKey="earned" name="Earned" stroke="#22c55e" fill="#22c55e33" strokeWidth={2} />
+                      <Area type="monotone" dataKey="redeemed" name="Redeemed" stroke="#f97316" fill="#f9731633" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                  <StickyNote className="w-3.5 h-3.5" /> Staff Notes
+                </p>
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#FFD000]/50"
+                    rows={3}
+                    placeholder="Add a note about this customer..."
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    disabled={!noteText.trim() || addNoteMutation.isPending}
+                    onClick={() => noteText.trim() && addNoteMutation.mutate(noteText.trim())}
+                  >
+                    Add Note
+                  </Button>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {(notesData?.data ?? []).length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">No notes yet.</p>
+                  ) : (
+                    (notesData?.data ?? []).map((note: { id: number; body: string; addedBy: string; createdAt: string }) => (
+                      <div key={note.id} className="border border-border rounded-lg px-3 py-2.5 text-sm space-y-1 bg-muted/20">
+                        <p className="leading-snug">{note.body}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground">{note.addedBy} · {formatDate(note.createdAt)}</span>
+                          <button
+                            onClick={() => deleteNoteMutation.mutate(note.id)}
+                            className="p-1 rounded hover:bg-red-100 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Edit Dialog */}
       <Dialog
