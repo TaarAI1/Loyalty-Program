@@ -378,7 +378,7 @@ export class CustomersService {
     };
   }
 
-  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string; occupation: string | null; preferredChannel: string | null; maritalStatus: string | null }>) {
+  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string; occupation: string | null; preferredChannel: string | null; maritalStatus: string | null; legalName: string | null; preferredName: string | null; nationality: string | null; city: string | null; area: string | null; homeAddress: string | null; deliveryAddress: string | null; alternatePhone: string | null }>) {
     await this.assertExists(id);
     return this.prisma.customer.update({
       where: { id },

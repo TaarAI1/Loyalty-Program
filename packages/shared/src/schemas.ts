@@ -63,6 +63,14 @@ export const CustomerUpdateSchema = z.object({
   occupation: z.string().max(100).optional().nullable(),
   preferredChannel: z.enum(['WhatsApp', 'SMS', 'Email']).optional().nullable(),
   maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed']).optional().nullable(),
+  legalName: z.string().max(255).optional().nullable(),
+  preferredName: z.string().max(100).optional().nullable(),
+  nationality: z.string().max(100).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  area: z.string().max(100).optional().nullable(),
+  homeAddress: z.string().optional().nullable(),
+  deliveryAddress: z.string().optional().nullable(),
+  alternatePhone: z.string().max(20).optional().nullable(),
 });
 export type CustomerUpdateDto = z.infer<typeof CustomerUpdateSchema>;
 

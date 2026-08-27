@@ -108,6 +108,14 @@ export default function CustomerDetailPage() {
     occupation: '',
     preferredChannel: '',
     maritalStatus: '',
+    legalName: '',
+    preferredName: '',
+    nationality: '',
+    city: '',
+    area: '',
+    homeAddress: '',
+    deliveryAddress: '',
+    alternatePhone: '',
   });
 
   const updateMutation = useMutation({
@@ -158,6 +166,14 @@ export default function CustomerDetailPage() {
         occupation: (customer as any).occupation ?? '',
         preferredChannel: (customer as any).preferredChannel ?? '',
         maritalStatus: (customer as any).maritalStatus ?? '',
+        legalName: (customer as any).legalName ?? '',
+        preferredName: (customer as any).preferredName ?? '',
+        nationality: (customer as any).nationality ?? '',
+        city: (customer as any).city ?? '',
+        area: (customer as any).area ?? '',
+        homeAddress: (customer as any).homeAddress ?? '',
+        deliveryAddress: (customer as any).deliveryAddress ?? '',
+        alternatePhone: (customer as any).alternatePhone ?? '',
       });
     }
     setEditOpen(true);
@@ -803,43 +819,54 @@ export default function CustomerDetailPage() {
               })();
               const churnColor = p.churnRisk === 'High' ? 'text-red-600 font-bold' : p.churnRisk === 'Medium' ? 'text-orange-500 font-bold' : 'text-green-600 font-bold';
               const profileFields: { label: string; value: string; highlight?: string }[] = [
-                { label: 'Full Name',             value: customer.name ?? '—' },
-                { label: 'Phone',                 value: phone },
-                { label: 'Email',                 value: customer.email ?? '—' },
-                { label: 'Date of Birth',         value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
-                { label: 'Age',                   value: p.age != null ? `${p.age} years (${p.generation ?? ''})` : '—' },
-                { label: 'Gender',                value: (customer as any).gender ?? '—' },
-                { label: 'Marital Status',        value: (customer as any).maritalStatus ?? '—' },
-                { label: 'Occupation',            value: (customer as any).occupation ?? '—' },
-                { label: 'Preferred Channel',     value: (customer as any).preferredChannel ?? '—' },
-                { label: 'Birthday Countdown',    value: p.birthdayDaysLeft != null ? `${p.birthdayDaysLeft} days away` : '—' },
-                { label: 'Loyalty Tier',          value: customer.tier?.name ?? '—' },
-                { label: 'Status',                value: (customer as any).status ?? '—' },
-                { label: 'Store',                 value: customer.store ?? '—' },
-                { label: 'Region',                value: customer.region ?? '—' },
-                { label: 'Preferred Store',       value: p.preferredStore ?? '—' },
-                { label: 'Preferred Visit Day',   value: p.preferredDay ? `${p.preferredDay}s` : '—' },
-                { label: 'Retailpro ID',          value: (customer as any).retailproId ?? '—' },
-                { label: 'Country Code',          value: `+${customer.countryCode ?? '92'}` },
-                { label: 'Enrolled',              value: `${p.enrolledDaysAgo} days ago` },
-                { label: 'Last Visit',            value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
-                { label: 'Days Since Last Visit', value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
-                { label: 'Engagement Score',      value: `${customer.engagementScore ?? 0} / 100` },
-                { label: 'Churn Risk',            value: p.churnRisk, highlight: churnColor },
-                { label: 'Redeemer Type',         value: p.redeemerType },
-                { label: 'Available Points',      value: formatNumber(customer.totalPoints) },
-                { label: 'Lifetime Sale',         value: formatCurrency(Number(customer.lifetimeSale)) },
-                { label: 'Total Spend (tx)',      value: formatCurrency(stats.totalSpent) },
-                { label: 'Total Transactions',    value: String(stats.totalTransactions) },
-                { label: 'Avg. Order Value',      value: formatCurrency(stats.avgOrderValue) },
-                { label: 'Avg. Visits / Month',   value: stats.avgVisitsPerMonth.toFixed(1) },
-                { label: 'Points Earned',         value: formatNumber(stats.totalPointsEarned) },
-                { label: 'Points Redeemed',       value: formatNumber(stats.totalPointsRedeemed) },
-                { label: 'Redemption Rate',       value: `${p.redemptionRate}%` },
-                { label: 'Points Expiring Next',  value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
-                { label: 'RFM — Recency',         value: `${p.rfmScores.recency} / 5` },
-                { label: 'RFM — Frequency',       value: `${p.rfmScores.frequency} / 5` },
-                { label: 'RFM — Monetary',        value: `${p.rfmScores.monetary} / 5` },
+                /* ── Identity ── */
+                { label: 'Full Name',              value: customer.name ?? '—' },
+                { label: 'Legal Name',             value: (customer as any).legalName ?? '—' },
+                { label: 'Preferred Name',         value: (customer as any).preferredName ?? '—' },
+                { label: 'Phone',                  value: phone },
+                { label: 'Alternate Phone',        value: (customer as any).alternatePhone ?? '—' },
+                { label: 'Email',                  value: customer.email ?? '—' },
+                /* ── Demographics ── */
+                { label: 'Date of Birth',          value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
+                { label: 'Age',                    value: p.age != null ? `${p.age} years (${p.generation ?? ''})` : '—' },
+                { label: 'Gender',                 value: (customer as any).gender ?? '—' },
+                { label: 'Marital Status',         value: (customer as any).maritalStatus ?? '—' },
+                { label: 'Nationality',            value: (customer as any).nationality ?? '—' },
+                { label: 'Occupation',             value: (customer as any).occupation ?? '—' },
+                { label: 'Preferred Channel',      value: (customer as any).preferredChannel ?? '—' },
+                /* ── Location ── */
+                { label: 'City',                   value: (customer as any).city ?? '—' },
+                { label: 'Area / Neighborhood',    value: (customer as any).area ?? '—' },
+                { label: 'Region',                 value: customer.region ?? '—' },
+                { label: 'Home Address',           value: (customer as any).homeAddress ?? '—' },
+                { label: 'Delivery Address',       value: (customer as any).deliveryAddress ?? '—' },
+                /* ── Loyalty account ── */
+                { label: 'Loyalty Tier',           value: customer.tier?.name ?? '—' },
+                { label: 'Status',                 value: (customer as any).status ?? '—' },
+                { label: 'Store',                  value: customer.store ?? '—' },
+                { label: 'Preferred Store',        value: p.preferredStore ?? '—' },
+                { label: 'Preferred Visit Day',    value: p.preferredDay ? `${p.preferredDay}s` : '—' },
+                { label: 'Enrolled',               value: `${p.enrolledDaysAgo} days ago` },
+                { label: 'Last Visit',             value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
+                { label: 'Days Since Last Visit',  value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
+                /* ── Scoring ── */
+                { label: 'Engagement Score',       value: `${customer.engagementScore ?? 0} / 100` },
+                { label: 'Churn Risk',             value: p.churnRisk, highlight: churnColor },
+                { label: 'Redeemer Type',          value: p.redeemerType },
+                { label: 'RFM — Recency',          value: `${p.rfmScores.recency} / 5` },
+                { label: 'RFM — Frequency',        value: `${p.rfmScores.frequency} / 5` },
+                { label: 'RFM — Monetary',         value: `${p.rfmScores.monetary} / 5` },
+                /* ── Points & spend ── */
+                { label: 'Available Points',       value: formatNumber(customer.totalPoints) },
+                { label: 'Lifetime Sale',          value: formatCurrency(Number(customer.lifetimeSale)) },
+                { label: 'Total Spend (tx)',       value: formatCurrency(stats.totalSpent) },
+                { label: 'Total Transactions',     value: String(stats.totalTransactions) },
+                { label: 'Avg. Order Value',       value: formatCurrency(stats.avgOrderValue) },
+                { label: 'Avg. Visits / Month',    value: stats.avgVisitsPerMonth.toFixed(1) },
+                { label: 'Points Earned',          value: formatNumber(stats.totalPointsEarned) },
+                { label: 'Points Redeemed',        value: formatNumber(stats.totalPointsRedeemed) },
+                { label: 'Redemption Rate',        value: `${p.redemptionRate}%` },
+                { label: 'Points Expiring Next',   value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
               ];
               return (
                 <div className="rounded-xl border border-border overflow-hidden">
@@ -1329,6 +1356,72 @@ export default function CustomerDetailPage() {
               <option value="Divorced">Divorced</option>
               <option value="Widowed">Widowed</option>
             </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Legal Name (optional)</Label>
+            <Input
+              placeholder="Full legal name if different..."
+              value={editForm.legalName}
+              onChange={(e) => setEditForm((f) => ({ ...f, legalName: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Preferred Name / Nickname</Label>
+            <Input
+              placeholder="e.g. Ali, Maha..."
+              value={editForm.preferredName}
+              onChange={(e) => setEditForm((f) => ({ ...f, preferredName: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Nationality</Label>
+            <Input
+              placeholder="e.g. Pakistani, British..."
+              value={editForm.nationality}
+              onChange={(e) => setEditForm((f) => ({ ...f, nationality: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Alternate Phone</Label>
+            <Input
+              placeholder="e.g. 03001234567"
+              value={editForm.alternatePhone}
+              onChange={(e) => setEditForm((f) => ({ ...f, alternatePhone: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>City</Label>
+            <Input
+              placeholder="e.g. Lahore"
+              value={editForm.city}
+              onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Area / Neighborhood</Label>
+            <Input
+              placeholder="e.g. DHA Phase 5"
+              value={editForm.area}
+              onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Home Address</Label>
+            <textarea
+              className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              placeholder="Full home address..."
+              value={editForm.homeAddress}
+              onChange={(e) => setEditForm((f) => ({ ...f, homeAddress: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Delivery Address (if different)</Label>
+            <textarea
+              className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              placeholder="Delivery address..."
+              value={editForm.deliveryAddress}
+              onChange={(e) => setEditForm((f) => ({ ...f, deliveryAddress: e.target.value }))}
+            />
           </div>
           <div className="flex gap-2 pt-2">
             <Button
