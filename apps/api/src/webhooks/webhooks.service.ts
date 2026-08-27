@@ -108,6 +108,13 @@ export class WebhooksService {
           store: dto.store,
           retailproId: dto.customer_id,
           mobileNumber,
+          preferredName:   dto.preferred_name,
+          nationality:     dto.nationality,
+          city:            dto.city,
+          homeAddress:     dto.home_address,
+          maritalStatus:   dto.marital_status,
+          deliveryAddress: dto.delivery_address,
+          alternatePhone:  dto.alternate_phone,
         },
       });
       this.logger.log({ customerId: existing.id }, 'Customer updated via webhook');
@@ -118,16 +125,23 @@ export class WebhooksService {
     const tier = await this.prisma.loyaltyTier.findFirst({ orderBy: { spendFrom: 'asc' } });
     const customer = await this.prisma.customer.create({
       data: {
-        retailproId: dto.customer_id,
-        name: dto.name,
+        retailproId:     dto.customer_id,
+        name:            dto.name,
         mobileNumber,
         countryCode,
-        email: dto.email,
-        dateOfBirth: dto.dob ? new Date(dto.dob) : undefined,
-        gender: dto.gender,
-        region: dto.region,
-        store: dto.store,
-        tierId: tier?.id,
+        email:           dto.email,
+        dateOfBirth:     dto.dob ? new Date(dto.dob) : undefined,
+        gender:          dto.gender,
+        region:          dto.region,
+        store:           dto.store,
+        tierId:          tier?.id,
+        preferredName:   dto.preferred_name,
+        nationality:     dto.nationality,
+        city:            dto.city,
+        homeAddress:     dto.home_address,
+        maritalStatus:   dto.marital_status,
+        deliveryAddress: dto.delivery_address,
+        alternatePhone:  dto.alternate_phone,
       },
     });
 
