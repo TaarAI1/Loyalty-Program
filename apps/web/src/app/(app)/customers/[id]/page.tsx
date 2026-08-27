@@ -892,7 +892,7 @@ export default function CustomerDetailPage() {
             {/* ── Row 1: Persona ICP card + Demographics grid ── */}
             {(() => {
               const p = customer.persona as {
-                label: string; summary: string; goals: string[]; actionItems: string[];
+                label: string; summary: string; insights: { issue: string; strategy: string }[]; actionItems: string[];
                 behaviors: string[]; personaTags: string[]; daysSinceVisit: number | null;
                 enrolledDaysAgo: number; redemptionRate: number; preferredStore: string | null;
                 preferredDay: string | null; redeemerType: string;
@@ -979,16 +979,22 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
 
-                  {/* Goals + Pain Points */}
+                  {/* Strategic Insights + Recommended Actions */}
                   <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
                     <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Goals
+                        <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
                       </p>
-                      <ul className="space-y-1.5">
-                        {p.goals.map((g, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" /> {g}
+                      <ul className="space-y-3">
+                        {p.insights.map((insight, i) => (
+                          <li key={i} className="space-y-0.5">
+                            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                              {insight.issue}
+                            </p>
+                            <p className="text-xs font-semibold pl-3 text-foreground leading-snug">
+                              {insight.strategy}
+                            </p>
                           </li>
                         ))}
                       </ul>

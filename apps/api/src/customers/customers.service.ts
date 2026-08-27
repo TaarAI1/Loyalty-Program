@@ -244,14 +244,73 @@ export class CustomersService {
     if (birthdayDaysLeft !== null && birthdayDaysLeft <= 14) personaTags.push('Birthday Soon');
     if (personaTags.length === 0) personaTags.push('New Member');
 
-    // ICP goals
-    const goals: string[] = [];
-    if (redemptionRate > 50) goals.push('Maximize reward redemptions');
-    if (avgVisitsPerMonth > 2) goals.push('Regular shopping routine');
-    if (stats.totalSpent > 100000) goals.push('Premium / status recognition');
-    if (txCount <= 2) goals.push('Explore the loyalty program');
-    if (daysSinceVisit !== null && daysSinceVisit < 30 && txCount > 3) goals.push('Get the most value per visit');
-    if (goals.length === 0) goals.push('Start building loyalty rewards');
+    // Strategic insights — observation + marketing strategy pairs
+    type Insight = { issue: string; strategy: string };
+    const insights: Insight[] = [];
+
+    if (daysSinceVisit !== null && daysSinceVisit > 30 && daysSinceVisit <= 60)
+      insights.push({
+        issue: `Not visited in ${daysSinceVisit} days`,
+        strategy: 'Send a personalised WhatsApp reminder with an exclusive comeback offer to re-activate',
+      });
+    if (daysSinceVisit !== null && daysSinceVisit > 60 && daysSinceVisit <= 180)
+      insights.push({
+        issue: `Inactive for ${daysSinceVisit} days — customer is drifting`,
+        strategy: 'Run a win-back campaign — offer double points or a time-limited discount to drive a return visit',
+      });
+    if (daysSinceVisit !== null && daysSinceVisit > 180)
+      insights.push({
+        issue: `Lapsed — no visit in ${daysSinceVisit} days`,
+        strategy: 'Deploy a high-value re-engagement offer (e.g. bonus points + free gift) with a clear expiry deadline',
+      });
+    if (txCount === 1)
+      insights.push({
+        issue: 'Only one transaction — not yet converted to a repeat buyer',
+        strategy: 'Run a "Second Visit" campaign: bonus points on next purchase within 30 days',
+      });
+    if (txCount >= 2 && txCount <= 4 && avgVisitsPerMonth < 1)
+      insights.push({
+        issue: 'Low visit frequency — visits are irregular',
+        strategy: 'Set up a monthly engagement reminder via WhatsApp to keep the brand top of mind',
+      });
+    if (redemptionRate < 20 && stats.totalPointsEarned > 300)
+      insights.push({
+        issue: `Low redemption rate (${redemptionRate}%) — points accumulating unused`,
+        strategy: 'Promote a redemption event or set a low-threshold reward to trigger the first redemption and build the habit',
+      });
+    if (nextExpiry?.pointsRemaining && nextExpiry.expiryDate) {
+      const daysToExpiry = Math.floor((nextExpiry.expiryDate.getTime() - Date.now()) / 86400000);
+      if (daysToExpiry <= 30)
+        insights.push({
+          issue: `${nextExpiry.pointsRemaining} points expiring in ${daysToExpiry} days`,
+          strategy: 'Send an urgency campaign — "Use your points before they expire" with a direct in-store call to action',
+        });
+    }
+    if (stats.totalSpent > 50000 && avgVisitsPerMonth < 1)
+      insights.push({
+        issue: `High lifetime spend (Rs ${Math.round(stats.totalSpent).toLocaleString()}) but low visit frequency`,
+        strategy: 'Invite to a VIP loyalty event, exclusive in-store preview, or early access sale to reactivate high-value behaviour',
+      });
+    if (birthdayDaysLeft !== null && birthdayDaysLeft <= 14)
+      insights.push({
+        issue: `Birthday in ${birthdayDaysLeft} days`,
+        strategy: 'Schedule a personalised birthday greeting with a bonus reward or exclusive birthday discount',
+      });
+    if (txCount >= 5 && stats.avgOrderValue < 5000)
+      insights.push({
+        issue: 'Regular shopper but consistently small basket size',
+        strategy: 'Run an upsell campaign — bundle promotions or "spend Rs X more to unlock bonus points"',
+      });
+    if (avgVisitsPerMonth >= 3 && redemptionRate < 20)
+      insights.push({
+        issue: 'Frequent visitor but rarely redeems points',
+        strategy: 'Educate on redemption value via a targeted in-app message or cashier prompt at next visit',
+      });
+    if (insights.length === 0)
+      insights.push({
+        issue: 'Customer is active and engaged',
+        strategy: 'Maintain momentum — continue regular loyalty communications and reward milestones',
+      });
 
     // Action items / engagement recommendations
     const actionItems: string[] = [];
@@ -313,7 +372,7 @@ export class CustomersService {
     const persona = {
       label: personaLabel,
       summary,
-      goals,
+      insights,
       actionItems,
       behaviors,
       personaTags,
