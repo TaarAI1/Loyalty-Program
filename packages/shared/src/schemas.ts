@@ -60,6 +60,9 @@ export const CustomerUpdateSchema = z.object({
   store: z.string().max(100).optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['active', 'inactive', 'blocked']).optional(),
+  occupation: z.string().max(100).optional().nullable(),
+  preferredChannel: z.enum(['WhatsApp', 'SMS', 'Email']).optional().nullable(),
+  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed']).optional().nullable(),
 });
 export type CustomerUpdateDto = z.infer<typeof CustomerUpdateSchema>;
 

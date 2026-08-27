@@ -21,7 +21,8 @@ import {
 } from '@/lib/utils';
 import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck } from 'lucide-react';
 import {
-  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
 } from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
@@ -104,6 +105,9 @@ export default function CustomerDetailPage() {
     gender: '',
     status: 'active',
     isActive: true,
+    occupation: '',
+    preferredChannel: '',
+    maritalStatus: '',
   });
 
   const updateMutation = useMutation({
@@ -151,6 +155,9 @@ export default function CustomerDetailPage() {
         gender: (customer as any).gender ?? '',
         status: (customer as any).status ?? 'active',
         isActive: (customer as any).isActive !== false,
+        occupation: (customer as any).occupation ?? '',
+        preferredChannel: (customer as any).preferredChannel ?? '',
+        maritalStatus: (customer as any).maritalStatus ?? '',
       });
     }
     setEditOpen(true);
@@ -326,6 +333,16 @@ export default function CustomerDetailPage() {
                   return `+${cc} ${d}`;
                 })()}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
+                {/* Auto persona tags */}
+                {(customer as any).persona?.personaTags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {((customer as any).persona.personaTags as string[]).map((tag: string) => (
+                      <span key={tag} className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Milestone tier progress bar */}
@@ -761,136 +778,234 @@ export default function CustomerDetailPage() {
         </button>
 
         {personaOpen && customer?.persona && (
-          <div className="p-5 space-y-6 bg-background">
+          <div className="p-5 space-y-5 bg-background">
+            {/* ── Row 1: Persona ICP card + Demographics grid ── */}
+            {(() => {
+              const p = customer.persona as {
+                label: string; summary: string; goals: string[]; painPoints: string[];
+                behaviors: string[]; personaTags: string[]; daysSinceVisit: number | null;
+                enrolledDaysAgo: number; redemptionRate: number; preferredStore: string | null;
+                preferredDay: string | null; redeemerType: string; churnRisk: string;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+                age: number | null; generation: string | null; birthdayDaysLeft: number | null;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+              };
+              const badgeConfig: Record<string, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
+                'Champion':    { icon: <Trophy className="w-5 h-5" />,        color: 'text-yellow-700', bg: 'bg-yellow-50',  border: 'border-yellow-200' },
+                'Loyal':       { icon: <UserCheck className="w-5 h-5" />,     color: 'text-green-700',  bg: 'bg-green-50',   border: 'border-green-200' },
+                'Promising':   { icon: <Sparkles className="w-5 h-5" />,      color: 'text-blue-700',   bg: 'bg-blue-50',    border: 'border-blue-200' },
+                'At Risk':     { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-orange-700', bg: 'bg-orange-50',  border: 'border-orange-200' },
+                'Cannot Lose': { icon: <Flame className="w-5 h-5" />,         color: 'text-purple-700', bg: 'bg-purple-50',  border: 'border-purple-200' },
+                'Lost':        { icon: <UserX className="w-5 h-5" />,         color: 'text-red-700',    bg: 'bg-red-50',     border: 'border-red-200' },
+                'New':         { icon: <Star className="w-5 h-5" />,          color: 'text-sky-700',    bg: 'bg-sky-50',     border: 'border-sky-200' },
+              };
+              const bc = badgeConfig[p.label] ?? badgeConfig['New'];
+              const churnColor = p.churnRisk === 'High' ? 'text-red-600' : p.churnRisk === 'Medium' ? 'text-orange-500' : 'text-green-600';
+              const rfmData = [
+                { axis: 'Recency',   value: p.rfmScores.recency,   fullMark: 5 },
+                { axis: 'Frequency', value: p.rfmScores.frequency, fullMark: 5 },
+                { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
+              ];
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Persona ICP */}
+                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
+                    <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
+                      {bc.icon} {p.label}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {p.daysSinceVisit !== null && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                        <RotateCcw className="w-3 h-3" /> {p.redemptionRate}% redeemed
+                      </span>
+                      {p.preferredStore && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Building2 className="w-3 h-3" /> {p.preferredStore}
+                        </span>
+                      )}
+                      {p.preferredDay && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Calendar className="w-3 h-3" /> {p.preferredDay}s
+                        </span>
+                      )}
+                      {p.nextExpiryDate && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-700">
+                          <Zap className="w-3 h-3" /> {p.nextExpiryPoints} pts expiring {formatDate(p.nextExpiryDate)}
+                        </span>
+                      )}
+                      {p.birthdayDaysLeft !== null && p.birthdayDaysLeft <= 30 && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-pink-100 border border-pink-200 text-pink-700">
+                          🎂 Birthday in {p.birthdayDaysLeft}d
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-            {/* Top row: Persona badge + insight pills */}
-            <div className="flex flex-wrap gap-3 items-start">
-              {/* Big persona badge */}
-              {(() => {
-                const label = customer.persona.label;
-                const config: Record<string, { icon: React.ReactNode; color: string }> = {
-                  'Champion':     { icon: <Trophy className="w-5 h-5" />,    color: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-                  'Loyal':        { icon: <UserCheck className="w-5 h-5" />, color: 'bg-green-100 text-green-700 border-green-300' },
-                  'Promising':    { icon: <Sparkles className="w-5 h-5" />,  color: 'bg-blue-100 text-blue-700 border-blue-300' },
-                  'At Risk':      { icon: <AlertTriangle className="w-5 h-5" />, color: 'bg-orange-100 text-orange-700 border-orange-300' },
-                  'Cannot Lose':  { icon: <Flame className="w-5 h-5" />,     color: 'bg-purple-100 text-purple-700 border-purple-300' },
-                  'Lost':         { icon: <UserX className="w-5 h-5" />,     color: 'bg-red-100 text-red-700 border-red-300' },
-                  'New':          { icon: <Star className="w-5 h-5" />,      color: 'bg-sky-100 text-sky-700 border-sky-300' },
-                };
-                const c = config[label] ?? config['New'];
-                return (
-                  <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-sm ${c.color}`}>
-                    {c.icon} {label}
-                  </span>
-                );
-              })()}
+                  {/* Demographics grid */}
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" /> Demographics
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      {[
+                        { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
+                        { label: 'Generation', value: p.generation ?? '—' },
+                        { label: 'Redeemer',   value: p.redeemerType },
+                        { label: 'Churn Risk', value: p.churnRisk, extra: churnColor },
+                        { label: 'Occupation', value: (customer as any).occupation ?? '—' },
+                        { label: 'Channel',    value: (customer as any).preferredChannel ?? '—' },
+                        { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
+                        { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
+                      ].map(({ label, value, extra }) => (
+                        <div key={label}>
+                          <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+                          <p className={`text-sm font-semibold ${extra ?? ''}`}>{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Insight pills */}
-              <div className="flex flex-wrap gap-2">
-                {customer.persona.daysSinceVisit !== null && (
-                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                    Last visit: <strong>{customer.persona.daysSinceVisit}d ago</strong>
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
-                  <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
-                  Redemption rate: <strong>{customer.persona.redemptionRate}%</strong>
+                  {/* Goals + Pain Points */}
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Goals
+                      </p>
+                      <ul className="space-y-1.5">
+                        {p.goals.map((g, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" /> {g}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-2 pt-1 border-t border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Pain Points
+                      </p>
+                      <ul className="space-y-1.5">
+                        {p.painPoints.map((pt, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" /> {pt}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Behaviors row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-1">Behaviors:</span>
+              {((customer.persona as { behaviors?: string[] }).behaviors ?? []).map((b: string, i: number) => (
+                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
+                  {b}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                  Member for: <strong>{customer.persona.enrolledDaysAgo}d</strong>
-                </span>
-                {customer.persona.preferredStore && (
-                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted border border-border">
-                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    Preferred store: <strong>{customer.persona.preferredStore}</strong>
-                  </span>
-                )}
-                {customer.persona.nextExpiryDate && (
-                  <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700">
-                    <Zap className="w-3.5 h-3.5" />
-                    <strong>{customer.persona.nextExpiryPoints} pts</strong> expiring {formatDate(customer.persona.nextExpiryDate)}
-                  </span>
-                )}
+              ))}
+            </div>
+
+            {/* ── Row 3: 3 charts ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Chart 1: Monthly Spend trend */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Spend Trend (12 mo)</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={activityData?.data ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="spend" name="Spend" fill="#FFD000" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Chart 2: RFM Radar */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">RFM Score</p>
+                {(() => {
+                  const p2 = customer.persona as { rfmScores: { recency: number; frequency: number; monetary: number } };
+                  const rfmData2 = [
+                    { axis: 'Recency',   value: p2.rfmScores.recency   },
+                    { axis: 'Frequency', value: p2.rfmScores.frequency },
+                    { axis: 'Monetary',  value: p2.rfmScores.monetary  },
+                  ];
+                  return (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RadarChart data={rfmData2} margin={{ top: 4, right: 20, left: 20, bottom: 4 }}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
+                        <Radar name="RFM" dataKey="value" stroke="#FFD000" fill="#FFD000" fillOpacity={0.35} dot />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
+              </div>
+
+              {/* Chart 3: Visit day-of-week bar */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Visit Pattern</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={activityData?.dayOfWeek ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="visits" name="Visits" fill="#a78bfa" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Charts + Notes */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-              {/* Spend chart */}
-              <div className="lg:col-span-2 space-y-4">
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Monthly Spend (last 12 months)</p>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={activityData?.data ?? []} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                      <Bar dataKey="spend" name="Spend" fill="#FFD000" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Points Earned vs Redeemed</p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <AreaChart data={activityData?.data ?? []} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="earned" name="Earned" stroke="#22c55e" fill="#22c55e33" strokeWidth={2} />
-                      <Area type="monotone" dataKey="redeemed" name="Redeemed" stroke="#f97316" fill="#f9731633" strokeWidth={2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+            {/* ── Notes ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <StickyNote className="w-3.5 h-3.5" /> Staff Notes
+              </p>
+              <div className="space-y-2">
+                <textarea
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#FFD000]/50"
+                  rows={3}
+                  placeholder="Add a note about this customer..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  className="w-full"
+                  disabled={!noteText.trim() || addNoteMutation.isPending}
+                  onClick={() => noteText.trim() && addNoteMutation.mutate(noteText.trim())}
+                >
+                  Add Note
+                </Button>
               </div>
-
-              {/* Notes */}
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                  <StickyNote className="w-3.5 h-3.5" /> Staff Notes
-                </p>
-                <div className="space-y-2">
-                  <textarea
-                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#FFD000]/50"
-                    rows={3}
-                    placeholder="Add a note about this customer..."
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                  />
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    disabled={!noteText.trim() || addNoteMutation.isPending}
-                    onClick={() => noteText.trim() && addNoteMutation.mutate(noteText.trim())}
-                  >
-                    Add Note
-                  </Button>
-                </div>
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {(notesData?.data ?? []).length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">No notes yet.</p>
-                  ) : (
-                    (notesData?.data ?? []).map((note: { id: number; body: string; addedBy: string; createdAt: string }) => (
-                      <div key={note.id} className="border border-border rounded-lg px-3 py-2.5 text-sm space-y-1 bg-muted/20">
-                        <p className="leading-snug">{note.body}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-muted-foreground">{note.addedBy} · {formatDate(note.createdAt)}</span>
-                          <button
-                            onClick={() => deleteNoteMutation.mutate(note.id)}
-                            className="p-1 rounded hover:bg-red-100 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {(notesData?.data ?? []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No notes yet.</p>
+                ) : (
+                  (notesData?.data ?? []).map((note: { id: number; body: string; addedBy: string; createdAt: string }) => (
+                    <div key={note.id} className="border border-border rounded-lg px-3 py-2.5 text-sm space-y-1 bg-muted/20">
+                      <p className="leading-snug">{note.body}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">{note.addedBy} · {formatDate(note.createdAt)}</span>
+                        <button
+                          onClick={() => deleteNoteMutation.mutate(note.id)}
+                          className="p-1 rounded hover:bg-red-100 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -969,6 +1084,41 @@ export default function CustomerDetailPage() {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="blocked">Blocked</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Occupation (optional)</Label>
+            <Input
+              placeholder="e.g. Doctor, Engineer..."
+              value={editForm.occupation}
+              onChange={(e) => setEditForm((f) => ({ ...f, occupation: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Preferred Contact Channel</Label>
+            <select
+              value={editForm.preferredChannel}
+              onChange={(e) => setEditForm((f) => ({ ...f, preferredChannel: e.target.value }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Not specified</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="SMS">SMS</option>
+              <option value="Email">Email</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Marital Status</Label>
+            <select
+              value={editForm.maritalStatus}
+              onChange={(e) => setEditForm((f) => ({ ...f, maritalStatus: e.target.value }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Not specified</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Widowed">Widowed</option>
             </select>
           </div>
           <div className="flex gap-2 pt-2">

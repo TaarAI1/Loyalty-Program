@@ -1,0 +1,4 @@
+ALTER TABLE "customers"
+  ADD COLUMN IF NOT EXISTS "occupation" VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS "preferred_channel" VARCHAR(20),
+  ADD COLUMN IF NOT EXISTS "marital_status" VARCHAR(20);

@@ -41,10 +41,13 @@ model Customer {
   lifetimeSale    Decimal   @default(0) @map("lifetime_sale") @db.Decimal(10, 2)
   lastVisitDate   DateTime? @map("last_visit_date")
   segment         String?   @default("new") @db.VarChar(30)
-  engagementScore Int       @default(0) @map("engagement_score")
-  isActive        Boolean   @default(true) @map("is_active")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  engagementScore  Int       @default(0) @map("engagement_score")
+  occupation       String?   @db.VarChar(100)
+  preferredChannel String?   @map("preferred_channel") @db.VarChar(20)
+  maritalStatus    String?   @map("marital_status") @db.VarChar(20)
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   tier              LoyaltyTier?        @relation(fields: [tierId], references: [id])
   transactions      Transaction[]

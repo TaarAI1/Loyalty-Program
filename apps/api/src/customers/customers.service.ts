@@ -159,12 +159,158 @@ export class CustomersService {
       select: { expiryDate: true, pointsRemaining: true },
     });
 
+    // Age + generation from DOB
+    let age: number | null = null;
+    let generation: string | null = null;
+    let birthdayDaysLeft: number | null = null;
+    if (customer.dateOfBirth) {
+      const dob = customer.dateOfBirth;
+      const today = new Date();
+      age = today.getFullYear() - dob.getFullYear();
+      const hadBirthdayThisYear =
+        today.getMonth() > dob.getMonth() ||
+        (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
+      if (!hadBirthdayThisYear) age -= 1;
+      if (age < 28) generation = 'Gen Z';
+      else if (age < 44) generation = 'Millennial';
+      else if (age < 60) generation = 'Gen X';
+      else generation = 'Boomer';
+      const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+      if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
+      birthdayDaysLeft = Math.ceil((nextBirthday.getTime() - today.getTime()) / 86400000);
+    }
+
+    // Preferred day of week from transactions (all-time)
+    const allTxDates = await this.prisma.transaction.findMany({
+      where: { customerId: id },
+      select: { transactionDate: true },
+    });
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+    for (const tx of allTxDates) dayCounts[tx.transactionDate.getDay()]++;
+    const maxDayIdx = dayCounts.indexOf(Math.max(...dayCounts));
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const preferredDay = txCount > 0 ? dayNames[maxDayIdx] : null;
+    const weekendVisits = dayCounts[0] + dayCounts[6];
+    const isWeekendShopper = txCount > 0 && weekendVisits / txCount > 0.6;
+
+    // Redeemer type
+    const redeemerType =
+      redemptionRate > 60 ? 'Spender' :
+      redemptionRate > 20 ? 'Balanced' : 'Saver';
+
+    // Churn risk
+    const churnRisk =
+      daysSinceVisit === null ? 'Low' :
+      daysSinceVisit > 180 ? 'High' :
+      daysSinceVisit > 90 ? 'Medium' : 'Low';
+
+    // RFM scores (1–5)
+    const recencyScore =
+      daysSinceVisit === null ? 1 :
+      daysSinceVisit < 30 ? 5 :
+      daysSinceVisit < 60 ? 4 :
+      daysSinceVisit < 90 ? 3 :
+      daysSinceVisit < 180 ? 2 : 1;
+
+    const txCountLastYear = await this.prisma.transaction.count({
+      where: { customerId: id, transactionDate: { gte: new Date(Date.now() - 365 * 86400000) } },
+    });
+    const frequencyScore =
+      txCountLastYear > 12 ? 5 :
+      txCountLastYear > 8 ? 4 :
+      txCountLastYear > 4 ? 3 :
+      txCountLastYear > 1 ? 2 : 1;
+
+    const monetaryScore =
+      stats.totalSpent > 200000 ? 5 :
+      stats.totalSpent > 100000 ? 4 :
+      stats.totalSpent > 50000 ? 3 :
+      stats.totalSpent > 10000 ? 2 : 1;
+
+    const rfmScores = { recency: recencyScore, frequency: frequencyScore, monetary: monetaryScore };
+
+    // Auto persona tags
+    const personaTags: string[] = [];
+    if (daysSinceVisit !== null && daysSinceVisit <= 30 && txCount >= 5 && stats.totalSpent > 20000) personaTags.push('Champion');
+    if (stats.totalSpent > 100000) personaTags.push('High Value');
+    if (isWeekendShopper) personaTags.push('Weekend Shopper');
+    if (avgVisitsPerMonth >= 3) personaTags.push('Frequent Buyer');
+    if (churnRisk === 'Medium') personaTags.push('At Risk');
+    if (churnRisk === 'High') personaTags.push('Lapsed');
+    if (redeemerType === 'Spender') personaTags.push('Bargain Hunter');
+    if (redeemerType === 'Saver' && stats.totalPointsEarned > 500) personaTags.push('Points Saver');
+    if (customer.tier?.name?.toLowerCase().includes('diamond') || customer.tier?.name?.toLowerCase().includes('platinum')) personaTags.push('VIP');
+    if (enrolledDaysAgo < 60) personaTags.push('Early Adopter');
+    if (birthdayDaysLeft !== null && birthdayDaysLeft <= 14) personaTags.push('Birthday Soon');
+    if (personaTags.length === 0) personaTags.push('New Member');
+
+    // ICP goals
+    const goals: string[] = [];
+    if (redemptionRate > 50) goals.push('Maximize reward redemptions');
+    if (avgVisitsPerMonth > 2) goals.push('Regular shopping routine');
+    if (stats.totalSpent > 100000) goals.push('Premium / status recognition');
+    if (txCount <= 2) goals.push('Explore the loyalty program');
+    if (daysSinceVisit !== null && daysSinceVisit < 30 && txCount > 3) goals.push('Get the most value per visit');
+    if (goals.length === 0) goals.push('Start building loyalty rewards');
+
+    // ICP pain points
+    const painPoints: string[] = [];
+    if (redemptionRate < 10 && stats.totalPointsEarned > 500) painPoints.push('Has unused points — may not know how to redeem');
+    if (nextExpiry?.pointsRemaining && nextExpiry.expiryDate) {
+      const daysToExpiry = Math.floor((nextExpiry.expiryDate.getTime() - Date.now()) / 86400000);
+      if (daysToExpiry <= 30) painPoints.push('Points about to expire unused');
+    }
+    if (daysSinceVisit !== null && daysSinceVisit > 60 && daysSinceVisit < 180) painPoints.push('May have lost interest or found alternatives');
+    if (txCount === 1) painPoints.push('Only visited once — not yet converted to loyal');
+    if (painPoints.length === 0) painPoints.push('No major friction signals detected');
+
+    // ICP behavior tags
+    const behaviors: string[] = [];
+    if (avgVisitsPerMonth >= 3) behaviors.push('Frequent Shopper');
+    if (redemptionRate > 60) behaviors.push('Active Redeemer');
+    if (redemptionRate === 0 && stats.totalPointsEarned > 0) behaviors.push('Points Saver');
+    if (stats.avgOrderValue > 10000) behaviors.push('Big Basket Buyer');
+    if (preferredStore) behaviors.push('Store-Loyal');
+    if (enrolledDaysAgo < 60) behaviors.push('Early Adopter');
+    if (behaviors.length === 0) behaviors.push('Getting Started');
+
+    // ICP summary sentence
+    const spendStr = `Rs ${Math.round(stats.totalSpent).toLocaleString()}`;
+    let summary = '';
+    if (personaLabel === 'Champion') {
+      summary = `Champion customer${preferredStore ? `, shopping regularly at ${preferredStore}` : ''} with a ${redemptionRate}% redemption rate and ${spendStr} lifetime spend.`;
+    } else if (personaLabel === 'Loyal') {
+      summary = `Loyal customer with ${txCount} visits and ${spendStr} in lifetime spend${preferredStore ? ` — prefers ${preferredStore}` : ''}.`;
+    } else if (personaLabel === 'At Risk') {
+      summary = `At-risk customer who last visited ${daysSinceVisit} days ago with ${spendStr} in lifetime spend. Worth re-engaging.`;
+    } else if (personaLabel === 'Cannot Lose') {
+      summary = `High-value customer (${spendStr} lifetime) who hasn't visited in ${daysSinceVisit} days. Critical to re-engage.`;
+    } else if (personaLabel === 'Lost') {
+      summary = `Lapsed customer — last seen ${daysSinceVisit} days ago. ${txCount} total visits with ${spendStr} lifetime spend.`;
+    } else if (personaLabel === 'Promising') {
+      summary = `Promising new customer enrolled ${enrolledDaysAgo} days ago with ${txCount} visit${txCount !== 1 ? 's' : ''} so far.`;
+    } else {
+      summary = `New customer enrolled ${enrolledDaysAgo} days ago — ${txCount} transaction${txCount !== 1 ? 's' : ''} so far.`;
+    }
+
     const persona = {
       label: personaLabel,
+      summary,
+      goals,
+      painPoints,
+      behaviors,
+      personaTags,
       daysSinceVisit,
       enrolledDaysAgo,
       redemptionRate,
       preferredStore,
+      preferredDay,
+      redeemerType,
+      churnRisk,
+      rfmScores,
+      age,
+      generation,
+      birthdayDaysLeft,
       nextExpiryDate: nextExpiry?.expiryDate ?? null,
       nextExpiryPoints: nextExpiry?.pointsRemaining ?? null,
     };
@@ -232,7 +378,7 @@ export class CustomersService {
     };
   }
 
-  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string }>) {
+  async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string; occupation: string | null; preferredChannel: string | null; maritalStatus: string | null }>) {
     await this.assertExists(id);
     return this.prisma.customer.update({
       where: { id },
@@ -337,7 +483,18 @@ export class CustomersService {
       }
     }
 
-    return { data: Object.values(monthMap) };
+    // Day of week breakdown (all-time)
+    const allTx = await this.prisma.transaction.findMany({
+      where: { customerId },
+      select: { transactionDate: true },
+    });
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayCounts = dayLabels.map((day, i) => ({
+      day,
+      visits: allTx.filter((t) => t.transactionDate.getDay() === i).length,
+    }));
+
+    return { data: Object.values(monthMap), dayOfWeek: dayCounts };
   }
 
   async getNotes(customerId: string) {
