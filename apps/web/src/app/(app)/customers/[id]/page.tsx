@@ -802,7 +802,7 @@ export default function CustomerDetailPage() {
                 age: number | null; generation: string | null; birthdayDaysLeft: number | null;
                 enrolledDaysAgo: number; daysSinceVisit: number | null; redemptionRate: number;
                 preferredStore: string | null; preferredDay: string | null;
-                redeemerType: string; churnRisk: string;
+                redeemerType: string;
                 nextExpiryDate: string | null; nextExpiryPoints: number | null;
                 rfmScores: { recency: number; frequency: number; monetary: number };
               };
@@ -817,7 +817,6 @@ export default function CustomerDetailPage() {
                 if (d.startsWith('0')) d = d.slice(1);
                 return `+${cc} ${d}`;
               })();
-              const churnColor = p.churnRisk === 'High' ? 'text-red-600 font-bold' : p.churnRisk === 'Medium' ? 'text-orange-500 font-bold' : 'text-green-600 font-bold';
               const profileFields: { label: string; value: string; highlight?: string }[] = [
                 /* ── Identity ── */
                 { label: 'Full Name',              value: customer.name ?? '—' },
@@ -851,7 +850,6 @@ export default function CustomerDetailPage() {
                 { label: 'Days Since Last Visit',  value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
                 /* ── Scoring ── */
                 { label: 'Engagement Score',       value: `${customer.engagementScore ?? 0} / 100` },
-                { label: 'Churn Risk',             value: p.churnRisk, highlight: churnColor },
                 { label: 'Redeemer Type',          value: p.redeemerType },
                 { label: 'RFM — Recency',          value: `${p.rfmScores.recency} / 5` },
                 { label: 'RFM — Frequency',        value: `${p.rfmScores.frequency} / 5` },
@@ -897,7 +895,7 @@ export default function CustomerDetailPage() {
                 label: string; summary: string; goals: string[]; painPoints: string[];
                 behaviors: string[]; personaTags: string[]; daysSinceVisit: number | null;
                 enrolledDaysAgo: number; redemptionRate: number; preferredStore: string | null;
-                preferredDay: string | null; redeemerType: string; churnRisk: string;
+                preferredDay: string | null; redeemerType: string;
                 rfmScores: { recency: number; frequency: number; monetary: number };
                 age: number | null; generation: string | null; birthdayDaysLeft: number | null;
                 nextExpiryDate: string | null; nextExpiryPoints: number | null;
@@ -912,7 +910,6 @@ export default function CustomerDetailPage() {
                 'New':         { icon: <Star className="w-5 h-5" />,          color: 'text-sky-700',    bg: 'bg-sky-50',     border: 'border-sky-200' },
               };
               const bc = badgeConfig[p.label] ?? badgeConfig['New'];
-              const churnColor = p.churnRisk === 'High' ? 'text-red-600' : p.churnRisk === 'Medium' ? 'text-orange-500' : 'text-green-600';
               const rfmData = [
                 { axis: 'Recency',   value: p.rfmScores.recency,   fullMark: 5 },
                 { axis: 'Frequency', value: p.rfmScores.frequency, fullMark: 5 },
@@ -969,7 +966,6 @@ export default function CustomerDetailPage() {
                         { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
                         { label: 'Generation', value: p.generation ?? '—' },
                         { label: 'Redeemer',   value: p.redeemerType },
-                        { label: 'Churn Risk', value: p.churnRisk, extra: churnColor },
                         { label: 'Occupation', value: (customer as any).occupation ?? '—' },
                         { label: 'Channel',    value: (customer as any).preferredChannel ?? '—' },
                         { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
@@ -1027,14 +1023,12 @@ export default function CustomerDetailPage() {
             {/* ── Quick-facts strip ── */}
             {(() => {
               const p = customer.persona as {
-                daysSinceVisit: number | null; churnRisk: string; preferredDay: string | null;
+                daysSinceVisit: number | null; preferredDay: string | null;
               };
-              const churnColor = p.churnRisk === 'High' ? 'bg-red-50 text-red-700 border-red-200' : p.churnRisk === 'Medium' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-green-50 text-green-700 border-green-200';
               const chips = [
-                { label: 'Last Visit',    value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days ago` : '—',                      color: '' },
-                { label: 'Avg. Basket',   value: formatCurrency((customer as any).stats?.avgOrderValue ?? 0),                           color: '' },
-                { label: 'Preferred Day', value: p.preferredDay ? `${p.preferredDay}s` : '—',                                           color: '' },
-                { label: 'Churn Risk',    value: p.churnRisk,                                                                            color: churnColor },
+                { label: 'Last Visit',    value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days ago` : '—', color: '' },
+                { label: 'Avg. Basket',   value: formatCurrency((customer as any).stats?.avgOrderValue ?? 0),      color: '' },
+                { label: 'Preferred Day', value: p.preferredDay ? `${p.preferredDay}s` : '—',                      color: '' },
               ];
               return (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
