@@ -40,7 +40,6 @@ export default function CustomerDetailPage() {
   const [txItems, setTxItems] = useState<Record<string, { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[]>>({});
   const [personaOpen, setPersonaOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
-  const [selectedVisitDay, setSelectedVisitDay] = useState<{ day: string; dates: string[] } | null>(null);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
@@ -1191,55 +1190,31 @@ export default function CustomerDetailPage() {
               <div className="space-y-2">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Weekday Visit Breakdown</p>
                 <ResponsiveContainer width="100%" height={180}>
-                  <BarChart
-                    data={activityData?.dayOfWeek ?? []}
-                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                    onClick={(chartData) => {
-                      if (!chartData?.activePayload?.[0]) return;
-                      const payload = chartData.activePayload[0].payload as { day: string; visits: number; dates: string[] };
-                      if (!payload.dates?.length) return;
-                      setSelectedVisitDay((prev) =>
-                        prev?.day === payload.day ? null : { day: payload.day, dates: payload.dates }
-                      );
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
+                  <BarChart data={activityData?.dayOfWeek ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar
-                      dataKey="visits"
-                      name="Visits"
-                      radius={[3, 3, 0, 0]}
-                      fill="#a78bfa"
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload as { day: string; visits: number; dates: string[] };
+                        return (
+                          <div className="rounded-lg border border-border bg-background shadow-md px-3 py-2.5 space-y-1.5 max-w-[200px]">
+                            <p className="text-xs font-bold">{d.day} — {d.visits} visit{d.visits !== 1 ? 's' : ''}</p>
+                            {d.dates?.length > 0 && (
+                              <div className="space-y-0.5">
+                                {d.dates.map((date) => (
+                                  <p key={date} className="text-[11px] text-muted-foreground">{formatDate(date)}</p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }}
                     />
+                    <Bar dataKey="visits" name="Visits" fill="#a78bfa" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-                {/* Date drill-down panel */}
-                {selectedVisitDay && (
-                  <div className="rounded-lg border border-border bg-muted/20 px-3 py-2.5 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold">
-                        {selectedVisitDay.day} visits
-                        <span className="ml-1.5 text-muted-foreground font-normal">({selectedVisitDay.dates.length})</span>
-                      </p>
-                      <button
-                        onClick={() => setSelectedVisitDay(null)}
-                        className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedVisitDay.dates.map((d) => (
-                        <span key={d} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#a78bfa]/15 text-purple-700 border border-[#a78bfa]/30">
-                          {formatDate(d)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
