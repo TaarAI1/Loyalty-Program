@@ -322,3 +322,70 @@ model AuditLog {
   @@index([entity, entityId])
   @@map("audit_log")
 }
+
+model SurveyQuestion {
+  id           Int      @id @default(autoincrement())
+  text         String
+  questionType String   @default("text") @map("question_type") @db.VarChar(20)
+  status       String   @default("active") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  formQuestions SurveyFormQuestion[]
+
+  @@map("survey_questions")
+}
+
+model SurveyForm {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  status    String   @default("active") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  formQuestions SurveyFormQuestion[]
+  assignments   FormAssignment[]
+
+  @@map("survey_forms")
+}
+
+model SurveyFormQuestion {
+  id         Int    @id @default(autoincrement())
+  formId     Int    @map("form_id")
+  questionId Int    @map("question_id")
+  sortOrder  Int    @default(0) @map("sort_order")
+
+  form     SurveyForm     @relation(fields: [formId],     references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([questionId])
+  @@map("survey_form_questions")
+}
+
+model Device {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  deviceType String   @default("workstation") @map("device_type") @db.VarChar(20)
+  store      String?  @db.VarChar(100)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  assignments FormAssignment[]
+
+  @@map("devices")
+}
+
+model FormAssignment {
+  id         Int      @id @default(autoincrement())
+  formId     Int      @map("form_id")
+  deviceId   Int      @map("device_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  form   SurveyForm @relation(fields: [formId],   references: [id], onDelete: Cascade)
+  device Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([deviceId])
+  @@map("form_assignments")
+}

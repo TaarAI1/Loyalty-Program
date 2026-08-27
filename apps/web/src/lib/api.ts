@@ -118,3 +118,32 @@ export const usersApi = {
     api.patch(`/users/${id}`, data).then((r) => r.data),
   remove: (id: number) => api.delete(`/users/${id}`).then((r) => r.data),
 };
+
+// Forms
+export const formsApi = {
+  // Questions
+  getQuestions: () => api.get('/forms/questions').then((r) => r.data),
+  createQuestion: (data: { text: string; questionType: string; status?: string }) =>
+    api.post('/forms/questions', data).then((r) => r.data),
+  updateQuestion: (id: number, data: { text?: string; questionType?: string; status?: string }) =>
+    api.put(`/forms/questions/${id}`, data).then((r) => r.data),
+  deleteQuestion: (id: number) => api.delete(`/forms/questions/${id}`).then((r) => r.data),
+  // Forms
+  getForms: () => api.get('/forms').then((r) => r.data),
+  createForm: (data: { name: string; questionIds: number[]; status?: string }) =>
+    api.post('/forms', data).then((r) => r.data),
+  updateForm: (id: number, data: { name?: string; status?: string; questionIds?: number[] }) =>
+    api.put(`/forms/${id}`, data).then((r) => r.data),
+  // Devices
+  getDevices: (params?: { store?: string; deviceType?: string }) =>
+    api.get('/forms/devices', { params }).then((r) => r.data),
+  createDevice: (data: { name: string; deviceType: string; store?: string }) =>
+    api.post('/forms/devices', data).then((r) => r.data),
+  updateDevice: (id: number, data: { name?: string; deviceType?: string; store?: string; isActive?: boolean }) =>
+    api.put(`/forms/devices/${id}`, data).then((r) => r.data),
+  // Assignments
+  getAssignments: () => api.get('/forms/assignments').then((r) => r.data),
+  assignForm: (data: { formId: number; deviceIds: number[] }) =>
+    api.post('/forms/assignments', data).then((r) => r.data),
+  deleteAssignment: (id: number) => api.delete(`/forms/assignments/${id}`).then((r) => r.data),
+};

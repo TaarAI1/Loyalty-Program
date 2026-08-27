@@ -20,6 +20,7 @@ import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { SeedModule } from './seed/seed.module';
 import { SegmentsModule } from './segments/segments.module';
+import { FormsModule } from './forms/forms.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { SegmentsModule } from './segments/segments.module';
     NotificationsModule,
     DashboardModule,
     SegmentsModule,
+    FormsModule,
     HealthModule,
   ],
   providers: [
