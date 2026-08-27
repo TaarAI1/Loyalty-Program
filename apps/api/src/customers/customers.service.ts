@@ -253,16 +253,33 @@ export class CustomersService {
     if (daysSinceVisit !== null && daysSinceVisit < 30 && txCount > 3) goals.push('Get the most value per visit');
     if (goals.length === 0) goals.push('Start building loyalty rewards');
 
-    // ICP pain points
-    const painPoints: string[] = [];
-    if (redemptionRate < 10 && stats.totalPointsEarned > 500) painPoints.push('Has unused points — may not know how to redeem');
+    // Action items / engagement recommendations
+    const actionItems: string[] = [];
+    if (redemptionRate < 10 && stats.totalPointsEarned > 500)
+      actionItems.push('Send a redemption guide — customer has unspent points and may not know how to use them');
     if (nextExpiry?.pointsRemaining && nextExpiry.expiryDate) {
       const daysToExpiry = Math.floor((nextExpiry.expiryDate.getTime() - Date.now()) / 86400000);
-      if (daysToExpiry <= 30) painPoints.push('Points about to expire unused');
+      if (daysToExpiry <= 30)
+        actionItems.push(`Points expiring in ${daysToExpiry} days — send an urgency WhatsApp reminder to drive a visit`);
     }
-    if (daysSinceVisit !== null && daysSinceVisit > 60 && daysSinceVisit < 180) painPoints.push('May have lost interest or found alternatives');
-    if (txCount === 1) painPoints.push('Only visited once — not yet converted to loyal');
-    if (painPoints.length === 0) painPoints.push('No major friction signals detected');
+    if (daysSinceVisit !== null && daysSinceVisit > 60 && daysSinceVisit < 180)
+      actionItems.push('Customer is drifting — run a win-back promotion (e.g. double points or exclusive discount)');
+    if (daysSinceVisit !== null && daysSinceVisit >= 180)
+      actionItems.push('Customer has lapsed — consider a high-value re-engagement offer to bring them back');
+    if (txCount === 1)
+      actionItems.push('Only one visit — send a "welcome back" offer to convert to a repeat buyer');
+    if (redemptionRate === 0 && stats.totalPointsEarned > 1000)
+      actionItems.push('Points hoarder — highlight redemption benefits in next campaign to unlock spending behaviour');
+    if (birthdayDaysLeft !== null && birthdayDaysLeft <= 14)
+      actionItems.push('Birthday coming up — send a personalised birthday reward or greeting');
+    if (avgVisitsPerMonth >= 3 && redemptionRate < 20)
+      actionItems.push('Frequent visitor but low redemption — educate on how points work to increase engagement');
+    if (stats.totalSpent > 100000 && daysSinceVisit !== null && daysSinceVisit > 45)
+      actionItems.push('High-value customer showing reduced activity — prioritise personal outreach or a VIP-only offer');
+    if (txCount >= 5 && stats.avgOrderValue < 5000)
+      actionItems.push('Regular shopper with a small basket — suggest bundle promotions or upsell campaigns');
+    if (actionItems.length === 0)
+      actionItems.push('Customer is healthy and active — keep engaging through regular loyalty communications');
 
     // ICP behavior tags
     const behaviors: string[] = [];
@@ -297,7 +314,7 @@ export class CustomersService {
       label: personaLabel,
       summary,
       goals,
-      painPoints,
+      actionItems,
       behaviors,
       personaTags,
       daysSinceVisit,

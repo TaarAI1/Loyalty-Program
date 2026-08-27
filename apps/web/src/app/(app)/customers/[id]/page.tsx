@@ -892,7 +892,7 @@ export default function CustomerDetailPage() {
             {/* ── Row 1: Persona ICP card + Demographics grid ── */}
             {(() => {
               const p = customer.persona as {
-                label: string; summary: string; goals: string[]; painPoints: string[];
+                label: string; summary: string; goals: string[]; actionItems: string[];
                 behaviors: string[]; personaTags: string[]; daysSinceVisit: number | null;
                 enrolledDaysAgo: number; redemptionRate: number; preferredStore: string | null;
                 preferredDay: string | null; redeemerType: string;
@@ -995,12 +995,12 @@ export default function CustomerDetailPage() {
                     </div>
                     <div className="space-y-2 pt-1 border-t border-border">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-orange-500" /> Pain Points
+                        <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
                       </p>
                       <ul className="space-y-1.5">
-                        {p.painPoints.map((pt, i) => (
+                        {p.actionItems.map((item, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" /> {pt}
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> {item}
                           </li>
                         ))}
                       </ul>
