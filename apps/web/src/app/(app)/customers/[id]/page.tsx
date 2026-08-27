@@ -779,6 +779,91 @@ export default function CustomerDetailPage() {
 
         {personaOpen && customer?.persona && (
           <div className="p-5 space-y-5 bg-background">
+
+            {/* ── Full Customer Profile table ── */}
+            {(() => {
+              const p = customer.persona as {
+                age: number | null; generation: string | null; birthdayDaysLeft: number | null;
+                enrolledDaysAgo: number; daysSinceVisit: number | null; redemptionRate: number;
+                preferredStore: string | null; preferredDay: string | null;
+                redeemerType: string; churnRisk: string;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+              };
+              const stats = (customer as any).stats as {
+                totalSpent: number; totalTransactions: number; avgOrderValue: number;
+                totalPointsEarned: number; totalPointsRedeemed: number; avgVisitsPerMonth: number;
+              };
+              const phone = (() => {
+                let d = (customer.mobileNumber ?? '').replace(/\D/g, '');
+                const cc = customer.countryCode ?? '92';
+                if (d.startsWith(cc)) d = d.slice(cc.length);
+                if (d.startsWith('0')) d = d.slice(1);
+                return `+${cc} ${d}`;
+              })();
+              const churnColor = p.churnRisk === 'High' ? 'text-red-600 font-bold' : p.churnRisk === 'Medium' ? 'text-orange-500 font-bold' : 'text-green-600 font-bold';
+              const profileFields: { label: string; value: string; highlight?: string }[] = [
+                { label: 'Full Name',             value: customer.name ?? '—' },
+                { label: 'Phone',                 value: phone },
+                { label: 'Email',                 value: customer.email ?? '—' },
+                { label: 'Date of Birth',         value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
+                { label: 'Age',                   value: p.age != null ? `${p.age} years (${p.generation ?? ''})` : '—' },
+                { label: 'Gender',                value: (customer as any).gender ?? '—' },
+                { label: 'Marital Status',        value: (customer as any).maritalStatus ?? '—' },
+                { label: 'Occupation',            value: (customer as any).occupation ?? '—' },
+                { label: 'Preferred Channel',     value: (customer as any).preferredChannel ?? '—' },
+                { label: 'Birthday Countdown',    value: p.birthdayDaysLeft != null ? `${p.birthdayDaysLeft} days away` : '—' },
+                { label: 'Loyalty Tier',          value: customer.tier?.name ?? '—' },
+                { label: 'Status',                value: (customer as any).status ?? '—' },
+                { label: 'Store',                 value: customer.store ?? '—' },
+                { label: 'Region',                value: customer.region ?? '—' },
+                { label: 'Preferred Store',       value: p.preferredStore ?? '—' },
+                { label: 'Preferred Visit Day',   value: p.preferredDay ? `${p.preferredDay}s` : '—' },
+                { label: 'Retailpro ID',          value: (customer as any).retailproId ?? '—' },
+                { label: 'Country Code',          value: `+${customer.countryCode ?? '92'}` },
+                { label: 'Enrolled',              value: `${p.enrolledDaysAgo} days ago` },
+                { label: 'Last Visit',            value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
+                { label: 'Days Since Last Visit', value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
+                { label: 'Engagement Score',      value: `${customer.engagementScore ?? 0} / 100` },
+                { label: 'Churn Risk',            value: p.churnRisk, highlight: churnColor },
+                { label: 'Redeemer Type',         value: p.redeemerType },
+                { label: 'Available Points',      value: formatNumber(customer.totalPoints) },
+                { label: 'Lifetime Sale',         value: formatCurrency(Number(customer.lifetimeSale)) },
+                { label: 'Total Spend (tx)',      value: formatCurrency(stats.totalSpent) },
+                { label: 'Total Transactions',    value: String(stats.totalTransactions) },
+                { label: 'Avg. Order Value',      value: formatCurrency(stats.avgOrderValue) },
+                { label: 'Avg. Visits / Month',   value: stats.avgVisitsPerMonth.toFixed(1) },
+                { label: 'Points Earned',         value: formatNumber(stats.totalPointsEarned) },
+                { label: 'Points Redeemed',       value: formatNumber(stats.totalPointsRedeemed) },
+                { label: 'Redemption Rate',       value: `${p.redemptionRate}%` },
+                { label: 'Points Expiring Next',  value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
+                { label: 'RFM — Recency',         value: `${p.rfmScores.recency} / 5` },
+                { label: 'RFM — Frequency',       value: `${p.rfmScores.frequency} / 5` },
+                { label: 'RFM — Monetary',        value: `${p.rfmScores.monetary} / 5` },
+              ];
+              return (
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Complete Customer Profile</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2">
+                    {profileFields.map(({ label, value, highlight }, i) => (
+                      <div
+                        key={label}
+                        className={`flex items-start justify-between px-4 py-2.5 border-b border-border/60 ${
+                          i % 4 < 2 ? 'bg-background' : 'bg-muted/10'
+                        }`}
+                      >
+                        <span className="text-xs text-muted-foreground font-medium w-1/2 shrink-0">{label}</span>
+                        <span className={`text-xs font-semibold text-right ${highlight ?? ''}`}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ── Row 1: Persona ICP card + Demographics grid ── */}
             {(() => {
               const p = customer.persona as {
