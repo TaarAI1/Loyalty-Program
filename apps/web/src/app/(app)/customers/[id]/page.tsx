@@ -106,9 +106,7 @@ export default function CustomerDetailPage() {
     status: 'active',
     isActive: true,
     occupation: '',
-    preferredChannel: '',
     maritalStatus: '',
-    legalName: '',
     preferredName: '',
     nationality: '',
     city: '',
@@ -164,9 +162,7 @@ export default function CustomerDetailPage() {
         status: (customer as any).status ?? 'active',
         isActive: (customer as any).isActive !== false,
         occupation: (customer as any).occupation ?? '',
-        preferredChannel: (customer as any).preferredChannel ?? '',
         maritalStatus: (customer as any).maritalStatus ?? '',
-        legalName: (customer as any).legalName ?? '',
         preferredName: (customer as any).preferredName ?? '',
         nationality: (customer as any).nationality ?? '',
         city: (customer as any).city ?? '',
@@ -820,7 +816,6 @@ export default function CustomerDetailPage() {
               const profileFields: { label: string; value: string; highlight?: string }[] = [
                 /* ── Identity ── */
                 { label: 'Full Name',              value: customer.name ?? '—' },
-                { label: 'Legal Name',             value: (customer as any).legalName ?? '—' },
                 { label: 'Preferred Name',         value: (customer as any).preferredName ?? '—' },
                 { label: 'Phone',                  value: phone },
                 { label: 'Alternate Phone',        value: (customer as any).alternatePhone ?? '—' },
@@ -832,7 +827,6 @@ export default function CustomerDetailPage() {
                 { label: 'Marital Status',         value: (customer as any).maritalStatus ?? '—' },
                 { label: 'Nationality',            value: (customer as any).nationality ?? '—' },
                 { label: 'Occupation',             value: (customer as any).occupation ?? '—' },
-                { label: 'Preferred Channel',      value: (customer as any).preferredChannel ?? '—' },
                 /* ── Location ── */
                 { label: 'City',                   value: (customer as any).city ?? '—' },
                 { label: 'Area / Neighborhood',    value: (customer as any).area ?? '—' },
@@ -967,7 +961,6 @@ export default function CustomerDetailPage() {
                         { label: 'Generation', value: p.generation ?? '—' },
                         { label: 'Redeemer',   value: p.redeemerType },
                         { label: 'Occupation', value: (customer as any).occupation ?? '—' },
-                        { label: 'Channel',    value: (customer as any).preferredChannel ?? '—' },
                         { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
                         { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
                       ].map(({ label, value }) => (
@@ -1348,19 +1341,6 @@ export default function CustomerDetailPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label>Preferred Contact Channel</Label>
-            <select
-              value={editForm.preferredChannel}
-              onChange={(e) => setEditForm((f) => ({ ...f, preferredChannel: e.target.value }))}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">Not specified</option>
-              <option value="WhatsApp">WhatsApp</option>
-              <option value="SMS">SMS</option>
-              <option value="Email">Email</option>
-            </select>
-          </div>
-          <div className="space-y-1">
             <Label>Marital Status</Label>
             <select
               value={editForm.maritalStatus}
@@ -1373,14 +1353,6 @@ export default function CustomerDetailPage() {
               <option value="Divorced">Divorced</option>
               <option value="Widowed">Widowed</option>
             </select>
-          </div>
-          <div className="space-y-1">
-            <Label>Legal Name (optional)</Label>
-            <Input
-              placeholder="Full legal name if different..."
-              value={editForm.legalName}
-              onChange={(e) => setEditForm((f) => ({ ...f, legalName: e.target.value }))}
-            />
           </div>
           <div className="space-y-1">
             <Label>Preferred Name / Nickname</Label>

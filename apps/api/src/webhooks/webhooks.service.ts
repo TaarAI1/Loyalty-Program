@@ -115,6 +115,7 @@ export class WebhooksService {
           maritalStatus:   dto.marital_status,
           deliveryAddress: dto.delivery_address,
           alternatePhone:  dto.alternate_phone,
+          occupation:      dto.occupation,
         },
       });
       this.logger.log({ customerId: existing.id }, 'Customer updated via webhook');
@@ -142,6 +143,7 @@ export class WebhooksService {
         maritalStatus:   dto.marital_status,
         deliveryAddress: dto.delivery_address,
         alternatePhone:  dto.alternate_phone,
+        occupation:      dto.occupation,
       },
     });
 

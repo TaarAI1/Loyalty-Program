@@ -56,6 +56,7 @@ export const WebhookCustomerSchema = z.object({
     .pipe(z.enum(['Single', 'Married', 'Divorced', 'Widowed']).optional()),
   delivery_address: z.string().optional().transform((v) => v === '' ? undefined : v),
   alternate_phone:  z.string().max(20).optional().transform((v) => v === '' ? undefined : v),
+  occupation:       z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
 });
 export type WebhookCustomerDto = z.infer<typeof WebhookCustomerSchema>;
 
