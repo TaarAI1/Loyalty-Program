@@ -489,10 +489,16 @@ export class CustomersService {
       select: { transactionDate: true },
     });
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dayCounts = dayLabels.map((day, i) => ({
-      day,
-      visits: allTx.filter((t) => t.transactionDate.getDay() === i).length,
-    }));
+    const dayCounts = dayLabels.map((day, i) => {
+      const txOnDay = allTx.filter((t) => t.transactionDate.getDay() === i);
+      return {
+        day,
+        visits: txOnDay.length,
+        dates: txOnDay
+          .map((t) => t.transactionDate.toISOString().slice(0, 10))
+          .sort(),
+      };
+    });
 
     return { data: Object.values(monthMap), dayOfWeek: dayCounts };
   }
