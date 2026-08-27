@@ -1188,7 +1188,7 @@ export default function CustomerDetailPage() {
 
               {/* Chart 3: Visit day-of-week bar */}
               <div className="space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Visit Pattern</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Weekday Visit Breakdown</p>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={activityData?.dayOfWeek ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
