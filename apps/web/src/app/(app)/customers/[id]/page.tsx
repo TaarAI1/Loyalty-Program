@@ -912,6 +912,130 @@ export default function CustomerDetailPage() {
               ))}
             </div>
 
+            {/* ── Quick-facts strip ── */}
+            {(() => {
+              const p = customer.persona as {
+                daysSinceVisit: number | null; churnRisk: string; preferredDay: string | null;
+              };
+              const churnColor = p.churnRisk === 'High' ? 'bg-red-50 text-red-700 border-red-200' : p.churnRisk === 'Medium' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-green-50 text-green-700 border-green-200';
+              const chips = [
+                { label: 'Last Visit',    value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days ago` : '—',                      color: '' },
+                { label: 'Avg. Basket',   value: formatCurrency((customer as any).stats?.avgOrderValue ?? 0),                           color: '' },
+                { label: 'Preferred Day', value: p.preferredDay ? `${p.preferredDay}s` : '—',                                           color: '' },
+                { label: 'Churn Risk',    value: p.churnRisk,                                                                            color: churnColor },
+              ];
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {chips.map(({ label, value, color }) => (
+                    <div key={label} className={`rounded-lg border px-4 py-3 ${color || 'bg-muted/20 border-border'}`}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</p>
+                      <p className="text-sm font-bold mt-0.5">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* ── Loyalty Stats table + RFM score table ── */}
+            {(() => {
+              const stats = (customer as any).stats as {
+                totalSpent: number; totalTransactions: number; avgOrderValue: number;
+                totalPointsEarned: number; totalPointsRedeemed: number;
+              };
+              const p = customer.persona as {
+                redemptionRate: number; enrolledDaysAgo: number; daysSinceVisit: number | null;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+              };
+              const balance = (customer as any).totalPoints ?? 0;
+              const enrolledDate = (customer as any).createdAt
+                ? new Date(Date.now() - p.enrolledDaysAgo * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '—';
+              const loyaltyRows = [
+                { label: 'Total Spend',          value: formatCurrency(stats.totalSpent) },
+                { label: 'Total Transactions',   value: String(stats.totalTransactions) },
+                { label: 'Avg. Order Value',     value: formatCurrency(stats.avgOrderValue) },
+                { label: 'Points Earned',        value: formatNumber(stats.totalPointsEarned) },
+                { label: 'Points Redeemed',      value: formatNumber(stats.totalPointsRedeemed) },
+                { label: 'Current Balance',      value: formatNumber(balance) },
+                { label: 'Redemption Rate',      value: `${p.redemptionRate}%` },
+                { label: 'Enrolled',             value: enrolledDate },
+                { label: 'Days Since Last Visit',value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
+                { label: 'Points Expiring Next', value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
+              ];
+              const rfmRows = [
+                { label: 'Recency',   score: p.rfmScores.recency,   desc: 'How recently they visited' },
+                { label: 'Frequency', score: p.rfmScores.frequency, desc: 'How often they shop' },
+                { label: 'Monetary',  score: p.rfmScores.monetary,  desc: 'How much they spend' },
+              ];
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Loyalty Stats table */}
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Loyalty Stats</p>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {loyaltyRows.map(({ label, value }, i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/10'}>
+                            <td className="px-4 py-2 text-muted-foreground font-medium text-xs w-1/2">{label}</td>
+                            <td className="px-4 py-2 font-semibold text-xs text-right">{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* RFM score table */}
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">RFM Scores</p>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {rfmRows.map(({ label, score, desc }) => (
+                        <div key={label} className="px-4 py-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div>
+                              <span className="text-sm font-bold">{label}</span>
+                              <span className="text-[11px] text-muted-foreground ml-2">{desc}</span>
+                            </div>
+                            <span className="text-sm font-black tabular-nums">{score}<span className="text-muted-foreground font-normal">/5</span></span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <div
+                                key={n}
+                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#FFD000]' : 'bg-muted'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* RFM interpretation */}
+                    <div className="px-4 py-3 bg-muted/10 border-t border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Score guide</p>
+                      <div className="grid grid-cols-5 gap-1 text-center">
+                        {[
+                          { n: 1, label: 'Cold', color: 'text-red-500' },
+                          { n: 2, label: 'Weak', color: 'text-orange-400' },
+                          { n: 3, label: 'Fair', color: 'text-yellow-500' },
+                          { n: 4, label: 'Good', color: 'text-lime-600' },
+                          { n: 5, label: 'Best', color: 'text-green-600' },
+                        ].map(({ n, label, color }) => (
+                          <div key={n}>
+                            <div className="text-xs font-black">{n}</div>
+                            <div className={`text-[10px] font-semibold ${color}`}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ── Row 3: 3 charts ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Chart 1: Monthly Spend trend */}
