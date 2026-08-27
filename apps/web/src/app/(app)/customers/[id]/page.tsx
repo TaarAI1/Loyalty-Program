@@ -970,10 +970,10 @@ export default function CustomerDetailPage() {
                         { label: 'Channel',    value: (customer as any).preferredChannel ?? '—' },
                         { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
                         { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
-                      ].map(({ label, value, extra }) => (
+                      ].map(({ label, value }) => (
                         <div key={label}>
                           <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                          <p className={`text-sm font-semibold ${extra ?? ''}`}>{value}</p>
+                          <p className="text-sm font-semibold">{value}</p>
                         </div>
                       ))}
                     </div>
