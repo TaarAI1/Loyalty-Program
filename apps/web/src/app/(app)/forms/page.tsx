@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { formsApi, configApi } from '@/lib/api';
+import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -628,17 +628,20 @@ function FormAssignTab() {
   const [loading, setLoading]         = useState(true);
   const [assigning, setAssigning]     = useState(false);
 
-  // Inline assignment panel state
-  const [filterStore, setFilterStore]         = useState('');
+  // Filter / selection state
+  const [filterStore, setFilterStore]           = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
-  const [selectedFormId, setSelectedFormId]   = useState('');
+  const [selectedFormId, setSelectedFormId]     = useState('');
 
-  // Add device dialog state
+  // Stores from DB
+  const [storeOptions, setStoreOptions]   = useState<{ value: string; label: string }[]>([{ value: '', label: 'All Branches' }]);
+  const [storesLoading, setStoresLoading] = useState(false);
+
+  // Add / Edit device dialog
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
+  const [editingDevice, setEditingDevice]       = useState<Device | null>(null);
   const [deviceForm, setDeviceForm] = useState({ name: '', deviceType: 'workstation', store: '' });
-  const [retailProStores, setRetailProStores]   = useState<{ value: string | number; label: string }[]>([]);
-  const [storesLoading, setStoresLoading]       = useState(false);
 
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
     open: false, message: '', onConfirm: () => {},
@@ -661,13 +664,13 @@ function FormAssignTab() {
   const loadStores = useCallback(async () => {
     try {
       setStoresLoading(true);
-      const stores = await configApi.getRetailProStores();
-      setRetailProStores([
+      const stores: string[] = await formsApi.getStores();
+      setStoreOptions([
         { value: '', label: 'All Branches' },
-        ...stores.map((s) => ({ value: s.store_name, label: `${s.store_code ? s.store_code + ' — ' : ''}${s.store_name}` })),
+        ...stores.map((s) => ({ value: s, label: s })),
       ]);
     } catch {
-      setRetailProStores([{ value: '', label: 'All Branches' }]);
+      setStoreOptions([{ value: '', label: 'All Branches' }]);
     } finally { setStoresLoading(false); }
   }, []);
 
@@ -676,17 +679,6 @@ function FormAssignTab() {
   // Devices to show: real ones or dummies if none registered
   const allDevices = devices.length > 0 ? devices : DUMMY_DEVICES;
 
-  // Store options for filter dropdown
-  const storeOptions = storesLoading
-    ? [{ value: '', label: 'Loading stores…' }]
-    : retailProStores.length > 1
-      ? retailProStores
-      : [
-          { value: '', label: 'All Branches' },
-          ...Array.from(new Set(allDevices.map((d) => d.store).filter(Boolean))).map((s) => ({ value: s as string, label: s as string })),
-        ];
-
-  // Device type options for filter
   const deviceTypeFilterOptions = [
     { value: '',            label: 'All Device Types' },
     { value: 'workstation', label: 'Workstation' },
@@ -695,7 +687,6 @@ function FormAssignTab() {
     { value: 'mobile',      label: 'Mobile' },
   ];
 
-  // Filter the device list based on dropdowns
   const filteredDevices = allDevices.filter((d) => {
     if (filterStore && d.store !== filterStore) return false;
     if (filterDeviceType && d.deviceType !== filterDeviceType) return false;
@@ -708,7 +699,6 @@ function FormAssignTab() {
 
   async function handleAssign() {
     if (!selectedFormId || selectedDeviceIds.length === 0) return;
-    // Block if only dummy devices selected
     const realSelected = selectedDeviceIds.filter((id) => id > 0);
     if (realSelected.length === 0) return;
     setAssigning(true);
@@ -728,11 +718,38 @@ function FormAssignTab() {
     });
   }
 
+  function openAddDevice() {
+    setEditingDevice(null);
+    setDeviceForm({ name: '', deviceType: 'workstation', store: '' });
+    setShowDeviceDialog(true);
+  }
+
+  function openEditDevice(d: Device) {
+    setEditingDevice(d);
+    setDeviceForm({ name: d.name, deviceType: d.deviceType, store: d.store ?? '' });
+    setShowDeviceDialog(true);
+  }
+
+  function removeDevice(id: number) {
+    askConfirm('Are you sure you want to delete this device? This cannot be undone.', async () => {
+      closeConfirm();
+      await formsApi.deleteDevice(id);
+      load();
+    });
+  }
+
   async function saveDevice() {
     if (!deviceForm.name.trim()) return;
-    await formsApi.createDevice({ name: deviceForm.name, deviceType: deviceForm.deviceType, store: deviceForm.store || undefined });
+    if (editingDevice) {
+      await formsApi.updateDevice(editingDevice.id, {
+        name: deviceForm.name,
+        deviceType: deviceForm.deviceType,
+        store: deviceForm.store || undefined,
+      });
+    } else {
+      await formsApi.createDevice({ name: deviceForm.name, deviceType: deviceForm.deviceType, store: deviceForm.store || undefined });
+    }
     setShowDeviceDialog(false);
-    setDeviceForm({ name: '', deviceType: 'workstation', store: '' });
     load();
   }
 
@@ -741,25 +758,17 @@ function FormAssignTab() {
     ...forms.map((f) => ({ value: f.id, label: f.name })),
   ];
 
-  const grouped = assignments.reduce<Record<string, Assignment[]>>((acc, a) => {
-    const key = a.form.name;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(a);
-    return acc;
-  }, {});
-
   return (
     <div className="space-y-6">
 
       {/* ── Assignment Panel ─────────────────────────────────── */}
       <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
-        {/* Panel header */}
         <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold">Assign Form to Devices</p>
             <p className="text-xs text-muted-foreground mt-0.5">Select a branch, device type, devices and a form, then click Assign.</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowDeviceDialog(true)}>
+          <Button variant="outline" size="sm" onClick={openAddDevice}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Device
           </Button>
         </div>
@@ -770,7 +779,7 @@ function FormAssignTab() {
             <div className="space-y-1.5">
               <Label>Branch / Store</Label>
               <Select
-                options={storeOptions}
+                options={storesLoading ? [{ value: '', label: 'Loading stores…' }] : storeOptions}
                 value={filterStore}
                 onChange={(e) => { setFilterStore(e.target.value); setSelectedDeviceIds([]); }}
               />
@@ -818,36 +827,40 @@ function FormAssignTab() {
                   const checked = selectedDeviceIds.includes(d.id);
                   const isDummy = d.id < 0;
                   return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => toggleDevice(d.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
-                    >
-                      {/* Checkbox */}
-                      <span className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                        {checked && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-                      </span>
-                      {/* Device icon */}
-                      <span className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${checked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                        {DEVICE_ICON[d.deviceType] ?? <Monitor className="h-5 w-5" />}
-                      </span>
-                      {/* Info */}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium leading-tight">
-                          {d.name}
-                          {isDummy && <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">(demo)</span>}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                          {d.store ? ` · ${d.store}` : ''}
-                        </p>
-                      </div>
-                      {/* Active badge */}
-                      <Badge variant={d.isActive ? 'default' : 'outline'} className="shrink-0 text-[10px]">
-                        {d.isActive ? 'Active' : 'Off'}
-                      </Badge>
-                    </button>
+                    <div key={d.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
+                      {/* Checkbox area — clicking selects/deselects */}
+                      <button type="button" onClick={() => toggleDevice(d.id)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                        <span className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                          {checked && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                        </span>
+                        <span className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${checked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                          {DEVICE_ICON[d.deviceType] ?? <Monitor className="h-5 w-5" />}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-tight">
+                            {d.name}
+                            {isDummy && <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">(demo)</span>}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                            {d.store ? ` · ${d.store}` : ''}
+                          </p>
+                        </div>
+                      </button>
+                      {/* Edit + Delete (real devices only) */}
+                      {!isDummy && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button type="button" onClick={() => openEditDevice(d)}
+                            className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button type="button" onClick={() => removeDevice(d.id)}
+                            className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -875,19 +888,19 @@ function FormAssignTab() {
 
           {selectedDeviceIds.some((id) => id < 0) && (
             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-              Demo devices are shown for preview only. Register a real device with "Add Device" to create actual assignments.
+              Demo devices are for preview only. Register a real device with "Add Device" to create actual assignments.
             </p>
           )}
         </div>
       </div>
 
-      {/* ── Assignments Grid ─────────────────────────────────── */}
+      {/* ── Current Assignments — data table ─────────────────── */}
       <div>
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Current Assignments</p>
 
         {loading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[1,2,3].map((n) => <div key={n} className="h-24 rounded-xl bg-muted/40 animate-pulse" />)}
+          <div className="space-y-2">
+            {[1,2,3].map((n) => <div key={n} className="h-12 rounded-lg bg-muted/40 animate-pulse" />)}
           </div>
         ) : assignments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 text-center rounded-2xl border border-dashed">
@@ -896,32 +909,56 @@ function FormAssignTab() {
             <p className="text-xs text-muted-foreground mt-1">Select a form and devices above, then click Assign.</p>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {assignments.map((a) => (
-              <div key={a.id} className="rounded-xl border bg-background p-4 flex gap-3 hover:shadow-md transition-shadow group">
-                {/* Device icon */}
-                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                  {DEVICE_ICON[a.device.deviceType] ?? <Monitor className="h-5 w-5" />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">{a.device.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {DEVICE_TYPE_OPTIONS.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
-                    {a.device.store ? ` · ${a.device.store}` : ''}
-                  </p>
-                  {/* Form chip */}
-                  <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium max-w-full">
-                    <LayoutTemplate className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{a.form.name}</span>
-                  </div>
-                </div>
-                {/* Delete */}
-                <button type="button" onClick={() => removeAssignment(a.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity self-start rounded-lg p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+          <div className="rounded-xl border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned At</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {assignments.map((a) => (
+                    <tr key={a.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+                            {DEVICE_ICON[a.device.deviceType] ?? <Monitor className="h-4 w-4" />}
+                          </span>
+                          <span className="font-medium">{a.device.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {DEVICE_TYPE_OPTIONS.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {a.device.store ?? <span className="text-muted-foreground/40">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium">
+                          <LayoutTemplate className="h-3 w-3 shrink-0" />
+                          {a.form.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                        {new Date(a.assignedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button type="button" onClick={() => removeAssignment(a.id)}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -933,8 +970,13 @@ function FormAssignTab() {
         onCancel={closeConfirm}
       />
 
-      {/* Add Device Dialog */}
-      <Dialog open={showDeviceDialog} onClose={() => setShowDeviceDialog(false)} title="Register a Device" className="max-w-sm">
+      {/* Add / Edit Device Dialog */}
+      <Dialog
+        open={showDeviceDialog}
+        onClose={() => setShowDeviceDialog(false)}
+        title={editingDevice ? 'Edit Device' : 'Register a Device'}
+        className="max-w-sm"
+      >
         <div className="space-y-4">
           <div className="space-y-1">
             <Label>Device Name</Label>
@@ -948,18 +990,15 @@ function FormAssignTab() {
           </div>
           <div className="space-y-1">
             <Label>Store <span className="text-muted-foreground text-xs">(optional)</span></Label>
-            {storesLoading ? (
-              <p className="text-xs text-muted-foreground py-1">Loading stores…</p>
-            ) : (
-              <Select
-                options={retailProStores.length > 1 ? retailProStores : [{ value: '', label: 'No stores found' }]}
-                value={deviceForm.store}
-                onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })} />
-            )}
+            <Select
+              options={storeOptions.length > 1 ? storeOptions : [{ value: '', label: 'No stores found in DB' }]}
+              value={deviceForm.store}
+              onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
+            />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDeviceDialog(false)}>Cancel</Button>
-            <Button onClick={saveDevice}>Add Device</Button>
+            <Button onClick={saveDevice}>{editingDevice ? 'Save Changes' : 'Add Device'}</Button>
           </div>
         </div>
       </Dialog>

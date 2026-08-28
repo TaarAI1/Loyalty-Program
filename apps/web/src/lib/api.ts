@@ -145,6 +145,8 @@ export const formsApi = {
     api.post('/forms/devices', data).then((r) => r.data),
   updateDevice: (id: number, data: { name?: string; deviceType?: string; store?: string; isActive?: boolean }) =>
     api.put(`/forms/devices/${id}`, data).then((r) => r.data),
+  deleteDevice: (id: number) => api.delete(`/forms/devices/${id}`).then((r) => r.data),
+  getStores: () => api.get('/forms/stores').then((r) => r.data as string[]),
   // Assignments
   getAssignments: () => api.get('/forms/assignments').then((r) => r.data),
   assignForm: (data: { formId: number; deviceIds: number[] }) =>

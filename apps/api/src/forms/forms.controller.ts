@@ -80,6 +80,16 @@ export class FormsController {
     return this.formsService.updateDevice(id, body);
   }
 
+  @Delete('devices/:id')
+  deleteDevice(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.deleteDevice(id);
+  }
+
+  @Get('stores')
+  getStores() {
+    return this.formsService.getStoresFromDb();
+  }
+
   // ── Assignments ───────────────────────────────────────────────────────────────
 
   @Get('assignments')
