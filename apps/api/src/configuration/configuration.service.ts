@@ -800,38 +800,32 @@ export class ConfigurationService {
   // ── Oracle — Stores ──────────────────────────────────────────────────────────
 
   async getStoresFromOracle(): Promise<{ store_no: string; store_name: string }[]> {
-    // Try Oracle first
     const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
-    if (subsidiarySid && this.oracle.isConnected) {
-      try {
-        const rows = await this.oracle.getStores(subsidiarySid);
-        if (rows.length > 0) {
-          this.logger.log({ count: rows.length }, 'Stores loaded from Oracle');
-          return rows;
-        }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error({ message }, 'Oracle store fetch failed — falling back to PostgreSQL');
-      }
-    } else {
-      this.logger.warn('Oracle not available or RETAILPRO_SUBSIDIARY_SID missing — falling back to PostgreSQL');
-    }
-
-    // Fallback: distinct stores already seen in transactions (from PostgreSQL customers table)
-    try {
-      const rows = await this.prisma.$queryRaw<{ store: string }[]>`
-        SELECT DISTINCT store FROM customers WHERE store IS NOT NULL AND store <> '' ORDER BY store
-      `;
-      const stores = rows
-        .map((r) => ({ store_no: '', store_name: r.store }))
-        .filter((s) => s.store_name);
-      this.logger.log({ count: stores.length }, 'Stores loaded from PostgreSQL fallback');
-      return stores;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error({ message }, 'PostgreSQL store fallback also failed');
+    if (!subsidiarySid) {
+      this.logger.warn('RETAILPRO_SUBSIDIARY_SID not set — cannot fetch stores');
       return [];
     }
+    if (!this.oracle.isConnected) {
+      this.logger.warn('Oracle pool not available — cannot fetch stores');
+      return [];
+    }
+    try {
+      const rows = await this.oracle.getStores(subsidiarySid);
+      this.logger.log({ count: rows.length }, 'Stores loaded from Oracle');
+      return rows;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error({ message }, 'Failed to fetch stores from Oracle');
+      return [];
+    }
+  }
+
+  getOracleStatus(): { connected: boolean; lastError: string | null; subsidiarySid: string | null } {
+    const status = this.oracle.getStatus();
+    return {
+      ...status,
+      subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
+    };
   }
 
   // ── RetailPro Prism — Stores ────────────────────────────────────────────────

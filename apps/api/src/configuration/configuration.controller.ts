@@ -143,6 +143,11 @@ export class ConfigurationController {
     return this.configurationService.getStoresFromOracle();
   }
 
+  @Get('oracle-status')
+  getOracleStatus() {
+    return this.configurationService.getOracleStatus();
+  }
+
   // ── RetailPro Stores ────────────────────────────────────────────────────────
 
   @Get('retailpro/stores')
