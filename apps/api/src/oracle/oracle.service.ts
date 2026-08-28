@@ -46,7 +46,7 @@ export class OracleService implements OnModuleInit, OnModuleDestroy {
     return this.pool !== null;
   }
 
-  async query<T = Record<string, unknown>>(sql: string, binds: Record<string, unknown> = {}): Promise<T[]> {
+  async query<T = Record<string, unknown>>(sql: string, binds: oracledb.BindParameters = {}): Promise<T[]> {
     if (!this.pool) {
       throw new Error('Oracle pool is not initialised — check ORACLE_* env vars');
     }
