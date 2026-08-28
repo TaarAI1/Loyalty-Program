@@ -177,7 +177,7 @@ export class WebhooksService {
 
   /** Fetch stores from Prism API filtered by subsidiary SID — equivalent to
    *  SELECT * FROM rps.store WHERE SBS_SID = '<RETAILPRO_SUBSIDIARY_SID>' */
-  async getStores(): Promise<{ name: string; code: string }[]> {
+  async getStores(): Promise<{ name: string; code: string; number: string }[]> {
     const baseUrl = process.env['RETAILPRO_BASE_URL'];
     const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
     if (!baseUrl) {
@@ -199,8 +199,9 @@ export class WebhooksService {
         ? data
         : (data?.Records ?? data?.records ?? []);
       return records.map((r) => ({
-        name: r['store_name'] ?? '',
-        code: r['store_code'] ?? '',
+        name:   r['store_name']   ?? '',
+        code:   r['store_code']   ?? '',
+        number: r['store_number'] ?? '',
       }));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
