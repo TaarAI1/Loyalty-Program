@@ -461,8 +461,8 @@ function FormBuildTab() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1,2,3].map((n) => <div key={n} className="h-36 rounded-xl bg-muted/40 animate-pulse" />)}
+        <div className="space-y-3">
+          {[1,2,3].map((n) => <div key={n} className="h-16 rounded-xl bg-muted/40 animate-pulse" />)}
         </div>
       ) : forms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -471,46 +471,48 @@ function FormBuildTab() {
           <p className="text-xs text-muted-foreground mt-1">Click "New Form" to build your first survey.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {forms.map((f) => {
             const typeIcons = Array.from(new Set(f.formQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
             return (
-              <div key={f.id} className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow group">
-                <div className="h-1.5 bg-primary" />
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="font-semibold text-base leading-tight">{f.name}</p>
-                    <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0 text-[10px]">
-                      {f.status}
-                    </Badge>
-                  </div>
-                  {/* question type chips */}
-                  <div className="flex gap-1.5 mb-3 flex-wrap">
-                    {typeIcons.map((type) => {
-                      const m = TYPE_META[type] ?? TYPE_META['text'];
-                      return (
-                        <span key={type} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.bg} ${m.text}`}>
-                          {m.icon}
-                          {TYPE_LABEL[type] ?? type}
+              <div key={f.id} className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow group flex">
+                <div className="w-1.5 bg-primary shrink-0" />
+                <div className="p-4 flex-1 flex items-center gap-4">
+                  {/* left: name + chips */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="font-semibold text-sm leading-tight truncate">{f.name}</p>
+                      <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0 text-[10px]">
+                        {f.status}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {typeIcons.map((type) => {
+                        const m = TYPE_META[type] ?? TYPE_META['text'];
+                        return (
+                          <span key={type} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${m.bg} ${m.text}`}>
+                            {m.icon}{TYPE_LABEL[type] ?? type}
+                          </span>
+                        );
+                      })}
+                      {f.formQuestions.length > 4 && (
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                          +{f.formQuestions.length - 4} more
                         </span>
-                      );
-                    })}
-                    {f.formQuestions.length > 4 && (
-                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                        +{f.formQuestions.length - 4} more
-                      </span>
-                    )}
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    {f.formQuestions.length} question{f.formQuestions.length !== 1 ? 's' : ''}
-                  </p>
-                  <div className="flex gap-2">
+                  {/* right: question count + actions */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-muted-foreground">
+                      {f.formQuestions.length} Q
+                    </span>
                     <button type="button" onClick={() => setPreviewForm(f)}
-                      className="flex-1 rounded-lg border border-primary text-primary text-xs font-semibold py-1.5 hover:bg-primary/5 transition-colors">
+                      className="rounded-lg border border-primary text-primary text-xs font-semibold px-3 py-1.5 hover:bg-primary/5 transition-colors">
                       Preview
                     </button>
                     <button type="button" onClick={() => openEdit(f)}
-                      className="flex-1 rounded-lg border border-border text-xs font-semibold py-1.5 hover:bg-muted/50 transition-colors">
+                      className="rounded-lg border border-border text-xs font-semibold px-3 py-1.5 hover:bg-muted/50 transition-colors">
                       Edit
                     </button>
                   </div>
