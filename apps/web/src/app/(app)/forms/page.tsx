@@ -473,7 +473,7 @@ function FormBuildTab() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((f) => {
-            const typeIcons = [...new Set(f.formQuestions.map((fq) => fq.question.questionType))].slice(0, 4);
+            const typeIcons = Array.from(new Set(f.formQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
             return (
               <div key={f.id} className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow group">
                 <div className="h-1.5 bg-primary" />
