@@ -136,6 +136,13 @@ export class ConfigurationController {
     return this.configurationService.triggerExpiryJob(body?.asOf);
   }
 
+  // ── Stores (Oracle) ─────────────────────────────────────────────────────────
+
+  @Get('stores')
+  getStores() {
+    return this.configurationService.getStoresFromOracle();
+  }
+
   // ── RetailPro Stores ────────────────────────────────────────────────────────
 
   @Get('retailpro/stores')

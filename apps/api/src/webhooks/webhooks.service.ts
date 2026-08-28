@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from './points.service';
 import { QueueService } from '../queue/queue.service';
 import { WebhookTransactionDto, WebhookCustomerDto, normalizeLocalPhone, formatPhoneNumber } from '@loyalty/shared';
-import axios from 'axios';
 
 @Injectable()
 export class WebhooksService {
@@ -173,41 +172,6 @@ export class WebhooksService {
     }
 
     return this.buildCustomerResponse('created', customer.id);
-  }
-
-  /** Fetch stores from Prism API filtered by subsidiary SID — equivalent to
-   *  SELECT * FROM rps.store WHERE SBS_SID = '<RETAILPRO_SUBSIDIARY_SID>' */
-  async getStores(): Promise<{ name: string; code: string; number: string }[]> {
-    const baseUrl = process.env['RETAILPRO_BASE_URL'];
-    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
-    if (!baseUrl) {
-      this.logger.warn('RETAILPRO_BASE_URL not set — returning empty store list');
-      return [];
-    }
-
-    const url = `${baseUrl.replace(/\/$/, '')}/v1/rest/store`;
-    const params: Record<string, string> = {
-      cols:   'store_no,store_name',
-      ...(subsidiarySid ? { filter: `(sbs_sid,eq,${subsidiarySid})` } : {}),
-      sort:   'store_no,asc',
-    };
-
-    try {
-      const response = await axios.get(url, { params, timeout: 8000 });
-      const data = response.data;
-      const records: Record<string, string>[] = Array.isArray(data)
-        ? data
-        : (data?.Records ?? data?.records ?? []);
-      return records.map((r) => ({
-        name:   r['store_name'] ?? '',
-        number: r['store_no']   ?? '',
-        code:   r['store_no']   ?? '',
-      }));
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error({ message }, 'Failed to fetch stores from Prism');
-      return [];
-    }
   }
 
   /** Fetch fresh customer + tier data and build a rich response */

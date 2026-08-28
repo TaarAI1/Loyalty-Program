@@ -5,6 +5,7 @@ import FormData from 'form-data';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from './encryption.service';
 import { QueueService } from '../queue/queue.service';
+import { OracleService } from '../oracle/oracle.service';
 import { formatPhoneNumber } from '@loyalty/shared';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class ConfigurationService {
     private readonly prisma: PrismaService,
     private readonly encryption: EncryptionService,
     private readonly queue: QueueService,
+    private readonly oracle: OracleService,
   ) {}
 
   // ── Loyalty Tiers ──────────────────────────────────────────────────────────
@@ -793,6 +795,27 @@ export class ConfigurationService {
     </td></tr>
   </table>
 </body></html>`;
+  }
+
+  // ── Oracle — Stores ──────────────────────────────────────────────────────────
+
+  async getStoresFromOracle(): Promise<{ store_no: string; store_name: string }[]> {
+    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
+    if (!subsidiarySid) {
+      this.logger.warn('RETAILPRO_SUBSIDIARY_SID not set — returning empty store list');
+      return [];
+    }
+    if (!this.oracle.isConnected) {
+      this.logger.warn('Oracle pool not available — returning empty store list');
+      return [];
+    }
+    try {
+      return await this.oracle.getStores(subsidiarySid);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error({ message }, 'Failed to fetch stores from Oracle');
+      return [];
+    }
   }
 
   // ── RetailPro Prism — Stores ────────────────────────────────────────────────

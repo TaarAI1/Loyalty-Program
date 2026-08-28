@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
   HttpCode,
   Logger,
   Post,
@@ -31,11 +30,6 @@ export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
   constructor(private readonly webhooksService: WebhooksService) {}
-
-  @Get('store')
-  getStores() {
-    return this.webhooksService.getStores();
-  }
 
   @Post('transaction')
   @HttpCode(200)
