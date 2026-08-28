@@ -146,7 +146,7 @@ export const formsApi = {
   updateDevice: (id: number, data: { name?: string; deviceType?: string; store?: string; isActive?: boolean }) =>
     api.put(`/forms/devices/${id}`, data).then((r) => r.data),
   deleteDevice: (id: number) => api.delete(`/forms/devices/${id}`).then((r) => r.data),
-  getStores: () => api.get('/forms/stores').then((r) => r.data as string[]),
+  getStores: () => api.get('/webhooks/store').then((r) => r.data as { name: string; code: string }[]),
   // Assignments
   getAssignments: () => api.get('/forms/assignments').then((r) => r.data),
   assignForm: (data: { formId: number; deviceIds: number[] }) =>

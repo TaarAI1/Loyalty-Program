@@ -664,10 +664,12 @@ function FormAssignTab() {
   const loadStores = useCallback(async () => {
     try {
       setStoresLoading(true);
-      const stores: string[] = await formsApi.getStores();
+      const stores: { name: string; code: string }[] = await formsApi.getStores();
       setStoreOptions([
         { value: '', label: 'All Branches' },
-        ...stores.map((s) => ({ value: s, label: s })),
+        ...stores
+          .filter((s) => s.name)
+          .map((s) => ({ value: s.name, label: s.code ? `${s.code} — ${s.name}` : s.name })),
       ]);
     } catch {
       setStoreOptions([{ value: '', label: 'All Branches' }]);

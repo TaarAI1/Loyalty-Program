@@ -85,11 +85,6 @@ export class FormsController {
     return this.formsService.deleteDevice(id);
   }
 
-  @Get('stores')
-  getStores() {
-    return this.formsService.getStoresFromDb();
-  }
-
   // ── Assignments ───────────────────────────────────────────────────────────────
 
   @Get('assignments')

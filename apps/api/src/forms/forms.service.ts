@@ -120,15 +120,6 @@ export class FormsService {
     return { success: true };
   }
 
-  async getStoresFromDb(): Promise<string[]> {
-    const rows = await this.prisma.$queryRaw<{ store: string }[]>`
-      SELECT DISTINCT store FROM customers
-      WHERE store IS NOT NULL AND store <> ''
-      ORDER BY store ASC
-    `;
-    return rows.map((r) => r.store);
-  }
-
   // ── Assignments ───────────────────────────────────────────────────────────────
 
   async getAssignments() {
