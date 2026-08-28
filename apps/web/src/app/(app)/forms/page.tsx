@@ -147,7 +147,7 @@ function QuestionsTab() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={q.status === 'active' ? 'default' : 'secondary'}>
+                <Badge variant={q.status === 'active' ? 'default' : 'outline'}>
                   {q.status}
                 </Badge>
                 <Button variant="ghost" size="sm" onClick={() => openEdit(q)}>Edit</Button>
@@ -283,7 +283,7 @@ function FormBuildTab() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-sm">{f.name}</CardTitle>
-                  <Badge variant={f.status === 'active' ? 'default' : 'secondary'} className="shrink-0">
+                  <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0">
                     {f.status}
                   </Badge>
                 </div>
@@ -483,7 +483,7 @@ function FormAssignTab() {
                       {d.store ? ` · ${d.store}` : ''}
                     </p>
                   </div>
-                  <Badge variant={d.isActive ? 'default' : 'secondary'} className="shrink-0">
+                  <Badge variant={d.isActive ? 'default' : 'outline'} className="shrink-0">
                     {d.isActive ? 'Active' : 'Off'}
                   </Badge>
                 </div>
