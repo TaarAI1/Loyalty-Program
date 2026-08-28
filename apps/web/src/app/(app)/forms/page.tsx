@@ -96,6 +96,31 @@ const DEVICE_ICON: Record<string, React.ReactNode> = {
   mobile:      <Smartphone   className="h-5 w-5" />,
 };
 
+// ── Confirm Dialog ────────────────────────────────────────────────────────────
+
+function ConfirmDialog({ open, title, message, onConfirm, onCancel }: {
+  open: boolean;
+  title?: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Dialog open={open} onClose={onCancel} title={title ?? 'Confirm'} className="max-w-sm">
+      <p className="text-sm text-muted-foreground mb-6">{message}</p>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button
+          onClick={onConfirm}
+          className="bg-destructive text-white hover:bg-destructive/90"
+        >
+          Confirm
+        </Button>
+      </div>
+    </Dialog>
+  );
+}
+
 // ── Question Preview ───────────────────────────────────────────────────────────
 
 const EMOJI_OPTIONS = [
@@ -232,6 +257,14 @@ function QuestionsTab() {
   const [editing, setEditing]     = useState<Question | null>(null);
   const [formState, setFormState] = useState({ text: '', questionType: 'text', status: 'active', options: [] as string[] });
   const [newOption, setNewOption] = useState('');
+  const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
+
+  function askConfirm(message: string, action: () => void) {
+    setConfirmState({ open: true, message, onConfirm: action });
+  }
+  function closeConfirm() { setConfirmState((s) => ({ ...s, open: false })); }
 
   const load = useCallback(async () => {
     try { setLoading(true); setQuestions(await formsApi.getQuestions()); } finally { setLoading(false); }
@@ -272,9 +305,12 @@ function QuestionsTab() {
     setShowDialog(false); load();
   }
 
-  async function remove(id: number) {
-    if (!confirm('Delete this question?')) return;
-    await formsApi.deleteQuestion(id); load();
+  function remove(id: number) {
+    askConfirm('Are you sure you want to delete this question? This cannot be undone.', async () => {
+      closeConfirm();
+      await formsApi.deleteQuestion(id);
+      load();
+    });
   }
 
   return (
@@ -337,6 +373,13 @@ function QuestionsTab() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onConfirm={() => { confirmState.onConfirm(); }}
+        onCancel={closeConfirm}
+      />
 
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}
         title={editing ? 'Edit Question' : 'Add Question'} className="max-w-md">
@@ -585,6 +628,14 @@ function FormAssignTab() {
   const [deviceForm, setDeviceForm] = useState({ name: '', deviceType: 'workstation', store: '' });
   const [assignFormId, setAssignFormId] = useState('');
   const [assignDeviceIds, setAssignDeviceIds] = useState<number[]>([]);
+  const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
+
+  function askConfirm(message: string, action: () => void) {
+    setConfirmState({ open: true, message, onConfirm: action });
+  }
+  function closeConfirm() { setConfirmState((s) => ({ ...s, open: false })); }
 
   const load = useCallback(async () => {
     try {
@@ -625,9 +676,12 @@ function FormAssignTab() {
     setShowAssignDialog(false); setAssignFormId(''); setAssignDeviceIds([]); load();
   }
 
-  async function removeAssignment(id: number) {
-    if (!confirm('Remove this assignment?')) return;
-    await formsApi.deleteAssignment(id); load();
+  function removeAssignment(id: number) {
+    askConfirm('Are you sure you want to remove this assignment? This cannot be undone.', async () => {
+      closeConfirm();
+      await formsApi.deleteAssignment(id);
+      load();
+    });
   }
 
   function toggleDevice(id: number) {
@@ -730,6 +784,13 @@ function FormAssignTab() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onConfirm={() => { confirmState.onConfirm(); }}
+        onCancel={closeConfirm}
+      />
 
       {/* Add Device Dialog */}
       <Dialog open={showDeviceDialog} onClose={() => setShowDeviceDialog(false)} title="Add Device" className="max-w-sm">
