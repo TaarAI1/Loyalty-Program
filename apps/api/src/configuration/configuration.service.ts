@@ -795,6 +795,42 @@ export class ConfigurationService {
 </body></html>`;
   }
 
+  // ── RetailPro Prism — Stores ────────────────────────────────────────────────
+
+  async getRetailProStores(): Promise<{ sid: string; store_name: string; store_number: string; store_code: string }[]> {
+    const baseUrl = process.env['RETAILPRO_BASE_URL'];
+    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
+
+    if (!baseUrl) {
+      this.logger.warn('RETAILPRO_BASE_URL not configured — returning empty store list');
+      return [];
+    }
+
+    const url = `${baseUrl.replace(/\/$/, '')}/v1/rest/store`;
+    const params: Record<string, string> = {
+      cols: 'sid,store_name,store_number,store_code,active,subsidiary_sid,active_price_level_sid',
+      filter: `(active,eq,true)${subsidiarySid ? `AND(subsidiary_sid,eq,${subsidiarySid})` : ''}`,
+      sort: 'store_code,asc',
+    };
+
+    try {
+      const response = await axios.get(url, { params, timeout: 8000 });
+      const data = response.data;
+      // Prism wraps results in { Records: [...] } or returns an array directly
+      const records: Record<string, string>[] = Array.isArray(data) ? data : (data?.Records ?? data?.records ?? []);
+      return records.map((r) => ({
+        sid:          r['sid']          ?? '',
+        store_name:   r['store_name']   ?? '',
+        store_number: r['store_number'] ?? '',
+        store_code:   r['store_code']   ?? '',
+      }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error({ message }, 'Failed to fetch stores from RetailPro Prism');
+      return [];
+    }
+  }
+
   // ── Audit Log ──────────────────────────────────────────────────────────────
 
   private async auditLog(

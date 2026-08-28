@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { formsApi } from '@/lib/api';
+import { formsApi, configApi } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -711,6 +711,8 @@ function FormAssignTab() {
   const [loading, setLoading] = useState(true);
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [retailProStores, setRetailProStores] = useState<{ value: string | number; label: string }[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
 
   const [deviceForm, setDeviceForm] = useState({ name: '', deviceType: 'workstation', store: '' });
   const [assignFormId, setAssignFormId] = useState('');
@@ -732,7 +734,25 @@ function FormAssignTab() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadStores = useCallback(async () => {
+    try {
+      setStoresLoading(true);
+      const stores = await configApi.getRetailProStores();
+      setRetailProStores([
+        { value: '', label: 'No store selected' },
+        ...stores.map((s) => ({
+          value: s.store_name,
+          label: `${s.store_code ? s.store_code + ' — ' : ''}${s.store_name}`,
+        })),
+      ]);
+    } catch {
+      setRetailProStores([{ value: '', label: 'Could not load stores' }]);
+    } finally {
+      setStoresLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); loadStores(); }, [load, loadStores]);
 
   async function saveDevice() {
     if (!deviceForm.name.trim()) return;
@@ -882,12 +902,19 @@ function FormAssignTab() {
             />
           </div>
           <div className="space-y-1">
-            <Label>Store / Location <span className="text-muted-foreground text-xs">(optional)</span></Label>
-            <Input
-              placeholder="e.g. Main Branch"
-              value={deviceForm.store}
-              onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
-            />
+            <Label>
+              Store{' '}
+              <span className="text-muted-foreground text-xs">(from RetailPro)</span>
+            </Label>
+            {storesLoading ? (
+              <p className="text-xs text-muted-foreground py-1">Loading stores…</p>
+            ) : (
+              <Select
+                options={retailProStores.length > 1 ? retailProStores : [{ value: '', label: 'No stores found — check RETAILPRO_BASE_URL' }]}
+                value={deviceForm.store}
+                onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
+              />
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDeviceDialog(false)}>Cancel</Button>

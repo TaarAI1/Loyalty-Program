@@ -78,6 +78,10 @@ export const configApi = {
   verifySmtp: () => api.post('/configuration/verify-smtp').then((r) => r.data),
   triggerForensicAlert: () => api.post('/configuration/trigger-forensic-alert').then((r) => r.data),
   getEmailLogs: () => api.get('/configuration/email-logs').then((r) => r.data),
+  getRetailProStores: () =>
+    api.get('/configuration/retailpro/stores').then((r) => r.data) as Promise<
+      { sid: string; store_name: string; store_number: string; store_code: string }[]
+    >,
 };
 
 // Reports
