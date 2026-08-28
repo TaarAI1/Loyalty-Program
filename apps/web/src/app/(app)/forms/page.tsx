@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog } from '@/components/ui/dialog';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, GripVertical, MonitorSmartphone, CheckCircle2, Star } from 'lucide-react';
+import { Trash2, Plus, GripVertical, MonitorSmartphone, CheckCircle2, Star, ArrowLeft, Pencil } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -96,8 +96,8 @@ function QuestionPreview({ question }: { question: Question }) {
   const opts = question.options ?? [];
 
   return (
-    <div className="py-3 border-b last:border-0">
-      <p className="text-sm font-medium mb-2">{question.text}</p>
+    <div>
+      <p className="text-base font-semibold mb-3">{question.text}</p>
 
       {question.questionType === 'text' && (
         <input
@@ -442,6 +442,72 @@ function QuestionsTab() {
   );
 }
 
+// ── Inline Form Preview ────────────────────────────────────────────────────────
+
+function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
+  return (
+    <div className="space-y-6">
+      {/* Top bar */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to forms
+        </button>
+        <Button variant="outline" size="sm" onClick={onEdit}>
+          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Form
+        </Button>
+      </div>
+
+      {/* Form card — looks like a real survey */}
+      <div className="max-w-2xl mx-auto">
+        {/* Header band */}
+        <div className="rounded-t-2xl bg-primary px-8 py-6">
+          <h2 className="text-xl font-bold text-primary-foreground">{form.name}</h2>
+          <p className="text-sm text-primary-foreground/70 mt-1">
+            Please take a moment to fill out this survey.
+          </p>
+        </div>
+
+        {/* Questions */}
+        <div className="rounded-b-2xl border border-t-0 bg-background divide-y">
+          {form.formQuestions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-10 text-center">
+              No questions added to this form yet.
+            </p>
+          ) : (
+            form.formQuestions.map((fq, idx) => (
+              <div key={fq.id} className="px-8 py-6">
+                <p className="text-xs font-semibold text-primary/70 uppercase tracking-wider mb-1">
+                  Question {idx + 1}
+                </p>
+                <QuestionPreview question={fq.question} />
+              </div>
+            ))
+          )}
+
+          {/* Submit strip */}
+          <div className="px-8 py-5 flex justify-end bg-muted/20 rounded-b-2xl">
+            <button
+              type="button"
+              className="rounded-full bg-primary px-8 py-2.5 text-sm font-semibold text-primary-foreground shadow hover:opacity-90 transition-opacity"
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          This is a preview. Responses are not saved.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Form Build Tab ─────────────────────────────────────────────────────────────
 
 function FormBuildTab() {
@@ -501,6 +567,17 @@ function FormBuildTab() {
     );
   }
 
+  // Show inline preview instead of cards list
+  if (previewForm) {
+    return (
+      <FormPreviewPage
+        form={previewForm}
+        onBack={() => setPreviewForm(null)}
+        onEdit={() => { setPreviewForm(null); openEdit(previewForm); }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -519,68 +596,44 @@ function FormBuildTab() {
           No forms yet. Create your first form.
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((f) => (
-            <Card key={f.id} className="relative">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-sm">{f.name}</CardTitle>
-                  <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0">
+            <div
+              key={f.id}
+              className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {/* Colour top strip */}
+              <div className="h-2 bg-primary" />
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="font-semibold text-sm leading-tight">{f.name}</p>
+                  <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0 text-[10px]">
                     {f.status}
                   </Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-xs text-muted-foreground mb-4">
                   {f.formQuestions.length} question{f.formQuestions.length !== 1 ? 's' : ''}
                 </p>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
+                  <button
+                    type="button"
                     onClick={() => setPreviewForm(f)}
+                    className="flex-1 rounded-lg border border-primary text-primary text-xs font-semibold py-1.5 hover:bg-primary/5 transition-colors"
                   >
                     Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openEdit(f)}
+                    className="flex-1 rounded-lg border border-border text-xs font-semibold py-1.5 hover:bg-muted/50 transition-colors"
                   >
                     Edit
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
-      )}
-
-      {/* Form Preview Dialog */}
-      {previewForm && (
-        <Dialog
-          open={!!previewForm}
-          onClose={() => setPreviewForm(null)}
-          title={previewForm.name}
-          className="max-w-lg"
-        >
-          <div className="space-y-1 max-h-[70vh] overflow-y-auto pr-1">
-            {previewForm.formQuestions.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                This form has no questions yet.
-              </p>
-            ) : (
-              previewForm.formQuestions.map((fq) => (
-                <QuestionPreview key={fq.id} question={fq.question} />
-              ))
-            )}
-            <div className="pt-4 flex justify-end">
-              <Button onClick={() => setPreviewForm(null)}>Close Preview</Button>
-            </div>
-          </div>
-        </Dialog>
       )}
 
       {/* Add / Edit Form Dialog */}
