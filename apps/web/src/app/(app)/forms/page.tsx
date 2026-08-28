@@ -634,6 +634,10 @@ function FormAssignTab() {
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
   const [selectedFormId, setSelectedFormId]     = useState('');
 
+  // Stores dropdown
+  const [storeOptions, setStoreOptions]   = useState<{ value: string; label: string }[]>([{ value: '', label: 'All Branches' }]);
+  const [storesLoading, setStoresLoading] = useState(false);
+
   // Add / Edit device dialog
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
   const [editingDevice, setEditingDevice]       = useState<Device | null>(null);
@@ -657,7 +661,25 @@ function FormAssignTab() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadStores = useCallback(async () => {
+    try {
+      setStoresLoading(true);
+      const stores: { store_no: string; store_name: string }[] = await formsApi.getStores();
+      setStoreOptions([
+        { value: '', label: 'All Branches' },
+        ...stores
+          .filter((s) => s.store_name)
+          .map((s) => ({
+            value: s.store_name,
+            label: s.store_no ? `${s.store_no} - ${s.store_name}` : s.store_name,
+          })),
+      ]);
+    } catch {
+      setStoreOptions([{ value: '', label: 'All Branches' }]);
+    } finally { setStoresLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); loadStores(); }, [load, loadStores]);
 
   // Devices to show: real ones or dummies if none registered
   const allDevices = devices.length > 0 ? devices : DUMMY_DEVICES;
@@ -761,8 +783,8 @@ function FormAssignTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Branch / Store</Label>
-              <Input
-                placeholder="Filter by store name…"
+              <Select
+                options={storesLoading ? [{ value: '', label: 'Loading stores…' }] : storeOptions}
                 value={filterStore}
                 onChange={(e) => { setFilterStore(e.target.value); setSelectedDeviceIds([]); }}
               />
@@ -973,8 +995,8 @@ function FormAssignTab() {
           </div>
           <div className="space-y-1">
             <Label>Store <span className="text-muted-foreground text-xs">(optional)</span></Label>
-            <Input
-              placeholder="Enter store name…"
+            <Select
+              options={[{ value: '', label: 'Select store…' }, ...storeOptions.slice(1)]}
               value={deviceForm.store}
               onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
             />

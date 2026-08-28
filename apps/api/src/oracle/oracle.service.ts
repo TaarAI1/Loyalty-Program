@@ -32,6 +32,17 @@ export class OracleService implements OnModuleInit, OnModuleDestroy {
       });
       this.lastError = null;
       this.logger.log(`Oracle connection pool created (${host}:${port}/${service})`);
+
+      // Test real TCP connectivity immediately after pool creation
+      try {
+        const testConn = await this.pool.getConnection();
+        await testConn.close();
+        this.logger.log('Oracle connection test: SUCCESS — database is reachable');
+      } catch (testErr: unknown) {
+        const testMsg = testErr instanceof Error ? testErr.message : String(testErr);
+        this.lastError = testMsg;
+        this.logger.error({ message: testMsg }, 'Oracle connection test: FAILED — database unreachable');
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       this.lastError = message;
