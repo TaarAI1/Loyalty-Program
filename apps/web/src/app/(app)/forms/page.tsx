@@ -7,20 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
+import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Plus, GripVertical, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
 
@@ -59,15 +47,20 @@ interface Assignment {
   device: Device;
 }
 
-const QUESTION_TYPES = [
-  { value: 'text',    label: 'Short Text' },
+const QUESTION_TYPE_OPTIONS = [
+  { value: 'text',     label: 'Short Text' },
   { value: 'textarea', label: 'Long Text' },
-  { value: 'rating',  label: 'Rating (1-5)' },
-  { value: 'boolean', label: 'Yes / No' },
-  { value: 'select',  label: 'Multiple Choice' },
+  { value: 'rating',   label: 'Rating (1-5)' },
+  { value: 'boolean',  label: 'Yes / No' },
+  { value: 'select',   label: 'Multiple Choice' },
 ];
 
-const DEVICE_TYPES = [
+const STATUS_OPTIONS = [
+  { value: 'active',   label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
+const DEVICE_TYPE_OPTIONS = [
   { value: 'workstation', label: 'Workstation' },
   { value: 'tablet',      label: 'Tablet' },
   { value: 'kiosk',       label: 'Kiosk' },
@@ -81,7 +74,7 @@ function QuestionsTab() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Question | null>(null);
-  const [form, setForm] = useState({ text: '', questionType: 'text', status: 'active' });
+  const [formState, setFormState] = useState({ text: '', questionType: 'text', status: 'active' });
 
   const load = useCallback(async () => {
     try {
@@ -96,22 +89,22 @@ function QuestionsTab() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ text: '', questionType: 'text', status: 'active' });
+    setFormState({ text: '', questionType: 'text', status: 'active' });
     setShowDialog(true);
   }
 
   function openEdit(q: Question) {
     setEditing(q);
-    setForm({ text: q.text, questionType: q.questionType, status: q.status });
+    setFormState({ text: q.text, questionType: q.questionType, status: q.status });
     setShowDialog(true);
   }
 
   async function save() {
-    if (!form.text.trim()) return;
+    if (!formState.text.trim()) return;
     if (editing) {
-      await formsApi.updateQuestion(editing.id, form);
+      await formsApi.updateQuestion(editing.id, formState);
     } else {
-      await formsApi.createQuestion(form);
+      await formsApi.createQuestion(formState);
     }
     setShowDialog(false);
     load();
@@ -149,7 +142,7 @@ function QuestionsTab() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{q.text}</p>
                   <p className="text-xs text-muted-foreground">
-                    {QUESTION_TYPES.find((t) => t.value === q.questionType)?.label ?? q.questionType}
+                    {QUESTION_TYPE_OPTIONS.find((t) => t.value === q.questionType)?.label ?? q.questionType}
                   </p>
                 </div>
               </div>
@@ -157,9 +150,7 @@ function QuestionsTab() {
                 <Badge variant={q.status === 'active' ? 'default' : 'secondary'}>
                   {q.status}
                 </Badge>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(q)}>
-                  <span className="text-xs">Edit</span>
-                </Button>
+                <Button variant="ghost" size="sm" onClick={() => openEdit(q)}>Edit</Button>
                 <Button variant="ghost" size="icon" onClick={() => remove(q.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -169,51 +160,42 @@ function QuestionsTab() {
         </div>
       )}
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Question' : 'Add Question'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label>Question Text</Label>
-              <Input
-                placeholder="e.g. How satisfied are you with our service?"
-                value={form.text}
-                onChange={(e) => setForm({ ...form, text: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select value={form.questionType} onValueChange={(v) => setForm({ ...form, questionType: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {QUESTION_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <Dialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        title={editing ? 'Edit Question' : 'Add Question'}
+        className="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Question Text</Label>
+            <Input
+              placeholder="e.g. How satisfied are you with our service?"
+              value={formState.text}
+              onChange={(e) => setFormState({ ...formState, text: e.target.value })}
+            />
           </div>
-          <DialogFooter>
+          <div className="space-y-1">
+            <Label>Type</Label>
+            <Select
+              options={QUESTION_TYPE_OPTIONS}
+              value={formState.questionType}
+              onChange={(e) => setFormState({ ...formState, questionType: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select
+              options={STATUS_OPTIONS}
+              value={formState.status}
+              onChange={(e) => setFormState({ ...formState, status: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
             <Button onClick={save}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
     </div>
   );
@@ -327,70 +309,66 @@ function FormBuildTab() {
         </div>
       )}
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Form' : 'New Form'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="space-y-1">
-              <Label>Form Name</Label>
-              <Input
-                placeholder="e.g. Post-Purchase Survey"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Questions ({selectedIds.length} selected)</Label>
-              {questions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No active questions found.</p>
-              ) : (
-                <div className="border rounded-md divide-y max-h-56 overflow-y-auto">
-                  {questions.map((q) => {
-                    const checked = selectedIds.includes(q.id);
-                    return (
-                      <button
-                        key={q.id}
-                        type="button"
-                        onClick={() => toggleQuestion(q.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
-                          checked ? 'bg-primary/5' : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <CheckCircle2
-                          className={`h-4 w-4 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground/30'}`}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm truncate">{q.text}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {QUESTION_TYPES.find((t) => t.value === q.questionType)?.label ?? q.questionType}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+      <Dialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
+        title={editing ? 'Edit Form' : 'New Form'}
+        className="max-w-lg"
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-1">
+            <Label>Form Name</Label>
+            <Input
+              placeholder="e.g. Post-Purchase Survey"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
-          <DialogFooter>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select
+              options={STATUS_OPTIONS}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Questions ({selectedIds.length} selected)</Label>
+            {questions.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No active questions found.</p>
+            ) : (
+              <div className="border rounded-md divide-y max-h-56 overflow-y-auto">
+                {questions.map((q) => {
+                  const checked = selectedIds.includes(q.id);
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => toggleQuestion(q.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+                        checked ? 'bg-primary/5' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <CheckCircle2
+                        className={`h-4 w-4 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground/30'}`}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm truncate">{q.text}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {QUESTION_TYPE_OPTIONS.find((t) => t.value === q.questionType)?.label ?? q.questionType}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
             <Button onClick={save}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
     </div>
   );
@@ -461,7 +439,8 @@ function FormAssignTab() {
     );
   }
 
-  // Group assignments by form for display
+  const formOptions = forms.map((f) => ({ value: f.id, label: f.name }));
+
   const grouped = assignments.reduce<Record<string, Assignment[]>>((acc, a) => {
     const key = a.form.name;
     if (!acc[key]) acc[key] = [];
@@ -485,7 +464,6 @@ function FormAssignTab() {
         </div>
       </div>
 
-      {/* Devices section */}
       {devices.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -501,7 +479,7 @@ function FormAssignTab() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{d.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {DEVICE_TYPES.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                      {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
                       {d.store ? ` · ${d.store}` : ''}
                     </p>
                   </div>
@@ -515,7 +493,6 @@ function FormAssignTab() {
         </Card>
       )}
 
-      {/* Assignments */}
       {loading ? (
         <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
       ) : assignments.length === 0 ? (
@@ -536,7 +513,7 @@ function FormAssignTab() {
                       <div>
                         <p className="text-sm">{a.device.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {DEVICE_TYPES.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
+                          {DEVICE_TYPE_OPTIONS.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
                           {a.device.store ? ` · ${a.device.store}` : ''}
                         </p>
                       </div>
@@ -553,108 +530,101 @@ function FormAssignTab() {
       )}
 
       {/* Add Device Dialog */}
-      <Dialog open={showDeviceDialog} onOpenChange={setShowDeviceDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Add Device</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label>Device Name</Label>
-              <Input
-                placeholder="e.g. Cashier 1"
-                value={deviceForm.name}
-                onChange={(e) => setDeviceForm({ ...deviceForm, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select value={deviceForm.deviceType} onValueChange={(v) => setDeviceForm({ ...deviceForm, deviceType: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEVICE_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Store / Location <span className="text-muted-foreground">(optional)</span></Label>
-              <Input
-                placeholder="e.g. Main Branch"
-                value={deviceForm.store}
-                onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
-              />
-            </div>
+      <Dialog
+        open={showDeviceDialog}
+        onClose={() => setShowDeviceDialog(false)}
+        title="Add Device"
+        className="max-w-sm"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Device Name</Label>
+            <Input
+              placeholder="e.g. Cashier 1"
+              value={deviceForm.name}
+              onChange={(e) => setDeviceForm({ ...deviceForm, name: e.target.value })}
+            />
           </div>
-          <DialogFooter>
+          <div className="space-y-1">
+            <Label>Type</Label>
+            <Select
+              options={DEVICE_TYPE_OPTIONS}
+              value={deviceForm.deviceType}
+              onChange={(e) => setDeviceForm({ ...deviceForm, deviceType: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Store / Location <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input
+              placeholder="e.g. Main Branch"
+              value={deviceForm.store}
+              onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDeviceDialog(false)}>Cancel</Button>
             <Button onClick={saveDevice}>Add Device</Button>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
 
       {/* Assign Form Dialog */}
-      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Assign Form to Devices</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1">
-              <Label>Form</Label>
-              <Select value={assignFormId} onValueChange={setAssignFormId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a form" />
-                </SelectTrigger>
-                <SelectContent>
-                  {forms.map((f) => (
-                    <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Devices ({assignDeviceIds.length} selected)</Label>
-              {devices.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No devices registered yet.</p>
-              ) : (
-                <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
-                  {devices.map((d) => {
-                    const checked = assignDeviceIds.includes(d.id);
-                    return (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => toggleDevice(d.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
-                          checked ? 'bg-primary/5' : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <CheckCircle2
-                          className={`h-4 w-4 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground/30'}`}
-                        />
-                        <div>
-                          <p className="text-sm">{d.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {DEVICE_TYPES.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                            {d.store ? ` · ${d.store}` : ''}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+      <Dialog
+        open={showAssignDialog}
+        onClose={() => setShowAssignDialog(false)}
+        title="Assign Form to Devices"
+        className="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Form</Label>
+            <Select
+              options={formOptions}
+              placeholder="Select a form"
+              value={assignFormId}
+              onChange={(e) => setAssignFormId(e.target.value)}
+            />
           </div>
-          <DialogFooter>
+          <div className="space-y-2">
+            <Label>Devices ({assignDeviceIds.length} selected)</Label>
+            {devices.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No devices registered yet.</p>
+            ) : (
+              <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
+                {devices.map((d) => {
+                  const checked = assignDeviceIds.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => toggleDevice(d.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+                        checked ? 'bg-primary/5' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <CheckCircle2
+                        className={`h-4 w-4 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground/30'}`}
+                      />
+                      <div>
+                        <p className="text-sm">{d.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                          {d.store ? ` · ${d.store}` : ''}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowAssignDialog(false)}>Cancel</Button>
             <Button onClick={saveAssignment} disabled={!assignFormId || assignDeviceIds.length === 0}>
               Assign
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </div>
+        </div>
       </Dialog>
     </div>
   );
