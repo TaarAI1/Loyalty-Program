@@ -123,9 +123,9 @@ export const usersApi = {
 export const formsApi = {
   // Questions
   getQuestions: () => api.get('/forms/questions').then((r) => r.data),
-  createQuestion: (data: { text: string; questionType: string; status?: string }) =>
+  createQuestion: (data: { text: string; questionType: string; options?: string[]; status?: string }) =>
     api.post('/forms/questions', data).then((r) => r.data),
-  updateQuestion: (id: number, data: { text?: string; questionType?: string; status?: string }) =>
+  updateQuestion: (id: number, data: { text?: string; questionType?: string; options?: string[]; status?: string }) =>
     api.put(`/forms/questions/${id}`, data).then((r) => r.data),
   deleteQuestion: (id: number) => api.delete(`/forms/questions/${id}`).then((r) => r.data),
   // Forms

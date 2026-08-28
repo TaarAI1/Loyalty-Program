@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog } from '@/components/ui/dialog';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, GripVertical, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
+import { Trash2, Plus, GripVertical, MonitorSmartphone, CheckCircle2, Star } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,6 +18,7 @@ interface Question {
   id: number;
   text: string;
   questionType: string;
+  options: string[] | null;
   status: string;
   createdAt: string;
 }
@@ -49,8 +50,8 @@ interface Assignment {
 
 const QUESTION_TYPE_OPTIONS = [
   { value: 'text',     label: 'Short Text' },
-  { value: 'textarea', label: 'Long Text' },
-  { value: 'rating',   label: 'Rating (1-5)' },
+  { value: 'textarea', label: 'Emoji Feedback' },
+  { value: 'rating',   label: 'Star Rating (1-5)' },
   { value: 'boolean',  label: 'Yes / No' },
   { value: 'select',   label: 'Multiple Choice' },
 ];
@@ -67,6 +68,148 @@ const DEVICE_TYPE_OPTIONS = [
   { value: 'mobile',      label: 'Mobile' },
 ];
 
+const TYPE_LABEL: Record<string, string> = {
+  text:     'Short Text',
+  textarea: 'Emoji Feedback',
+  rating:   'Star Rating',
+  boolean:  'Yes / No',
+  select:   'Multiple Choice',
+};
+
+// ── Question Preview (live interactive preview) ───────────────────────────────
+
+const EMOJI_OPTIONS = [
+  { emoji: '😞', label: 'Very Bad' },
+  { emoji: '😐', label: 'Neutral' },
+  { emoji: '😊', label: 'Good' },
+  { emoji: '😁', label: 'Great' },
+  { emoji: '👍', label: 'Excellent' },
+];
+
+function QuestionPreview({ question }: { question: Question }) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [yesNo, setYesNo] = useState<string | null>(null);
+  const [emojiIdx, setEmojiIdx] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const opts = question.options ?? [];
+
+  return (
+    <div className="py-3 border-b last:border-0">
+      <p className="text-sm font-medium mb-2">{question.text}</p>
+
+      {question.questionType === 'text' && (
+        <input
+          className="w-full rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none cursor-default"
+          placeholder="Type your answer here…"
+          readOnly
+        />
+      )}
+
+      {question.questionType === 'textarea' && (
+        <div className="flex gap-3 mt-1">
+          {EMOJI_OPTIONS.map((e, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setEmojiIdx(i)}
+              title={e.label}
+              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-2xl transition-all border ${
+                emojiIdx === i
+                  ? 'border-primary bg-primary/10 scale-110'
+                  : 'border-transparent hover:bg-muted/60'
+              }`}
+            >
+              {e.emoji}
+              <span className="text-[10px] text-muted-foreground">{e.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {question.questionType === 'rating' && (
+        <div className="flex gap-1 mt-1">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setRating(n)}
+              onMouseEnter={() => setHoverRating(n)}
+              onMouseLeave={() => setHoverRating(0)}
+              className="transition-transform hover:scale-110"
+            >
+              <Star
+                className={`h-8 w-8 transition-colors ${
+                  n <= (hoverRating || rating)
+                    ? 'fill-yellow-400 text-yellow-400'
+                    : 'text-muted-foreground/30'
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {question.questionType === 'boolean' && (
+        <div className="flex gap-3 mt-1">
+          {['Yes', 'No'].map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setYesNo(opt)}
+              className={`rounded-full px-6 py-1.5 text-sm font-medium border transition-colors ${
+                yesNo === opt
+                  ? opt === 'Yes'
+                    ? 'bg-green-500 text-white border-green-500'
+                    : 'bg-red-500 text-white border-red-500'
+                  : 'border-border hover:bg-muted/60'
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {question.questionType === 'select' && (
+        <div className="space-y-1.5 mt-1">
+          {opts.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">No options defined.</p>
+          ) : (
+            opts.map((opt, i) => (
+              <label
+                key={i}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span
+                  className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    selected === opt ? 'border-primary' : 'border-muted-foreground/40 group-hover:border-primary/60'
+                  }`}
+                  onClick={() => setSelected(opt)}
+                >
+                  {selected === opt && (
+                    <span className="h-2 w-2 rounded-full bg-primary block" />
+                  )}
+                </span>
+                <span
+                  className="text-sm"
+                  onClick={() => setSelected(opt)}
+                >
+                  <span className="text-muted-foreground mr-1">
+                    {String.fromCharCode(97 + i)}.
+                  </span>
+                  {opt}
+                </span>
+              </label>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Questions Tab ─────────────────────────────────────────────────────────────
 
 function QuestionsTab() {
@@ -74,7 +217,13 @@ function QuestionsTab() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Question | null>(null);
-  const [formState, setFormState] = useState({ text: '', questionType: 'text', status: 'active' });
+  const [formState, setFormState] = useState({
+    text: '',
+    questionType: 'text',
+    status: 'active',
+    options: [] as string[],
+  });
+  const [newOption, setNewOption] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -89,22 +238,46 @@ function QuestionsTab() {
 
   function openAdd() {
     setEditing(null);
-    setFormState({ text: '', questionType: 'text', status: 'active' });
+    setFormState({ text: '', questionType: 'text', status: 'active', options: [] });
+    setNewOption('');
     setShowDialog(true);
   }
 
   function openEdit(q: Question) {
     setEditing(q);
-    setFormState({ text: q.text, questionType: q.questionType, status: q.status });
+    setFormState({
+      text: q.text,
+      questionType: q.questionType,
+      status: q.status,
+      options: q.options ?? [],
+    });
+    setNewOption('');
     setShowDialog(true);
+  }
+
+  function addOption() {
+    const val = newOption.trim();
+    if (!val || formState.options.includes(val)) return;
+    setFormState((s) => ({ ...s, options: [...s.options, val] }));
+    setNewOption('');
+  }
+
+  function removeOption(idx: number) {
+    setFormState((s) => ({ ...s, options: s.options.filter((_, i) => i !== idx) }));
   }
 
   async function save() {
     if (!formState.text.trim()) return;
+    const payload = {
+      text: formState.text,
+      questionType: formState.questionType,
+      status: formState.status,
+      options: formState.questionType === 'select' ? formState.options : undefined,
+    };
     if (editing) {
-      await formsApi.updateQuestion(editing.id, formState);
+      await formsApi.updateQuestion(editing.id, payload);
     } else {
-      await formsApi.createQuestion(formState);
+      await formsApi.createQuestion(payload);
     }
     setShowDialog(false);
     load();
@@ -142,7 +315,10 @@ function QuestionsTab() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{q.text}</p>
                   <p className="text-xs text-muted-foreground">
-                    {QUESTION_TYPE_OPTIONS.find((t) => t.value === q.questionType)?.label ?? q.questionType}
+                    {TYPE_LABEL[q.questionType] ?? q.questionType}
+                    {q.questionType === 'select' && q.options && q.options.length > 0
+                      ? ` · ${q.options.length} options`
+                      : ''}
                   </p>
                 </div>
               </div>
@@ -180,9 +356,74 @@ function QuestionsTab() {
             <Select
               options={QUESTION_TYPE_OPTIONS}
               value={formState.questionType}
-              onChange={(e) => setFormState({ ...formState, questionType: e.target.value })}
+              onChange={(e) =>
+                setFormState({ ...formState, questionType: e.target.value, options: [] })
+              }
             />
           </div>
+
+          {/* Multiple choice options editor */}
+          {formState.questionType === 'select' && (
+            <div className="space-y-2">
+              <Label>Answer Options</Label>
+              {formState.options.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formState.options.map((opt, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-0.5 text-sm"
+                    >
+                      <span className="text-muted-foreground mr-0.5">
+                        {String.fromCharCode(97 + i)}.
+                      </span>
+                      {opt}
+                      <button
+                        type="button"
+                        onClick={() => removeOption(i)}
+                        className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type an option and press +"
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOption(); } }}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={addOption}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {formState.options.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Add at least one option (e.g. "Satisfied", "Neutral", "Unsatisfied").
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Info text for other types */}
+          {formState.questionType === 'textarea' && (
+            <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              Respondents will answer with emoji reactions: 😞 😐 😊 😁 👍
+            </p>
+          )}
+          {formState.questionType === 'rating' && (
+            <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              Respondents will rate from 1 to 5 stars.
+            </p>
+          )}
+          {formState.questionType === 'boolean' && (
+            <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+              Respondents will tap Yes or No.
+            </p>
+          )}
+
           <div className="space-y-1">
             <Label>Status</Label>
             <Select
@@ -212,6 +453,7 @@ function FormBuildTab() {
   const [name, setName] = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [status, setStatus] = useState('active');
+  const [previewForm, setPreviewForm] = useState<Form | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -292,23 +534,56 @@ function FormBuildTab() {
                 <p className="text-xs text-muted-foreground mb-3">
                   {f.formQuestions.length} question{f.formQuestions.length !== 1 ? 's' : ''}
                 </p>
-                <ol className="space-y-1 mb-4">
-                  {f.formQuestions.map((fq) => (
-                    <li key={fq.id} className="text-xs text-muted-foreground flex gap-2">
-                      <span className="text-foreground/40">{fq.sortOrder + 1}.</span>
-                      <span className="truncate">{fq.question.text}</span>
-                    </li>
-                  ))}
-                </ol>
-                <Button variant="outline" size="sm" className="w-full" onClick={() => openEdit(f)}>
-                  Edit Form
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setPreviewForm(f)}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEdit(f)}
+                  >
+                    Edit
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
 
+      {/* Form Preview Dialog */}
+      {previewForm && (
+        <Dialog
+          open={!!previewForm}
+          onClose={() => setPreviewForm(null)}
+          title={previewForm.name}
+          className="max-w-lg"
+        >
+          <div className="space-y-1 max-h-[70vh] overflow-y-auto pr-1">
+            {previewForm.formQuestions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                This form has no questions yet.
+              </p>
+            ) : (
+              previewForm.formQuestions.map((fq) => (
+                <QuestionPreview key={fq.id} question={fq.question} />
+              ))
+            )}
+            <div className="pt-4 flex justify-end">
+              <Button onClick={() => setPreviewForm(null)}>Close Preview</Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+
+      {/* Add / Edit Form Dialog */}
       <Dialog
         open={showDialog}
         onClose={() => setShowDialog(false)}
@@ -352,12 +627,12 @@ function FormBuildTab() {
                       <CheckCircle2
                         className={`h-4 w-4 shrink-0 ${checked ? 'text-primary' : 'text-muted-foreground/30'}`}
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm truncate">{q.text}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {QUESTION_TYPE_OPTIONS.find((t) => t.value === q.questionType)?.label ?? q.questionType}
-                        </p>
                       </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {TYPE_LABEL[q.questionType] ?? q.questionType}
+                      </span>
                     </button>
                   );
                 })}

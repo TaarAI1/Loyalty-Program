@@ -23,14 +23,14 @@ export class FormsController {
   }
 
   @Post('questions')
-  createQuestion(@Body() body: { text: string; questionType: string; status?: string }) {
+  createQuestion(@Body() body: { text: string; questionType: string; options?: string[]; status?: string }) {
     return this.formsService.createQuestion(body);
   }
 
   @Put('questions/:id')
   updateQuestion(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { text?: string; questionType?: string; status?: string },
+    @Body() body: { text?: string; questionType?: string; options?: string[]; status?: string },
   ) {
     return this.formsService.updateQuestion(id, body);
   }

@@ -13,19 +13,28 @@ export class FormsService {
     });
   }
 
-  async createQuestion(data: { text: string; questionType: string; status?: string }) {
+  async createQuestion(data: { text: string; questionType: string; options?: string[]; status?: string }) {
     return this.prisma.surveyQuestion.create({
       data: {
         text: data.text,
         questionType: data.questionType,
+        options: data.options ?? undefined,
         status: data.status ?? 'active',
       },
     });
   }
 
-  async updateQuestion(id: number, data: { text?: string; questionType?: string; status?: string }) {
+  async updateQuestion(id: number, data: { text?: string; questionType?: string; options?: string[]; status?: string }) {
     await this.prisma.surveyQuestion.findFirstOrThrow({ where: { id } });
-    return this.prisma.surveyQuestion.update({ where: { id }, data });
+    return this.prisma.surveyQuestion.update({
+      where: { id },
+      data: {
+        ...(data.text !== undefined && { text: data.text }),
+        ...(data.questionType !== undefined && { questionType: data.questionType }),
+        ...(data.options !== undefined && { options: data.options }),
+        ...(data.status !== undefined && { status: data.status }),
+      },
+    });
   }
 
   async deleteQuestion(id: number) {

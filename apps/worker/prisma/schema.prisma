@@ -289,6 +289,7 @@ model SurveyQuestion {
   id           Int      @id @default(autoincrement())
   text         String
   questionType String   @default("text") @map("question_type") @db.VarChar(20)
+  options      Json?
   status       String   @default("active") @db.VarChar(20)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
