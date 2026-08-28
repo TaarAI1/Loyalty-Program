@@ -187,9 +187,9 @@ export class WebhooksService {
 
     const url = `${baseUrl.replace(/\/$/, '')}/v1/rest/store`;
     const params: Record<string, string> = {
-      cols: 'sid,store_name,store_number,store_code,active',
-      filter: `(active,eq,true)${subsidiarySid ? `AND(subsidiary_sid,eq,${subsidiarySid})` : ''}`,
-      sort: 'store_code,asc',
+      cols:   'store_no,store_name',
+      ...(subsidiarySid ? { filter: `(sbs_sid,eq,${subsidiarySid})` } : {}),
+      sort:   'store_no,asc',
     };
 
     try {
@@ -199,9 +199,9 @@ export class WebhooksService {
         ? data
         : (data?.Records ?? data?.records ?? []);
       return records.map((r) => ({
-        name:   r['store_name']   ?? '',
-        code:   r['store_code']   ?? '',
-        number: r['store_number'] ?? '',
+        name:   r['store_name'] ?? '',
+        number: r['store_no']   ?? '',
+        code:   r['store_no']   ?? '',
       }));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
