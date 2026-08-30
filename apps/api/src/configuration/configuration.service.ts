@@ -861,7 +861,7 @@ export class ConfigurationService {
       const conn = await (await import('oracledb')).getConnection({
         user:          data.dbUser,
         password:      pwd,
-        connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${data.host})(PORT=${data.port}))(CONNECT_DATA=(SID=${data.service})))`,
+        connectString: `${data.host}:${data.port}/${data.service}`,
       });
       await conn.close();
       return { success: true, message: 'Connection successful — Oracle database is reachable.' };

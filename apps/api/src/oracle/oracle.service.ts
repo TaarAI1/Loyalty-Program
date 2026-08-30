@@ -41,7 +41,7 @@ export class OracleService implements OnModuleInit, OnModuleDestroy {
       this.pool = await oracledb.createPool({
         user,
         password,
-        connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${host})(PORT=${port}))(CONNECT_DATA=(SID=${service})))`,
+        connectString: `${host}:${port}/${service}`,
         poolMin:       0,
         poolMax:       3,
         poolIncrement: 1,

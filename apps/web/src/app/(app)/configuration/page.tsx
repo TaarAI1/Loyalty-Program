@@ -1221,7 +1221,7 @@ function OracleTab() {
               <Input type="password" placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>SID</Label>
+              <Label>Service Name</Label>
               <Input placeholder="e.g. ORCL or RPROODS" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} />
             </div>
           </div>
