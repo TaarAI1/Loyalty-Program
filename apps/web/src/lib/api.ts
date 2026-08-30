@@ -82,6 +82,16 @@ export const configApi = {
     api.get('/configuration/retailpro/stores').then((r) => r.data) as Promise<
       { sid: string; store_name: string; store_number: string; store_code: string }[]
     >,
+  getOracleConfig: () =>
+    api.get('/configuration/oracle').then((r) => r.data) as Promise<{
+      host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null;
+    }>,
+  saveOracleConfig: (data: {
+    host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
+  }) => api.post('/configuration/oracle', data).then((r) => r.data),
+  testOracleConnection: (data: {
+    host: string; port: number; dbUser: string; password: string; service: string;
+  }) => api.post('/configuration/oracle/test', data).then((r) => r.data) as Promise<{ success: boolean; message: string }>,
 };
 
 // Reports

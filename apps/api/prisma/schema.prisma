@@ -229,6 +229,19 @@ model EmailConfig {
   @@map("email_config")
 }
 
+model OracleConfig {
+  id            Int      @id @default(1)
+  host          String   @default("")
+  port          Int      @default(1521)
+  dbUser        String   @default("") @map("db_user")
+  password      String   @default("")
+  service       String   @default("")
+  subsidiarySid String?  @map("subsidiary_sid")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("oracle_config")
+}
+
 model NotificationLog {
   id            BigInt    @id @default(autoincrement())
   customerId    String?   @map("customer_id") @db.Uuid

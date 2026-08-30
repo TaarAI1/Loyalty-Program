@@ -797,12 +797,81 @@ export class ConfigurationService {
 </body></html>`;
   }
 
+  // ── Oracle — Config ───────────────────────────────────────────────────────────
+
+  async getOracleConfig(): Promise<{
+    host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null;
+  }> {
+    const row = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    if (row) {
+      return {
+        host:          row.host,
+        port:          row.port,
+        dbUser:        row.dbUser,
+        service:       row.service,
+        subsidiarySid: row.subsidiarySid ?? null,
+      };
+    }
+    // Fall back to env vars as defaults
+    return {
+      host:          process.env['ORACLE_HOST']     ?? '',
+      port:          parseInt(process.env['ORACLE_PORT'] ?? '1521', 10),
+      dbUser:        process.env['ORACLE_USER']     ?? '',
+      service:       process.env['ORACLE_SERVICE']  ?? '',
+      subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
+    };
+  }
+
+  async saveOracleConfig(data: {
+    host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
+  }): Promise<{ success: boolean }> {
+    const existing = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    const password = data.password
+      ? this.encryption.encrypt(data.password)
+      : (existing?.password ?? '');
+
+    await this.prisma.oracleConfig.upsert({
+      where:  { id: 1 },
+      update: { host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
+      create: { id: 1, host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
+    });
+
+    // Reinitialize Oracle pool with new credentials
+    const plainPassword = data.password ?? (existing ? this.encryption.decrypt(existing.password) : '');
+    if (data.host && data.dbUser && plainPassword && data.service) {
+      await this.oracle.reinitialize(data.host, data.port, data.dbUser, plainPassword, data.service);
+    }
+
+    this.logger.log({ host: data.host, service: data.service }, 'Oracle config saved and pool reinitialized');
+    return { success: true };
+  }
+
+  async testOracleConnection(data: {
+    host: string; port: number; dbUser: string; password: string; service: string;
+  }): Promise<{ success: boolean; message: string }> {
+    try {
+      const conn = await (await import('oracledb')).getConnection({
+        user:          data.dbUser,
+        password:      data.password,
+        connectString: `${data.host}:${data.port}/${data.service}`,
+      });
+      await conn.close();
+      return { success: true, message: 'Connection successful — Oracle database is reachable.' };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, message };
+    }
+  }
+
   // ── Oracle — Stores ──────────────────────────────────────────────────────────
 
   async getStoresFromOracle(): Promise<{ store_no: string; store_name: string }[]> {
-    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
+    // Prefer subsidiary SID from DB config, fall back to env var
+    const dbConfig = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    const subsidiarySid = dbConfig?.subsidiarySid ?? process.env['RETAILPRO_SUBSIDIARY_SID'];
+
     if (!subsidiarySid) {
-      this.logger.warn('RETAILPRO_SUBSIDIARY_SID not set — cannot fetch stores');
+      this.logger.warn('Subsidiary SID not configured — cannot fetch stores');
       return [];
     }
     if (!this.oracle.isConnected) {

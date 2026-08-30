@@ -1135,6 +1135,132 @@ function TestSmtpButton() {
   );
 }
 
+// ── Oracle DB Tab ─────────────────────────────────────────────────────────────
+
+function OracleTab() {
+  const [form, setForm] = useState({ host: '', port: 1521, dbUser: '', password: '', service: '', subsidiarySid: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    configApi.getOracleConfig().then((data) => {
+      setForm({
+        host:          data.host          ?? '',
+        port:          data.port          ?? 1521,
+        dbUser:        data.dbUser        ?? '',
+        password:      '',
+        service:       data.service       ?? '',
+        subsidiarySid: data.subsidiarySid ?? '',
+      });
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await configApi.saveOracleConfig({
+        host:          form.host,
+        port:          form.port,
+        dbUser:        form.dbUser,
+        password:      form.password || undefined,
+        service:       form.service,
+        subsidiarySid: form.subsidiarySid || undefined,
+      });
+      toast.success('Oracle configuration saved and connection pool updated.');
+      setForm((f) => ({ ...f, password: '' }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save Oracle configuration.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTest() {
+    if (!form.password) {
+      toast.error('Enter the password to test the connection.');
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await configApi.testOracleConnection({
+        host:    form.host,
+        port:    form.port,
+        dbUser:  form.dbUser,
+        password: form.password,
+        service: form.service,
+      });
+      setTestResult(result);
+    } catch (err) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Test failed.' });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+
+  return (
+    <div className="space-y-6 mt-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Oracle Database Connection</CardTitle>
+          <p className="text-sm text-muted-foreground">Configure the Oracle DB connection used to fetch store data. Leave password blank to keep the existing saved password.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Host</Label>
+              <Input placeholder="e.g. 192.168.1.100" value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Port</Label>
+              <Input type="number" placeholder="1521" value={form.port} onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) || 1521 })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Username</Label>
+              <Input placeholder="e.g. reportuser" value={form.dbUser} onChange={(e) => setForm({ ...form, dbUser: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Password</Label>
+              <Input type="password" placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Service Name</Label>
+              <Input placeholder="e.g. ORCL or RPROODS" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Subsidiary SID</Label>
+              <Input placeholder="e.g. 745052947000102257" value={form.subsidiarySid} onChange={(e) => setForm({ ...form, subsidiarySid: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Used to filter stores: WHERE SBS_SID = this value</p>
+            </div>
+          </div>
+
+          {testResult && (
+            <div className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${testResult.success ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{testResult.message}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button variant="outline" onClick={handleTest} disabled={testing || !form.host || !form.dbUser || !form.service}>
+              <Wifi className="w-4 h-4" />
+              {testing ? 'Testing…' : 'Test Connection'}
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving…' : 'Save Configuration'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ConfigurationPage() {
@@ -1145,6 +1271,7 @@ export default function ConfigurationPage() {
         <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         <TabsTrigger value="sms">SMS</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
+        <TabsTrigger value="oracle">Oracle DB</TabsTrigger>
       </TabsList>
 
       <TabsContent value="tiers">
@@ -1158,6 +1285,9 @@ export default function ConfigurationPage() {
       </TabsContent>
       <TabsContent value="email">
         <EmailTab />
+      </TabsContent>
+      <TabsContent value="oracle">
+        <OracleTab />
       </TabsContent>
     </Tabs>
   );

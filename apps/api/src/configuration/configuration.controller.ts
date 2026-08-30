@@ -136,6 +136,27 @@ export class ConfigurationController {
     return this.configurationService.triggerExpiryJob(body?.asOf);
   }
 
+  // ── Oracle DB Config ────────────────────────────────────────────────────────
+
+  @Get('oracle')
+  getOracleConfig() {
+    return this.configurationService.getOracleConfig();
+  }
+
+  @Post('oracle')
+  saveOracleConfig(
+    @Body() body: { host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string },
+  ) {
+    return this.configurationService.saveOracleConfig(body);
+  }
+
+  @Post('oracle/test')
+  testOracleConnection(
+    @Body() body: { host: string; port: number; dbUser: string; password: string; service: string },
+  ) {
+    return this.configurationService.testOracleConnection(body);
+  }
+
   // ── Stores (Oracle) ─────────────────────────────────────────────────────────
 
   @Get('stores')
