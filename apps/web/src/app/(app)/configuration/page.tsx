@@ -1138,7 +1138,7 @@ function TestSmtpButton() {
 // ── Oracle DB Tab ─────────────────────────────────────────────────────────────
 
 function OracleTab() {
-  const [form, setForm] = useState({ host: '', port: 1521, dbUser: '', password: '', service: '', subsidiarySid: '' });
+  const [form, setForm] = useState({ host: '', port: 1521, dbUser: '', password: '', service: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -1147,12 +1147,11 @@ function OracleTab() {
   useEffect(() => {
     configApi.getOracleConfig().then((data) => {
       setForm({
-        host:          data.host          ?? '',
-        port:          data.port          ?? 1521,
-        dbUser:        data.dbUser        ?? '',
-        password:      '',
-        service:       data.service       ?? '',
-        subsidiarySid: data.subsidiarySid ?? '',
+        host:    data.host    ?? '',
+        port:    data.port    ?? 1521,
+        dbUser:  data.dbUser  ?? '',
+        password: '',
+        service: data.service ?? '',
       });
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -1161,12 +1160,11 @@ function OracleTab() {
     setSaving(true);
     try {
       await configApi.saveOracleConfig({
-        host:          form.host,
-        port:          form.port,
-        dbUser:        form.dbUser,
-        password:      form.password || undefined,
-        service:       form.service,
-        subsidiarySid: form.subsidiarySid || undefined,
+        host:     form.host,
+        port:     form.port,
+        dbUser:   form.dbUser,
+        password: form.password || undefined,
+        service:  form.service,
       });
       toast.success('Oracle configuration saved and connection pool updated.');
     } catch (err) {
@@ -1223,13 +1221,8 @@ function OracleTab() {
               <Input type="password" placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Service Name</Label>
+              <Label>SID</Label>
               <Input placeholder="e.g. ORCL or RPROODS" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Subsidiary SID</Label>
-              <Input placeholder="e.g. 745052947000102257" value={form.subsidiarySid} onChange={(e) => setForm({ ...form, subsidiarySid: e.target.value })} />
-              <p className="text-xs text-muted-foreground">Used to filter stores: WHERE SBS_SID = this value</p>
             </div>
           </div>
 

@@ -41,12 +41,12 @@ export class OracleService implements OnModuleInit, OnModuleDestroy {
       this.pool = await oracledb.createPool({
         user,
         password,
-        connectString: `${host}:${port}/${service}`,
+        connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=${host})(PORT=${port}))(CONNECT_DATA=(SID=${service})))`,
         poolMin:       0,
         poolMax:       3,
         poolIncrement: 1,
       });
-      this.logger.log(`Oracle pool created (${host}:${port}/${service})`);
+      this.logger.log(`Oracle pool created (${host}:${port} SID=${service})`);
 
       // Verify real TCP connectivity
       try {
