@@ -152,7 +152,7 @@ export class ConfigurationController {
 
   @Post('oracle/test')
   testOracleConnection(
-    @Body() body: { host: string; port: number; dbUser: string; password: string; service: string },
+    @Body() body: { host: string; port: number; dbUser: string; password?: string; service: string },
   ) {
     return this.configurationService.testOracleConnection(body);
   }

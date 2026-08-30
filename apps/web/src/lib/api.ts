@@ -90,7 +90,7 @@ export const configApi = {
     host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
   }) => api.post('/configuration/oracle', data).then((r) => r.data),
   testOracleConnection: (data: {
-    host: string; port: number; dbUser: string; password: string; service: string;
+    host: string; port: number; dbUser: string; password?: string; service: string;
   }) => api.post('/configuration/oracle/test', data).then((r) => r.data) as Promise<{ success: boolean; message: string }>,
 };
 

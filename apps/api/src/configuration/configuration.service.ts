@@ -847,12 +847,20 @@ export class ConfigurationService {
   }
 
   async testOracleConnection(data: {
-    host: string; port: number; dbUser: string; password: string; service: string;
+    host: string; port: number; dbUser: string; password?: string; service: string;
   }): Promise<{ success: boolean; message: string }> {
+    let pwd = data.password;
+    if (!pwd) {
+      const saved = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+      if (!saved?.password) {
+        return { success: false, message: 'No password provided and none saved. Enter a password to test.' };
+      }
+      pwd = this.encryption.decrypt(saved.password);
+    }
     try {
       const conn = await (await import('oracledb')).getConnection({
         user:          data.dbUser,
-        password:      data.password,
+        password:      pwd,
         connectString: `${data.host}:${data.port}/${data.service}`,
       });
       await conn.close();

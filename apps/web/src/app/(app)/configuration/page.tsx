@@ -1169,7 +1169,6 @@ function OracleTab() {
         subsidiarySid: form.subsidiarySid || undefined,
       });
       toast.success('Oracle configuration saved and connection pool updated.');
-      setForm((f) => ({ ...f, password: '' }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save Oracle configuration.');
     } finally {
@@ -1178,19 +1177,15 @@ function OracleTab() {
   }
 
   async function handleTest() {
-    if (!form.password) {
-      toast.error('Enter the password to test the connection.');
-      return;
-    }
     setTesting(true);
     setTestResult(null);
     try {
       const result = await configApi.testOracleConnection({
-        host:    form.host,
-        port:    form.port,
-        dbUser:  form.dbUser,
-        password: form.password,
-        service: form.service,
+        host:     form.host,
+        port:     form.port,
+        dbUser:   form.dbUser,
+        password: form.password || undefined,
+        service:  form.service,
       });
       setTestResult(result);
     } catch (err) {
