@@ -148,6 +148,7 @@ export const formsApi = {
     api.post('/forms', data).then((r) => r.data),
   updateForm: (id: number, data: { name?: string; status?: string; questionIds?: number[] }) =>
     api.put(`/forms/${id}`, data).then((r) => r.data),
+  deleteForm: (id: number) => api.delete(`/forms/${id}`).then((r) => r.data),
   // Devices
   getDevices: (params?: { store?: string; deviceType?: string }) =>
     api.get('/forms/devices', { params }).then((r) => r.data),

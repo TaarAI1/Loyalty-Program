@@ -60,6 +60,11 @@ export class FormsController {
     return this.formsService.updateForm(id, body);
   }
 
+  @Delete(':id')
+  deleteForm(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.deleteForm(id);
+  }
+
   // ── Devices ───────────────────────────────────────────────────────────────────
 
   @Get('devices')

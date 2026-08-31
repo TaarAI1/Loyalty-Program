@@ -93,6 +93,13 @@ export class FormsService {
     });
   }
 
+  async deleteForm(id: number) {
+    await this.prisma.surveyForm.findFirstOrThrow({ where: { id } });
+    await this.prisma.surveyFormQuestion.deleteMany({ where: { formId: id } });
+    await this.prisma.surveyForm.delete({ where: { id } });
+    return { success: true };
+  }
+
   // ── Devices ───────────────────────────────────────────────────────────────────
 
   async getDevices(filters?: { store?: string; deviceType?: string }) {

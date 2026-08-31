@@ -464,6 +464,14 @@ function FormBuildTab() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [status, setStatus]         = useState('active');
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
+  const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
+
+  function askConfirm(message: string, action: () => void) {
+    setConfirmState({ open: true, message, onConfirm: action });
+  }
+  function closeConfirm() { setConfirmState((s) => ({ ...s, open: false })); }
 
   const load = useCallback(async () => {
     try {
@@ -478,6 +486,14 @@ function FormBuildTab() {
 
   function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setStatus('active'); setShowDialog(true); }
   function openEdit(f: Form) { setEditing(f); setName(f.name); setSelectedIds(f.formQuestions.map((fq) => fq.question.id)); setStatus(f.status); setShowDialog(true); }
+
+  async function handleDeleteForm(f: Form) {
+    askConfirm(`Delete form "${f.name}"? This cannot be undone.`, async () => {
+      await formsApi.deleteForm(f.id);
+      closeConfirm();
+      load();
+    });
+  }
 
   async function save() {
     if (!name.trim()) return;
@@ -558,6 +574,11 @@ function FormBuildTab() {
                       className="rounded-lg border border-border text-xs font-semibold px-3 py-1.5 hover:bg-muted/50 transition-colors">
                       Edit
                     </button>
+                    <button type="button" onClick={() => handleDeleteForm(f)}
+                      className="rounded-lg border border-destructive/40 text-destructive text-xs font-semibold px-2.5 py-1.5 hover:bg-destructive/5 transition-colors"
+                      title="Delete form">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -565,6 +586,13 @@ function FormBuildTab() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onConfirm={() => { confirmState.onConfirm(); }}
+        onCancel={closeConfirm}
+      />
 
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}
         title={editing ? 'Edit Form' : 'New Form'} className="max-w-lg">
