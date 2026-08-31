@@ -162,7 +162,7 @@ function QuestionPreview({ question }: { question: Question }) {
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
                 className="flex flex-col items-center gap-1.5 bg-transparent border-0 p-0 cursor-pointer"
-                style={{ opacity: emojiIdx !== null && emojiIdx !== i ? 0.4 : 1, transition: 'opacity 0.15s' }}
+                style={{ transition: 'opacity 0.15s' }}
               >
                 <div
                   style={{
