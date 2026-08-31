@@ -124,11 +124,11 @@ function ConfirmDialog({ open, title, message, onConfirm, onCancel }: {
 // ── Question Preview ───────────────────────────────────────────────────────────
 
 const EMOJI_OPTIONS = [
-  { emoji: '😞', label: 'Very Bad' },
-  { emoji: '😐', label: 'Neutral' },
-  { emoji: '😊', label: 'Good' },
-  { emoji: '😁', label: 'Great' },
-  { emoji: '👍', label: 'Excellent' },
+  { emoji: '😠', label: 'Very Bad',  color: '#ef4444', bg: 'rgba(239,68,68,0.15)'  },
+  { emoji: '😟', label: 'Bad',       color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
+  { emoji: '😐', label: 'Okay',      color: '#eab308', bg: 'rgba(234,179,8,0.15)'  },
+  { emoji: '🙂', label: 'Good',      color: '#84cc16', bg: 'rgba(132,204,22,0.15)' },
+  { emoji: '😄', label: 'Excellent', color: '#22c55e', bg: 'rgba(34,197,94,0.15)'  },
 ];
 
 function QuestionPreview({ question }: { question: Question }) {
@@ -152,14 +152,53 @@ function QuestionPreview({ question }: { question: Question }) {
       )}
 
       {question.questionType === 'textarea' && (
-        <div className="flex gap-2 mt-1 flex-wrap">
-          {EMOJI_OPTIONS.map((e, i) => (
-            <button key={i} type="button" onClick={() => setEmojiIdx(i)} title={e.label}
-              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-2xl transition-all border ${emojiIdx === i ? 'border-primary bg-primary/10 scale-110' : 'border-transparent hover:bg-muted/60'}`}>
-              {e.emoji}
-              <span className="text-[10px] text-muted-foreground">{e.label}</span>
-            </button>
-          ))}
+        <div className="mt-2 select-none">
+          {/* Emoji row */}
+          <div className="flex justify-between items-end mb-3">
+            {EMOJI_OPTIONS.map((e, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
+                title={e.label}
+                style={emojiIdx === i ? { background: e.bg, border: `2px solid ${e.color}` } : {}}
+                className={`flex flex-col items-center gap-1 rounded-full w-14 h-14 justify-center text-3xl transition-all duration-150 border-2 border-transparent ${emojiIdx === i ? 'scale-110 shadow-md' : 'hover:scale-105 hover:bg-muted/50'}`}
+              >
+                {e.emoji}
+              </button>
+            ))}
+          </div>
+          {/* Gradient bar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-red-500">−</span>
+            <div className="flex-1 flex rounded-full overflow-hidden h-3">
+              {EMOJI_OPTIONS.map((e, i) => (
+                <div
+                  key={i}
+                  onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
+                  style={{
+                    background: e.color,
+                    opacity: emojiIdx === null ? 0.35 : i <= emojiIdx ? 1 : 0.2,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                  }}
+                  className="flex-1"
+                />
+              ))}
+            </div>
+            <span className="text-xs font-bold text-green-500">+</span>
+          </div>
+          {/* Selected label */}
+          <div className="mt-2 text-center h-5">
+            {emojiIdx !== null && (
+              <span
+                className="text-xs font-semibold"
+                style={{ color: EMOJI_OPTIONS[emojiIdx].color }}
+              >
+                {EMOJI_OPTIONS[emojiIdx].label}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -424,7 +463,7 @@ function QuestionsTab() {
           )}
           {formState.questionType === 'textarea' && (
             <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
-              Respondents answer with emoji reactions: 😞 😐 😊 😁 👍
+              Respondents rate their experience from Very Bad to Excellent on a 5-point emoji scale with a color gradient bar.
             </p>
           )}
           {formState.questionType === 'rating' && (
