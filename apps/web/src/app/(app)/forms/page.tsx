@@ -831,7 +831,7 @@ function FormAssignTab() {
     <div className="space-y-6">
 
       {/* ── Assignment Panel ─────────────────────────────────── */}
-      <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+      <div className="rounded-2xl border bg-background shadow-sm">
         <div className="px-6 py-4 border-b bg-muted/20 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold">Assign Form to Devices</p>
