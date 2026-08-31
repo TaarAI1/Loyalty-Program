@@ -124,12 +124,103 @@ function ConfirmDialog({ open, title, message, onConfirm, onCancel }: {
 // ── Question Preview ───────────────────────────────────────────────────────────
 
 const EMOJI_OPTIONS = [
-  { emoji: '😡', label: 'Very Bad',  color: '#ef4444', bg: '#ef4444' },
-  { emoji: '☹️',  label: 'Bad',       color: '#f97316', bg: '#f97316' },
-  { emoji: '😑', label: 'Okay',      color: '#eab308', bg: '#eab308' },
-  { emoji: '😊', label: 'Good',      color: '#84cc16', bg: '#84cc16' },
-  { emoji: '😁', label: 'Excellent', color: '#22c55e', bg: '#22c55e' },
+  { label: 'Very Bad',  color: '#ef4444' },
+  { label: 'Bad',       color: '#f97316' },
+  { label: 'Okay',      color: '#eab308' },
+  { label: 'Good',      color: '#84cc16' },
+  { label: 'Excellent', color: '#22c55e' },
 ];
+
+function FaceSVG({ index, size = 56 }: { index: number; size?: number }) {
+  const s = size;
+  const r = s / 2;
+  const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'];
+  const fill = colors[index];
+  const stroke = '#1a1a1a';
+  const sw = s * 0.045;
+
+  // eye positions
+  const eyeY = r * 0.72;
+  const eyeR = s * 0.065;
+  const eyeLX = r * 0.65;
+  const eyeRX = r + (r - eyeLX);
+
+  // shared brow helper
+  function browPath(lx: number, rx: number, ly: number, ry: number, midY?: number) {
+    if (midY !== undefined) {
+      return `M${lx},${ly} Q${(lx + rx) / 2},${midY} ${rx},${ry}`;
+    }
+    return `M${lx},${ly} L${rx},${ry}`;
+  }
+
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} fill="none">
+      {/* face circle */}
+      <circle cx={r} cy={r} r={r - sw / 2} fill={fill} />
+
+      {/* === VERY BAD (angry) === */}
+      {index === 0 && <>
+        {/* angry brows — angled inward downward */}
+        <path d={browPath(eyeLX - s * 0.1, eyeLX + s * 0.08, eyeY - s * 0.22, eyeY - s * 0.32)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        <path d={browPath(eyeRX - s * 0.08, eyeRX + s * 0.1, eyeY - s * 0.32, eyeY - s * 0.22)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        {/* eyes */}
+        <circle cx={eyeLX} cy={eyeY} r={eyeR} fill={stroke} />
+        <circle cx={eyeRX} cy={eyeY} r={eyeR} fill={stroke} />
+        {/* frown */}
+        <path d={`M${r - s * 0.2},${r + s * 0.28} Q${r},${r + s * 0.16} ${r + s * 0.2},${r + s * 0.28}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+      </>}
+
+      {/* === BAD (sad) === */}
+      {index === 1 && <>
+        {/* sad brows — slight inward angle */}
+        <path d={browPath(eyeLX - s * 0.1, eyeLX + s * 0.08, eyeY - s * 0.28, eyeY - s * 0.35)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        <path d={browPath(eyeRX - s * 0.08, eyeRX + s * 0.1, eyeY - s * 0.35, eyeY - s * 0.28)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        {/* eyes */}
+        <circle cx={eyeLX} cy={eyeY} r={eyeR} fill={stroke} />
+        <circle cx={eyeRX} cy={eyeY} r={eyeR} fill={stroke} />
+        {/* frown */}
+        <path d={`M${r - s * 0.22},${r + s * 0.3} Q${r},${r + s * 0.18} ${r + s * 0.22},${r + s * 0.3}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+      </>}
+
+      {/* === OKAY (neutral) === */}
+      {index === 2 && <>
+        {/* flat brows */}
+        <path d={`M${eyeLX - s * 0.1},${eyeY - s * 0.3} L${eyeLX + s * 0.1},${eyeY - s * 0.3}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        <path d={`M${eyeRX - s * 0.1},${eyeY - s * 0.3} L${eyeRX + s * 0.1},${eyeY - s * 0.3}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        {/* eyes */}
+        <circle cx={eyeLX} cy={eyeY} r={eyeR} fill={stroke} />
+        <circle cx={eyeRX} cy={eyeY} r={eyeR} fill={stroke} />
+        {/* flat mouth */}
+        <path d={`M${r - s * 0.2},${r + s * 0.25} L${r + s * 0.2},${r + s * 0.25}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+      </>}
+
+      {/* === GOOD (smile) === */}
+      {index === 3 && <>
+        {/* neutral brows */}
+        <path d={`M${eyeLX - s * 0.1},${eyeY - s * 0.3} L${eyeLX + s * 0.1},${eyeY - s * 0.3}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        <path d={`M${eyeRX - s * 0.1},${eyeY - s * 0.3} L${eyeRX + s * 0.1},${eyeY - s * 0.3}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+        {/* eyes */}
+        <circle cx={eyeLX} cy={eyeY} r={eyeR} fill={stroke} />
+        <circle cx={eyeRX} cy={eyeY} r={eyeR} fill={stroke} />
+        {/* smile */}
+        <path d={`M${r - s * 0.22},${r + s * 0.2} Q${r},${r + s * 0.36} ${r + s * 0.22},${r + s * 0.2}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+      </>}
+
+      {/* === EXCELLENT (big happy) === */}
+      {index === 4 && <>
+        {/* happy arched brows */}
+        <path d={browPath(eyeLX - s * 0.1, eyeLX + s * 0.1, eyeY - s * 0.28, eyeY - s * 0.28, eyeY - s * 0.38)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+        <path d={browPath(eyeRX - s * 0.1, eyeRX + s * 0.1, eyeY - s * 0.28, eyeY - s * 0.28, eyeY - s * 0.38)} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+        {/* happy squint eyes — arc shaped */}
+        <path d={`M${eyeLX - eyeR},${eyeY} Q${eyeLX},${eyeY - eyeR * 1.6} ${eyeLX + eyeR},${eyeY}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+        <path d={`M${eyeRX - eyeR},${eyeY} Q${eyeRX},${eyeY - eyeR * 1.6} ${eyeRX + eyeR},${eyeY}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="none" />
+        {/* big open smile with teeth */}
+        <path d={`M${r - s * 0.26},${r + s * 0.15} Q${r},${r + s * 0.42} ${r + s * 0.26},${r + s * 0.15}`} stroke={stroke} strokeWidth={sw} strokeLinecap="round" fill="white" />
+        <path d={`M${r - s * 0.26},${r + s * 0.15} L${r + s * 0.26},${r + s * 0.15}`} stroke={stroke} strokeWidth={sw * 0.7} />
+      </>}
+    </svg>
+  );
+}
 
 function QuestionPreview({ question }: { question: Question }) {
   const [rating, setRating]         = useState(0);
@@ -162,12 +253,13 @@ function QuestionPreview({ question }: { question: Question }) {
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
                 style={{
-                  border: `2px solid ${e.color}`,
-                  boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}33` : undefined,
+                  boxShadow: emojiIdx === i ? `0 0 0 3px white, 0 0 0 6px ${e.color}` : undefined,
+                  filter: emojiIdx !== null && emojiIdx !== i ? 'brightness(0.65) saturate(0.6)' : 'brightness(1)',
+                  borderRadius: '50%',
                 }}
-                className={`flex items-center justify-center rounded-full w-14 h-14 text-3xl transition-all duration-150 bg-transparent ${emojiIdx === i ? 'scale-110 shadow-md' : 'opacity-70 hover:opacity-100 hover:scale-105'}`}
+                className={`transition-all duration-150 ${emojiIdx === i ? 'scale-115' : 'hover:scale-105'}`}
               >
-                {e.emoji}
+                <FaceSVG index={i} size={56} />
               </button>
             ))}
           </div>
@@ -466,7 +558,7 @@ function QuestionsTab() {
           )}
           {formState.questionType === 'textarea' && (
             <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
-              Respondents rate their experience from Very Bad to Excellent on a 5-point emoji scale with a color gradient bar.
+              Respondents rate their experience from Very Bad to Excellent using 5 colored face icons with a gradient bar.
             </p>
           )}
           {formState.questionType === 'rating' && (
