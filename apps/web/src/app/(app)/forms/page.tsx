@@ -161,21 +161,22 @@ function QuestionPreview({ question }: { question: Question }) {
                 type="button"
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
-                className="flex flex-col items-center gap-1.5 bg-transparent border-0 p-0 group"
-                style={{ filter: emojiIdx !== null && emojiIdx !== i ? 'grayscale(0.6) opacity(0.45)' : 'none' }}
+                className="flex flex-col items-center gap-1.5 bg-transparent border-0 p-0 cursor-pointer"
+                style={{ opacity: emojiIdx !== null && emojiIdx !== i ? 0.4 : 1, transition: 'opacity 0.15s' }}
               >
                 <div
                   style={{
-                    border: `2.5px solid ${e.color}`,
-                    boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}33` : undefined,
+                    border: emojiIdx === i ? `3px solid ${e.color}` : `2px solid ${e.color}55`,
+                    boxShadow: emojiIdx === i ? `0 0 8px 2px ${e.color}44` : undefined,
+                    transition: 'border 0.15s, box-shadow 0.15s',
                   }}
-                  className={`rounded-full transition-all duration-150 overflow-hidden ${emojiIdx === i ? 'scale-110' : 'group-hover:scale-105'}`}
+                  className="rounded-full overflow-hidden"
                 >
                   <img src={e.src} alt={e.label} width={52} height={52} draggable={false} className="block" />
                 </div>
                 <span
                   className="text-[10px] font-medium leading-tight text-center"
-                  style={{ color: emojiIdx === i ? e.color : undefined }}
+                  style={{ color: emojiIdx === i ? e.color : '#9ca3af' }}
                 >
                   {e.label}
                 </span>
