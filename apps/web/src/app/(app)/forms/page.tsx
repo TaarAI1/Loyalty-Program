@@ -124,11 +124,11 @@ function ConfirmDialog({ open, title, message, onConfirm, onCancel }: {
 // ── Question Preview ───────────────────────────────────────────────────────────
 
 const EMOJI_OPTIONS = [
-  { emoji: '😠', label: 'Very Bad',  color: '#ef4444', bg: 'rgba(239,68,68,0.15)'  },
-  { emoji: '😟', label: 'Bad',       color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
-  { emoji: '😐', label: 'Okay',      color: '#eab308', bg: 'rgba(234,179,8,0.15)'  },
-  { emoji: '🙂', label: 'Good',      color: '#84cc16', bg: 'rgba(132,204,22,0.15)' },
-  { emoji: '😄', label: 'Excellent', color: '#22c55e', bg: 'rgba(34,197,94,0.15)'  },
+  { emoji: '😡', label: 'Very Bad',  color: '#ef4444', bg: '#ef4444' },
+  { emoji: '☹️',  label: 'Bad',       color: '#f97316', bg: '#f97316' },
+  { emoji: '😑', label: 'Okay',      color: '#eab308', bg: '#eab308' },
+  { emoji: '😊', label: 'Good',      color: '#84cc16', bg: '#84cc16' },
+  { emoji: '😁', label: 'Excellent', color: '#22c55e', bg: '#22c55e' },
 ];
 
 function QuestionPreview({ question }: { question: Question }) {
@@ -161,8 +161,11 @@ function QuestionPreview({ question }: { question: Question }) {
                 type="button"
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
-                style={emojiIdx === i ? { background: e.bg, border: `2px solid ${e.color}` } : {}}
-                className={`flex flex-col items-center gap-1 rounded-full w-14 h-14 justify-center text-3xl transition-all duration-150 border-2 border-transparent ${emojiIdx === i ? 'scale-110 shadow-md' : 'hover:scale-105 hover:bg-muted/50'}`}
+                style={{
+                  background: e.bg,
+                  boxShadow: emojiIdx === i ? `0 0 0 3px white, 0 0 0 5px ${e.color}` : undefined,
+                }}
+                className={`flex items-center justify-center rounded-full w-14 h-14 text-3xl transition-all duration-150 ${emojiIdx === i ? 'scale-115 shadow-lg' : 'opacity-75 hover:opacity-100 hover:scale-105'}`}
               >
                 {e.emoji}
               </button>
