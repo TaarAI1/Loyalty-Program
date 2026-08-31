@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -698,6 +698,17 @@ function FormAssignTab() {
     open: false, message: '', onConfirm: () => {},
   });
   const [deviceDropdownOpen, setDeviceDropdownOpen] = useState(false);
+  const deviceDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (deviceDropdownRef.current && !deviceDropdownRef.current.contains(e.target as Node)) {
+        setDeviceDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
 
   function askConfirm(message: string, action: () => void) {
     setConfirmState({ open: true, message, onConfirm: action });
@@ -860,15 +871,7 @@ function FormAssignTab() {
                 <span className="ml-2 text-xs font-normal text-primary">{selectedDeviceIds.length} selected</span>
               )}
             </Label>
-            <div className="relative">
-              {/* Backdrop — dims page content behind the dropdown */}
-              {deviceDropdownOpen && (
-                <div
-                  className="fixed inset-0 z-40 bg-black/20"
-                  onClick={() => setDeviceDropdownOpen(false)}
-                />
-              )}
-
+            <div className="relative" ref={deviceDropdownRef}>
               {/* Trigger */}
               <button
                 type="button"
@@ -887,7 +890,7 @@ function FormAssignTab() {
 
               {/* Dropdown panel */}
               {deviceDropdownOpen && (
-                <div className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-lg overflow-hidden">
+                <div className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-xl overflow-hidden">
                   {filteredDevices.length === 0 ? (
                     <p className="px-3 py-4 text-sm text-muted-foreground text-center">No devices match the selected filters.</p>
                   ) : (
