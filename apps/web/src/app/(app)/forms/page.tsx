@@ -850,76 +850,39 @@ function FormAssignTab() {
             </div>
           </div>
 
-          {/* Row 2: Device list (multi-select) */}
+          {/* Row 2: Device list (multi-select dropdown) */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label>
-                Devices
-                {selectedDeviceIds.length > 0 && (
-                  <span className="ml-2 text-xs font-normal text-primary">{selectedDeviceIds.length} selected</span>
-                )}
-              </Label>
-              {filteredDevices.length > 1 && (
-                <button type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => {
-                    const allIds = filteredDevices.map((d) => d.id);
-                    const allSelected = allIds.every((id) => selectedDeviceIds.includes(id));
-                    setSelectedDeviceIds(allSelected ? [] : allIds);
-                  }}>
-                  {filteredDevices.every((d) => selectedDeviceIds.includes(d.id)) ? 'Deselect all' : 'Select all'}
-                </button>
+            <Label>
+              Devices
+              {selectedDeviceIds.length > 0 && (
+                <span className="ml-2 text-xs font-normal text-primary">{selectedDeviceIds.length} selected</span>
               )}
-            </div>
-
+            </Label>
             {filteredDevices.length === 0 ? (
               <div className="rounded-xl border border-dashed bg-muted/20 py-8 text-center">
                 <Monitor className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">No devices match the selected filters.</p>
               </div>
             ) : (
-              <div className="rounded-xl border divide-y overflow-hidden">
-                {filteredDevices.map((d) => {
-                  const checked = selectedDeviceIds.includes(d.id);
-                  const isDummy = d.id < 0;
-                  return (
-                    <div key={d.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}>
-                      {/* Checkbox area — clicking selects/deselects */}
-                      <button type="button" onClick={() => toggleDevice(d.id)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                        <span className={`h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                          {checked && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-                        </span>
-                        <span className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${checked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                          {DEVICE_ICON[d.deviceType] ?? <Monitor className="h-5 w-5" />}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium leading-tight">
-                            {d.name}
-                            {isDummy && <span className="ml-1.5 text-[10px] text-muted-foreground font-normal">(demo)</span>}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                            {d.store ? ` · ${d.store}` : ''}
-                          </p>
-                        </div>
-                      </button>
-                      {/* Edit + Delete (real devices only) */}
-                      {!isDummy && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button type="button" onClick={() => openEditDevice(d)}
-                            className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button type="button" onClick={() => removeDevice(d.id)}
-                            className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <>
+                <select
+                  multiple
+                  size={Math.min(filteredDevices.length, 5)}
+                  value={selectedDeviceIds.map(String)}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map((o) => Number(o.value));
+                    setSelectedDeviceIds(selected);
+                  }}
+                  className="w-full rounded-xl border bg-background text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                >
+                  {filteredDevices.map((d) => (
+                    <option key={d.id} value={d.id} className="py-1.5 px-2">
+                      {d.name}{d.id < 0 ? ' (demo)' : ''} — {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}{d.store ? ` · ${d.store}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Hold Ctrl / Cmd to select multiple devices.</p>
+              </>
             )}
           </div>
 
