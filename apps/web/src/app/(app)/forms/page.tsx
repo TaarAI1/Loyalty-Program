@@ -162,10 +162,10 @@ function QuestionPreview({ question }: { question: Question }) {
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
                 style={{
-                  background: e.bg,
-                  boxShadow: emojiIdx === i ? `0 0 0 3px white, 0 0 0 5px ${e.color}` : undefined,
+                  border: `2px solid ${e.color}`,
+                  boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}33` : undefined,
                 }}
-                className={`flex items-center justify-center rounded-full w-14 h-14 text-3xl transition-all duration-150 ${emojiIdx === i ? 'scale-115 shadow-lg' : 'opacity-75 hover:opacity-100 hover:scale-105'}`}
+                className={`flex items-center justify-center rounded-full w-14 h-14 text-3xl transition-all duration-150 bg-transparent ${emojiIdx === i ? 'scale-110 shadow-md' : 'opacity-70 hover:opacity-100 hover:scale-105'}`}
               >
                 {e.emoji}
               </button>
