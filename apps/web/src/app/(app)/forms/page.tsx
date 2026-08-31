@@ -123,12 +123,13 @@ function ConfirmDialog({ open, title, message, onConfirm, onCancel }: {
 
 // ── Question Preview ───────────────────────────────────────────────────────────
 
+// Twemoji CDN — stable flat emoji images, no colored background needed
 const EMOJI_OPTIONS = [
-  { emoji: '😡', label: 'Very Bad',  color: '#ef4444' },
-  { emoji: '😟', label: 'Bad',       color: '#f97316' },
-  { emoji: '😐', label: 'Okay',      color: '#eab308' },
-  { emoji: '😊', label: 'Good',      color: '#84cc16' },
-  { emoji: '😄', label: 'Excellent', color: '#22c55e' },
+  { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f621.svg', label: 'Very Bad',  color: '#ef4444' },
+  { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f61f.svg', label: 'Bad',       color: '#f97316' },
+  { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f611.svg', label: 'Okay',      color: '#eab308' },
+  { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f60a.svg', label: 'Good',      color: '#84cc16' },
+  { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f604.svg', label: 'Excellent', color: '#22c55e' },
 ];
 
 function QuestionPreview({ question }: { question: Question }) {
@@ -162,13 +163,12 @@ function QuestionPreview({ question }: { question: Question }) {
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
                 style={{
-                  background: e.color,
-                  boxShadow: emojiIdx === i ? `0 0 0 3px white, 0 0 0 6px ${e.color}` : undefined,
-                  filter: emojiIdx !== null && emojiIdx !== i ? 'brightness(0.65) saturate(0.7)' : 'brightness(1)',
+                  filter: emojiIdx !== null && emojiIdx !== i ? 'grayscale(0.5) opacity(0.5)' : 'none',
+                  boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}55` : undefined,
                 }}
-                className={`flex items-center justify-center rounded-full w-14 h-14 text-3xl leading-none transition-all duration-150 ${emojiIdx === i ? 'scale-115 shadow-lg' : 'hover:scale-105'}`}
+                className={`rounded-full transition-all duration-150 bg-transparent border-0 p-0 ${emojiIdx === i ? 'scale-115' : 'hover:scale-105'}`}
               >
-                {e.emoji}
+                <img src={e.src} alt={e.label} width={56} height={56} draggable={false} />
               </button>
             ))}
           </div>
