@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -698,17 +698,6 @@ function FormAssignTab() {
     open: false, message: '', onConfirm: () => {},
   });
   const [deviceDropdownOpen, setDeviceDropdownOpen] = useState(false);
-  const deviceDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (deviceDropdownRef.current && !deviceDropdownRef.current.contains(e.target as Node)) {
-        setDeviceDropdownOpen(false);
-      }
-    }
-    if (deviceDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [deviceDropdownOpen]);
 
   function askConfirm(message: string, action: () => void) {
     setConfirmState({ open: true, message, onConfirm: action });
@@ -871,7 +860,15 @@ function FormAssignTab() {
                 <span className="ml-2 text-xs font-normal text-primary">{selectedDeviceIds.length} selected</span>
               )}
             </Label>
-            <div className="relative" ref={deviceDropdownRef}>
+            <div className="relative">
+              {/* Backdrop — dims page content behind the dropdown */}
+              {deviceDropdownOpen && (
+                <div
+                  className="fixed inset-0 z-40 bg-black/20"
+                  onClick={() => setDeviceDropdownOpen(false)}
+                />
+              )}
+
               {/* Trigger */}
               <button
                 type="button"
