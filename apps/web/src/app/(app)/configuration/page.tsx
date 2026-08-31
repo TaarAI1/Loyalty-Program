@@ -1143,6 +1143,7 @@ function OracleTab() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [hasPassword, setHasPassword] = useState(false);
 
   useEffect(() => {
     configApi.getOracleConfig().then((data) => {
@@ -1153,6 +1154,7 @@ function OracleTab() {
         password: '',
         service: data.service ?? '',
       });
+      setHasPassword(data.hasPassword ?? false);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -1166,6 +1168,7 @@ function OracleTab() {
         password: form.password || undefined,
         service:  form.service,
       });
+      if (form.password) setHasPassword(true);
       toast.success('Oracle configuration saved and connection pool updated.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save Oracle configuration.');
@@ -1219,6 +1222,9 @@ function OracleTab() {
             <div className="space-y-1.5">
               <Label>Password</Label>
               <Input type="password" placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              {hasPassword && !form.password && (
+                <p className="text-xs text-green-600">Password saved. Enter a new value to change it.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Service Name</Label>
