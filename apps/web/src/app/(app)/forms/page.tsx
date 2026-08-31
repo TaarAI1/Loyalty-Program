@@ -154,54 +154,33 @@ function QuestionPreview({ question }: { question: Question }) {
 
       {question.questionType === 'textarea' && (
         <div className="mt-2 select-none">
-          {/* Emoji row */}
-          <div className="flex justify-between items-end mb-3">
+          <div className="flex justify-between items-start gap-1">
             {EMOJI_OPTIONS.map((e, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
                 title={e.label}
-                style={{
-                  filter: emojiIdx !== null && emojiIdx !== i ? 'grayscale(0.5) opacity(0.5)' : 'none',
-                  boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}55` : undefined,
-                }}
-                className={`rounded-full transition-all duration-150 bg-transparent border-0 p-0 ${emojiIdx === i ? 'scale-115' : 'hover:scale-105'}`}
+                className="flex flex-col items-center gap-1.5 bg-transparent border-0 p-0 group"
+                style={{ filter: emojiIdx !== null && emojiIdx !== i ? 'grayscale(0.6) opacity(0.45)' : 'none' }}
               >
-                <img src={e.src} alt={e.label} width={56} height={56} draggable={false} />
+                <div
+                  style={{
+                    border: `2.5px solid ${e.color}`,
+                    boxShadow: emojiIdx === i ? `0 0 0 3px ${e.color}33` : undefined,
+                  }}
+                  className={`rounded-full transition-all duration-150 overflow-hidden ${emojiIdx === i ? 'scale-110' : 'group-hover:scale-105'}`}
+                >
+                  <img src={e.src} alt={e.label} width={52} height={52} draggable={false} className="block" />
+                </div>
+                <span
+                  className="text-[10px] font-medium leading-tight text-center"
+                  style={{ color: emojiIdx === i ? e.color : undefined }}
+                >
+                  {e.label}
+                </span>
               </button>
             ))}
-          </div>
-          {/* Gradient bar */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-red-500">−</span>
-            <div className="flex-1 flex rounded-full overflow-hidden h-3">
-              {EMOJI_OPTIONS.map((e, i) => (
-                <div
-                  key={i}
-                  onClick={() => setEmojiIdx(emojiIdx === i ? null : i)}
-                  style={{
-                    background: e.color,
-                    opacity: emojiIdx === null ? 0.35 : i <= emojiIdx ? 1 : 0.2,
-                    cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                  }}
-                  className="flex-1"
-                />
-              ))}
-            </div>
-            <span className="text-xs font-bold text-green-500">+</span>
-          </div>
-          {/* Selected label */}
-          <div className="mt-2 text-center h-5">
-            {emojiIdx !== null && (
-              <span
-                className="text-xs font-semibold"
-                style={{ color: EMOJI_OPTIONS[emojiIdx].color }}
-              >
-                {EMOJI_OPTIONS[emojiIdx].label}
-              </span>
-            )}
           </div>
         </div>
       )}
