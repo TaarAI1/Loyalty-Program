@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
-  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone,
+  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -697,6 +697,19 @@ function FormAssignTab() {
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
     open: false, message: '', onConfirm: () => {},
   });
+  const [deviceDropdownOpen, setDeviceDropdownOpen] = useState(false);
+  const deviceDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (deviceDropdownRef.current && !deviceDropdownRef.current.contains(e.target as Node)) {
+        setDeviceDropdownOpen(false);
+      }
+    }
+    if (deviceDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [deviceDropdownOpen]);
+
   function askConfirm(message: string, action: () => void) {
     setConfirmState({ open: true, message, onConfirm: action });
   }
@@ -850,7 +863,7 @@ function FormAssignTab() {
             </div>
           </div>
 
-          {/* Row 2: Device list (multi-select dropdown) */}
+          {/* Row 2: Device list (custom multi-select dropdown) */}
           <div className="space-y-1.5">
             <Label>
               Devices
@@ -858,32 +871,57 @@ function FormAssignTab() {
                 <span className="ml-2 text-xs font-normal text-primary">{selectedDeviceIds.length} selected</span>
               )}
             </Label>
-            {filteredDevices.length === 0 ? (
-              <div className="rounded-xl border border-dashed bg-muted/20 py-8 text-center">
-                <Monitor className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No devices match the selected filters.</p>
-              </div>
-            ) : (
-              <>
-                <select
-                  multiple
-                  size={Math.min(filteredDevices.length, 5)}
-                  value={selectedDeviceIds.map(String)}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map((o) => Number(o.value));
-                    setSelectedDeviceIds(selected);
-                  }}
-                  className="w-full rounded-xl border bg-background text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-                >
-                  {filteredDevices.map((d) => (
-                    <option key={d.id} value={d.id} className="py-1.5 px-2">
-                      {d.name}{d.id < 0 ? ' (demo)' : ''} — {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}{d.store ? ` · ${d.store}` : ''}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">Hold Ctrl / Cmd to select multiple devices.</p>
-              </>
-            )}
+            <div className="relative" ref={deviceDropdownRef}>
+              {/* Trigger */}
+              <button
+                type="button"
+                onClick={() => setDeviceDropdownOpen((o) => !o)}
+                className="w-full flex items-center justify-between rounded-md border bg-background px-3 py-2 text-sm text-left transition-colors hover:bg-muted/30 focus:outline-none"
+              >
+                <span className="truncate text-muted-foreground">
+                  {selectedDeviceIds.length === 0
+                    ? 'Select devices…'
+                    : selectedDeviceIds.length === 1
+                      ? (filteredDevices.find((d) => d.id === selectedDeviceIds[0])?.name ?? '1 device selected')
+                      : `${selectedDeviceIds.length} devices selected`}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${deviceDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown panel */}
+              {deviceDropdownOpen && (
+                <div className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-lg overflow-hidden">
+                  {filteredDevices.length === 0 ? (
+                    <p className="px-3 py-4 text-sm text-muted-foreground text-center">No devices match the selected filters.</p>
+                  ) : (
+                    <div className="max-h-48 overflow-y-auto divide-y">
+                      {filteredDevices.map((d) => {
+                        const checked = selectedDeviceIds.includes(d.id);
+                        return (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => toggleDevice(d.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
+                          >
+                            <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                              {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
+                            </span>
+                            <span className="truncate">
+                              {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
+                              <span className="text-muted-foreground text-xs ml-1.5">
+                                {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                                {d.store ? ` · ${d.store}` : ''}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Row 3: Form + Assign button */}
