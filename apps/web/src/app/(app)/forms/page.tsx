@@ -172,7 +172,7 @@ function QuestionPreview({ question }: { question: Question }) {
                   }}
                   className="rounded-full overflow-hidden"
                 >
-                  <img src={e.src} alt={e.label} width={52} height={52} draggable={false} className="block" />
+                  <img src={e.src} alt={e.label} width={36} height={36} draggable={false} className="block" />
                 </div>
                 <span
                   className="text-[10px] font-medium leading-tight text-center"
