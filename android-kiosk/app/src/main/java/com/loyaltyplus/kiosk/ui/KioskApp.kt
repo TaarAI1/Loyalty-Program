@@ -16,7 +16,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.loyaltyplus.kiosk.R
 import com.loyaltyplus.kiosk.ui.screens.FormScreen
 import com.loyaltyplus.kiosk.ui.screens.HomeScreen
 import com.loyaltyplus.kiosk.ui.screens.PinDialog
@@ -98,7 +97,8 @@ fun KioskApp(viewModel: KioskViewModel) {
 private fun rememberKioskPlayer(context: Context): ExoPlayer {
     val player = remember {
         ExoPlayer.Builder(context).build().apply {
-            val uri = Uri.parse("android.resource://${context.packageName}/${R.raw.kiosk_bg}")
+            val resId = context.resources.getIdentifier("kiosk_bg", "raw", context.packageName)
+            val uri = Uri.parse("android.resource://${context.packageName}/$resId")
             setMediaItem(MediaItem.fromUri(uri))
             repeatMode = Player.REPEAT_MODE_ALL
             volume = 0f
