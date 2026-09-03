@@ -7,7 +7,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -271,7 +275,7 @@ fun FormScreen(
                                 containerColor = Color(0x44FFFFFF),
                                 contentColor = Color.White,
                             ),
-                            border = androidx.compose.foundation.BorderStroke(
+                            border = BorderStroke(
                                 1.5.dp,
                                 Color.White.copy(alpha = 0.85f),
                             ),
@@ -422,10 +426,10 @@ private fun QuestionInput(
                     .heightIn(min = 130.dp),
                 placeholder = { Text("Type here…", color = Color(0xAAFFFFFF)) },
                 shape = RoundedCornerShape(14.dp),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done,
                 ),
-                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                keyboardActions = KeyboardActions(
                     onDone = { onNext() },
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -447,7 +451,7 @@ private fun CrystalChoiceChip(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    textColor: androidx.compose.ui.graphics.Color? = null,
+    textColor: Color? = null,
     onClick: () -> Unit,
 ) {
     Box(
