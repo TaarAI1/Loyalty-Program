@@ -106,7 +106,7 @@ export default function FeedbackDetailPage() {
               <div>
                 <dt className="text-xs text-muted-foreground">Form</dt>
                 <dd>
-                  <Badge variant="secondary">{detail.formName}</Badge>
+                  <Badge variant="outline">{detail.formName}</Badge>
                 </dd>
               </div>
             </div>

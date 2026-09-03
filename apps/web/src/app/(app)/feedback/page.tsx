@@ -88,7 +88,7 @@ export default function FeedbackPage() {
                       {row.customerPhone ?? <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{row.formName}</Badge>
+                      <Badge variant="outline">{row.formName}</Badge>
                     </TableCell>
                     <TableCell>{row.deviceName}</TableCell>
                     <TableCell>
