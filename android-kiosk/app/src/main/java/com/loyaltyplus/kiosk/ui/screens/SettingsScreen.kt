@@ -113,7 +113,7 @@ fun SettingsScreen(
                     onValueChange = onApiUrlChange,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("https://your-api.up.railway.app/api") },
+                    placeholder = { Text("https://your-api.up.railway.app  (no /api needed)") },
                     shape = RoundedCornerShape(14.dp),
                     colors = fieldColors(),
                     enabled = !isConnecting,

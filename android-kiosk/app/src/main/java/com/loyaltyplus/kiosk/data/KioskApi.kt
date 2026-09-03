@@ -30,7 +30,7 @@ object KioskApi {
     }
 
     suspend fun connect(apiUrl: String, pairingCode: String): KioskConnectResponse {
-        val base = apiUrl.trimEnd('/')
+        val base = normalizeBaseUrl(apiUrl)
         val response = client.get("$base/forms/kiosk/connect") {
             parameter("code", pairingCode.trim().uppercase())
         }
@@ -48,10 +48,22 @@ object KioskApi {
     }
 
     suspend fun submit(apiUrl: String, pairingCode: String, answers: List<Map<String, String>>) {
-        val base = apiUrl.trimEnd('/')
+        val base = normalizeBaseUrl(apiUrl)
         client.post("$base/forms/kiosk/submit") {
             contentType(ContentType.Application.Json)
             setBody(mapOf("pairingCode" to pairingCode.uppercase(), "answers" to answers))
         }
+    }
+
+    /**
+     * Normalises the API base URL so users can paste either:
+     *   https://my-api.up.railway.app        (no /api suffix — auto-appended)
+     *   https://my-api.up.railway.app/       (trailing slash only — /api appended)
+     *   https://my-api.up.railway.app/api    (correct — left unchanged)
+     *   https://my-api.up.railway.app/api/   (trailing slash stripped)
+     */
+    private fun normalizeBaseUrl(raw: String): String {
+        val trimmed = raw.trim().trimEnd('/')
+        return if (trimmed.endsWith("/api")) trimmed else "$trimmed/api"
     }
 }
