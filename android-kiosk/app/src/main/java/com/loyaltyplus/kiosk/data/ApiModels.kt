@@ -18,6 +18,13 @@ data class DeviceDto(
 )
 
 @Serializable
+data class CustomerDto(
+    val id: String,
+    val name: String,
+    val phone: String,
+)
+
+@Serializable
 data class FormDto(
     val id: Int,
     val name: String,

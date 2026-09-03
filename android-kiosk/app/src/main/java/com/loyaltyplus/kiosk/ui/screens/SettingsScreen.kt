@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +56,8 @@ fun SettingsScreen(
     pairingCode: String,
     isConnecting: Boolean,
     toast: ToastMessage?,
+    /** true = embedded inside SidebarLayout, false = full-screen SETUP */
+    isEmbedded: Boolean = false,
     onApiUrlChange: (String) -> Unit,
     onPairingCodeChange: (String) -> Unit,
     onConnect: () -> Unit,
@@ -75,7 +78,13 @@ fun SettingsScreen(
                 .background(Paper)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                // When embedded, indent content to the right so it clears the hamburger button
+                .padding(
+                    start = if (isEmbedded) 72.dp else 24.dp,
+                    end = 24.dp,
+                    top = if (isEmbedded) 48.dp else 32.dp,
+                    bottom = 32.dp,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
@@ -92,7 +101,7 @@ fun SettingsScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Attach this kiosk",
+                    text = if (isEmbedded) "Device settings" else "Attach this kiosk",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
                     color = Ink,
@@ -154,14 +163,6 @@ fun SettingsScreen(
                         Text("Connect", fontWeight = FontWeight.Black, fontSize = 17.sp)
                     }
                 }
-
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Staff PIN to reopen this screen: 1234. On the home screen, long-press the LOYALTYPLUS label.",
-                    fontSize = 13.sp,
-                    color = Muted,
-                    lineHeight = 18.sp,
-                )
             }
         }
 
@@ -178,7 +179,9 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (toast.isError) androidx.compose.ui.graphics.Color(0xFF1C1C1E) else androidx.compose.ui.graphics.Color(0xFF1C3A2A))
+                        .background(
+                            if (toast.isError) Color(0xFF1C1C1E) else Color(0xFF1C3A2A)
+                        )
                         .padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -186,7 +189,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = if (toast.isError) Icons.Filled.Error else Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = if (toast.isError) androidx.compose.ui.graphics.Color(0xFFFF453A) else androidx.compose.ui.graphics.Color(0xFF30D158),
+                        tint = if (toast.isError) Color(0xFFFF453A) else Color(0xFF30D158),
                         modifier = Modifier.size(20.dp),
                     )
                     Text(

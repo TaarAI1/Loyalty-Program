@@ -7,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +29,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,10 +37,15 @@ import com.loyaltyplus.kiosk.data.DeviceDto
 import com.loyaltyplus.kiosk.ui.theme.Gold
 import com.loyaltyplus.kiosk.ui.theme.Ink
 
+// Very dark navy fallback (shown when no video file)
 private val GradientTop = Color(0xFF0D0D1A)
 private val GradientMid = Color(0xFF1A1A3E)
 private val GradientBot = Color(0xFF0A0A15)
-private val OverlayScrim = Color(0x99000000)
+
+// Scrim layers — light so the video stays visible
+private val TopScrim    = Color(0xCC000000)   // darker band at very top for logo legibility
+private val VideoScrim  = Color(0x22000000)   // almost transparent — lets video breathe
+private val BottomScrim = Color(0xBB000000)   // darker band at bottom for text legibility
 
 @Composable
 fun HomeScreen(
@@ -50,29 +53,53 @@ fun HomeScreen(
     formName: String,
     hasVideo: Boolean,
     onFillForm: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Gradient background (shows when no video, overlaid transparently when video plays)
+        // ── Gradient fallback (only visible when no video) ────────────────────
+        if (!hasVideo) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(listOf(GradientTop, GradientMid, GradientBot))
+                    )
+            )
+        }
+
+        // ── Three-zone scrim over the video ───────────────────────────────────
+        // Top band — darkens behind the branding text
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .align(Alignment.TopStart)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(TopScrim, Color.Transparent)
+                    )
+                )
+        )
+        // Middle — very light so video is clearly visible
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(VideoScrim)
+        )
+        // Bottom band — darkens behind text + button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp)
+                .align(Alignment.BottomStart)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(GradientTop, GradientMid, GradientBot),
+                        listOf(Color.Transparent, BottomScrim)
                     )
                 )
         )
 
-        // Dark overlay scrim (slightly lighter when showing video so it doesn't hide it completely)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(if (hasVideo) Color(0x77000000) else OverlayScrim)
-        )
-
-        // Glowing accent circles
+        // ── Glowing accent blobs ──────────────────────────────────────────────
         GlowingAccent(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -81,84 +108,74 @@ fun HomeScreen(
         GlowingAccent(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(bottom = 100.dp, start = 20.dp),
+                .padding(bottom = 120.dp, start = 20.dp),
             delayMillis = 1200,
         )
 
-        // Main content
+        // ── Content layout: top branding / middle (video shows) / bottom CTA ─
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 48.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Top: Branding — long-press to open settings
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.pointerInput(Unit) {
-                    detectTapGestures(onLongPress = { onOpenSettings() })
-                },
-            ) {
+            // ── TOP: branding ─────────────────────────────────────────────────
+            Spacer(Modifier.height(40.dp))
+            Text(
+                text = "LOYALTYPLUS",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 5.sp,
+                color = Gold,
+            )
+            Spacer(Modifier.height(6.dp))
+            device?.store?.let { store ->
                 Text(
-                    text = "LOYALTYPLUS",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 5.sp,
-                    color = Gold,
-                )
-                Spacer(Modifier.height(12.dp))
-                device?.store?.let { store ->
-                    Text(
-                        text = store.uppercase(),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 3.sp,
-                        color = Color.White.copy(alpha = 0.5f),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
-
-            // Center: Big headline
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.widthIn(max = 480.dp),
-            ) {
-                Text(
-                    text = "Share your\nexperience",
-                    fontSize = 52.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 58.sp,
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = "Your feedback helps us serve you better.",
-                    fontSize = 16.sp,
-                    color = Color.White.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center,
+                    text = store.uppercase(),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 3.sp,
+                    color = Color.White.copy(alpha = 0.55f),
                 )
             }
 
-            // Bottom: CTA button
+            // ── MIDDLE: empty — video shows through here ──────────────────────
+            Spacer(Modifier.weight(1f))
+
+            // ── BOTTOM: headline + CTA ────────────────────────────────────────
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .widthIn(max = 400.dp)
+                    .widthIn(max = 480.dp)
                     .fillMaxWidth(),
             ) {
+                Text(
+                    text = "Share your\nexperience",
+                    fontSize = 46.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 52.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Your feedback helps us serve you better.",
+                    fontSize = 15.sp,
+                    color = Color.White.copy(alpha = 0.65f),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(28.dp))
                 PulsingButton(onClick = onFillForm)
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
                 Text(
                     text = formName,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.35f),
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.3f),
                     letterSpacing = 1.sp,
                     textAlign = TextAlign.Center,
                 )
             }
+            Spacer(Modifier.height(40.dp))
         }
     }
 }
@@ -199,7 +216,7 @@ private fun GlowingAccent(modifier: Modifier = Modifier, delayMillis: Int = 0) {
     val infiniteTransition = rememberInfiniteTransition(label = "glow")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.04f,
-        targetValue = 0.12f,
+        targetValue = 0.14f,
         animationSpec = infiniteRepeatable(
             animation = tween(2000 + delayMillis, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,

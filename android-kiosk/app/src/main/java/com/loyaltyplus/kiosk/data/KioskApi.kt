@@ -47,11 +47,42 @@ object KioskApi {
         return response.body()
     }
 
-    suspend fun submit(apiUrl: String, pairingCode: String, answers: List<Map<String, String>>) {
+    suspend fun lookupCustomer(apiUrl: String, phone: String): CustomerDto {
+        val base = normalizeBaseUrl(apiUrl)
+        val response = client.get("$base/forms/kiosk/lookup-customer") {
+            parameter("phone", phone.trim())
+        }
+        if (!response.status.isSuccess()) {
+            val body = response.bodyAsText()
+            val message = try {
+                json.parseToJsonElement(body).jsonObject["message"]?.jsonPrimitive?.content
+                    ?: "HTTP ${response.status.value}"
+            } catch (_: Exception) {
+                "HTTP ${response.status.value}"
+            }
+            throw Exception(message)
+        }
+        return response.body()
+    }
+
+    suspend fun submit(
+        apiUrl: String,
+        pairingCode: String,
+        answers: List<Map<String, String>>,
+        customerName: String? = null,
+        customerPhone: String? = null,
+    ) {
         val base = normalizeBaseUrl(apiUrl)
         client.post("$base/forms/kiosk/submit") {
             contentType(ContentType.Application.Json)
-            setBody(mapOf("pairingCode" to pairingCode.uppercase(), "answers" to answers))
+            setBody(
+                buildMap {
+                    put("pairingCode", pairingCode.uppercase())
+                    put("answers", answers)
+                    if (customerName != null) put("customerName", customerName)
+                    if (customerPhone != null) put("customerPhone", customerPhone)
+                }
+            )
         }
     }
 

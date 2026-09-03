@@ -117,8 +117,34 @@ export class FormsController {
   }
 
   @Public()
+  @Get('kiosk/lookup-customer')
+  kioskLookupCustomer(@Query('phone') phone: string) {
+    return this.formsService.kioskLookupCustomer(phone);
+  }
+
+  @Public()
   @Post('kiosk/submit')
-  kioskSubmit(@Body() body: { pairingCode: string; answers: { questionId: number; value: string }[] }) {
+  kioskSubmit(
+    @Body()
+    body: {
+      pairingCode: string;
+      customerName?: string;
+      customerPhone?: string;
+      answers: { questionId: number; value: string }[];
+    },
+  ) {
     return this.formsService.kioskSubmit(body);
+  }
+
+  // ── Kiosk responses (JWT-protected — dashboard only) ─────────────────────────
+
+  @Get('kiosk/responses')
+  kioskGetResponses() {
+    return this.formsService.kioskGetResponses();
+  }
+
+  @Get('kiosk/responses/:id')
+  kioskGetResponse(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.kioskGetResponse(id);
   }
 }

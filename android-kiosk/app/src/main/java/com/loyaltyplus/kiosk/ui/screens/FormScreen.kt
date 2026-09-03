@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
@@ -40,7 +41,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -65,10 +65,11 @@ import com.loyaltyplus.kiosk.ui.theme.Line
 import com.loyaltyplus.kiosk.ui.theme.White
 
 // Crystal glass palette
-private val GlassBackground = Color(0xEEFFFFFF)    // near-opaque white glass
-private val GlassBorder = Color(0x66FFFFFF)
-private val GlassScrim = Color(0x55000022)          // deep navy tint over video
+private val GlassBackground = Color(0x99FFFFFF)    // 60% white — video shows through
+private val GlassBorder = Color(0xAAFFFFFF)         // bright border for crystal look
+private val GlassScrim = Color(0x33000022)          // very light navy — video clearly visible
 private val CardShadow = Color(0x22000000)
+private val ChipGlass = Color(0x55FFFFFF)           // semi-transparent chip background
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -81,6 +82,7 @@ fun FormScreen(
     onAnswer: (Int, String) -> Unit,
     onNext: () -> Unit,
     onBack: () -> Unit,
+    onGoHome: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val question = form.questions.getOrNull(questionIndex) ?: return
@@ -95,6 +97,21 @@ fun FormScreen(
                 .fillMaxSize()
                 .background(GlassScrim)
         )
+
+        // Back-to-home arrow (top-left)
+        IconButton(
+            onClick = onGoHome,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Back to Home",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp),
+            )
+        }
 
         // Centered crystal card
         Box(
@@ -138,15 +155,35 @@ fun FormScreen(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(28.dp))
                         .border(
-                            width = 1.5.dp,
+                            width = 2.dp,
                             brush = Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.8f), Color.White.copy(alpha = 0.2f))
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    Color.White.copy(alpha = 0.45f),
+                                    Color.White.copy(alpha = 0.15f),
+                                )
                             ),
                             shape = RoundedCornerShape(28.dp),
                         )
                         .background(GlassBackground)
                         .padding(horizontal = 28.dp, vertical = 28.dp),
                 ) {
+                    // Inner top shimmer line
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .align(Alignment.TopStart)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = 0.6f),
+                                        Color.Transparent,
+                                    )
+                                )
+                            )
+                    )
                     AnimatedContent(
                         targetState = questionIndex,
                         transitionSpec = {
@@ -192,7 +229,7 @@ fun FormScreen(
                                 Text("Optional", color = Color(0xFF999999), fontSize = 13.sp)
                             }
                             Spacer(Modifier.height(24.dp))
-                            QuestionInput(question = q, answer = a, onAnswer = { onAnswer(q.id, it) })
+                            QuestionInput(question = q, answer = a, onAnswer = { onAnswer(q.id, it) }, onNext = onNext)
                         }
                     }
                 }
@@ -224,8 +261,20 @@ fun FormScreen(
                                 .weight(1f)
                                 .heightIn(min = 56.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = White),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White.copy(alpha = 0.5f)),
+                        Button(
+                            onClick = onBack,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0x44FFFFFF),
+                                contentColor = Color.White,
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.5.dp,
+                                Color.White.copy(alpha = 0.85f),
+                            ),
                         ) {
                             Text("Back", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                         }
@@ -282,6 +331,7 @@ private fun QuestionInput(
     question: Question,
     answer: String,
     onAnswer: (String) -> Unit,
+    onNext: () -> Unit,
 ) {
     when (question.type) {
         QuestionType.RATING -> {
@@ -295,7 +345,7 @@ private fun QuestionInput(
                         Icon(
                             imageVector = if (selected) Icons.Filled.Star else Icons.Outlined.Star,
                             contentDescription = "$star stars",
-                            tint = Gold,
+                            tint = if (selected) Gold else Color.White.copy(alpha = 0.35f),
                             modifier = Modifier.size(50.dp),
                         )
                     }
@@ -317,11 +367,14 @@ private fun QuestionInput(
                             .width(88.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .border(
-                                width = if (selected) 3.dp else 1.dp,
-                                color = if (selected) Gold else Line,
+                                width = if (selected) 3.dp else 1.5.dp,
+                                brush = Brush.verticalGradient(
+                                    if (selected) listOf(Gold, Gold.copy(alpha = 0.6f))
+                                    else listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.2f))
+                                ),
                                 shape = RoundedCornerShape(16.dp),
                             )
-                            .background(if (selected) Gold.copy(alpha = 0.08f) else White)
+                            .background(if (selected) Gold.copy(alpha = 0.3f) else ChipGlass)
                             .clickable { onAnswer(option.label) }
                             .padding(vertical = 12.dp),
                     ) {
@@ -331,7 +384,7 @@ private fun QuestionInput(
                             text = option.label,
                             fontSize = 11.sp,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            color = Ink,
+                            color = if (selected) Ink else Color.White,
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -344,8 +397,8 @@ private fun QuestionInput(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                CrystalChoiceChip("Yes", answer == "Yes", Modifier.weight(1f)) { onAnswer("Yes") }
-                CrystalChoiceChip("No", answer == "No", Modifier.weight(1f)) { onAnswer("No") }
+                CrystalChoiceChip("Yes", answer == "Yes", Modifier.weight(1f), textColor = Ink) { onAnswer("Yes") }
+                CrystalChoiceChip("No", answer == "No", Modifier.weight(1f), textColor = Ink) { onAnswer("No") }
             }
         }
 
@@ -367,16 +420,22 @@ private fun QuestionInput(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 130.dp),
-                placeholder = { Text("Type here…", color = Color(0xFFAAAAAA)) },
+                placeholder = { Text("Type here…", color = Color(0xAAFFFFFF)) },
                 shape = RoundedCornerShape(14.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { onNext() },
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Gold,
-                    unfocusedBorderColor = Line,
-                    focusedContainerColor = Color(0xFFFAFAFA),
-                    unfocusedContainerColor = Color(0xFFFAFAFA),
-                    cursorColor = Ink,
-                    focusedTextColor = Ink,
-                    unfocusedTextColor = Ink,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                    focusedContainerColor = Color(0x44FFFFFF),
+                    unfocusedContainerColor = Color(0x33FFFFFF),
+                    cursorColor = Gold,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
                 ),
             )
         }
@@ -388,6 +447,7 @@ private fun CrystalChoiceChip(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    textColor: androidx.compose.ui.graphics.Color? = null,
     onClick: () -> Unit,
 ) {
     Box(
@@ -395,10 +455,15 @@ private fun CrystalChoiceChip(
         modifier = modifier
             .heightIn(min = 62.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (selected) Gold else Color(0xFFF5F5F5))
+            .background(if (selected) Gold else ChipGlass)
             .border(
-                width = if (selected) 0.dp else 1.dp,
-                color = Line,
+                width = if (selected) 0.dp else 1.5.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.7f),
+                        Color.White.copy(alpha = 0.2f),
+                    )
+                ),
                 shape = RoundedCornerShape(16.dp),
             )
             .clickable(onClick = onClick)
@@ -408,7 +473,7 @@ private fun CrystalChoiceChip(
             text = label,
             fontSize = 19.sp,
             fontWeight = FontWeight.Bold,
-            color = Ink,
+            color = textColor ?: (if (selected) Ink else Gold),
             textAlign = TextAlign.Center,
         )
     }

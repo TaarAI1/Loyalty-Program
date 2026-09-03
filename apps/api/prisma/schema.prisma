@@ -359,6 +359,7 @@ model SurveyForm {
 
   formQuestions SurveyFormQuestion[]
   assignments   FormAssignment[]
+  formResponses FormResponse[]
 
   @@map("survey_forms")
 }
@@ -386,7 +387,8 @@ model Device {
   pairingCode String   @unique @map("pairing_code") @db.VarChar(10)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  assignments FormAssignment[]
+  assignments   FormAssignment[]
+  formResponses FormResponse[]
 
   @@map("devices")
 }
@@ -406,11 +408,16 @@ model FormAssignment {
 }
 
 model FormResponse {
-  id          Int      @id @default(autoincrement())
-  deviceId    Int      @map("device_id")
-  formId      Int      @map("form_id")
-  answers     Json
-  submittedAt DateTime @default(now()) @map("submitted_at")
+  id             Int      @id @default(autoincrement())
+  deviceId       Int      @map("device_id")
+  formId         Int      @map("form_id")
+  customerName   String?  @map("customer_name") @db.VarChar(255)
+  customerPhone  String?  @map("customer_phone") @db.VarChar(20)
+  answers        Json
+  submittedAt    DateTime @default(now()) @map("submitted_at")
+
+  device  Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  form    SurveyForm @relation(fields: [formId],   references: [id], onDelete: Cascade)
 
   @@index([deviceId])
   @@index([formId])

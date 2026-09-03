@@ -3,6 +3,7 @@ package com.loyaltyplus.kiosk.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.loyaltyplus.kiosk.data.CustomerDto
 import com.loyaltyplus.kiosk.data.DeviceDto
 import com.loyaltyplus.kiosk.data.KioskApi
 import com.loyaltyplus.kiosk.data.KioskPreferences
@@ -15,24 +16,30 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Screen { SETTINGS, HOME, FORM, THANKS }
+enum class Screen { SETUP, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
 
 data class KioskUiState(
-    val screen: Screen = Screen.SETTINGS,
+    val screen: Screen = Screen.SETUP,
     val apiUrl: String = "",
     val pairingCode: String = "",
     val device: DeviceDto? = null,
     val form: SurveyForm = SampleForm.form,
+    // Customer lookup
+    val customerName: String = "",
+    val customerPhone: String = "",
+    val customer: CustomerDto? = null,
+    val isLookingUp: Boolean = false,
+    val lookupToast: ToastMessage? = null,
+    // Form
     val questionIndex: Int = 0,
     val answers: Map<Int, String> = emptyMap(),
     val showPinDialog: Boolean = false,
     val pinError: String? = null,
     val formError: String? = null,
-    // Settings screen state
     val isConnecting: Boolean = false,
     val connectionToast: ToastMessage? = null,
-    // Form submit state
     val isSubmitting: Boolean = false,
+    val sidebarOpen: Boolean = false,
 )
 
 data class ToastMessage(
@@ -46,15 +53,19 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(
         KioskUiState(
-            screen = if (prefs.setupComplete) Screen.HOME else Screen.SETTINGS,
+            screen = Screen.SETUP,
             apiUrl = prefs.apiUrl,
             pairingCode = prefs.pairingCode,
         ),
     )
     val state: StateFlow<KioskUiState> = _state.asStateFlow()
 
+    // ── Settings fields ───────────────────────────────────────────────────────
+
     fun onApiUrlChange(value: String) = _state.update { it.copy(apiUrl = value, connectionToast = null) }
     fun onPairingCodeChange(value: String) = _state.update { it.copy(pairingCode = value, connectionToast = null) }
+
+    // ── Connect ───────────────────────────────────────────────────────────────
 
     fun connect() {
         val s = _state.value
@@ -75,6 +86,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         device = response.device,
                         form = response.form.toSurveyForm(),
                         screen = Screen.HOME,
+                        sidebarOpen = false,
                         connectionToast = ToastMessage("Connected to ${response.device.name}!", isError = false),
                     )
                 }
@@ -92,29 +104,73 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearToast() = _state.update { it.copy(connectionToast = null) }
 
-    fun startForm() {
-        _state.update { it.copy(screen = Screen.FORM, questionIndex = 0, answers = emptyMap(), formError = null) }
+    // ── Sidebar navigation ────────────────────────────────────────────────────
+
+    fun toggleSidebar() = _state.update { it.copy(sidebarOpen = !it.sidebarOpen) }
+    fun closeSidebar() = _state.update { it.copy(sidebarOpen = false) }
+
+    fun navigateHome() = _state.update {
+        it.copy(screen = Screen.HOME, sidebarOpen = false)
     }
 
-    fun requestSettings() = _state.update { it.copy(showPinDialog = true, pinError = null) }
-    fun dismissPin() = _state.update { it.copy(showPinDialog = false, pinError = null) }
+    fun navigateSettingsPanel() = _state.update {
+        it.copy(screen = Screen.SETTINGS_PANEL, sidebarOpen = false, connectionToast = null)
+    }
 
-    fun submitPin(pin: String) {
-        if (pin == prefs.staffPin) {
-            _state.update {
-                it.copy(
-                    screen = Screen.SETTINGS,
-                    showPinDialog = false,
-                    pinError = null,
-                    apiUrl = prefs.apiUrl,
-                    pairingCode = prefs.pairingCode,
-                    connectionToast = null,
-                )
+    // ── Customer lookup ───────────────────────────────────────────────────────
+
+    fun onCustomerNameChange(value: String) = _state.update { it.copy(customerName = value, lookupToast = null) }
+    fun onCustomerPhoneChange(value: String) = _state.update { it.copy(customerPhone = value, lookupToast = null) }
+    fun clearLookupToast() = _state.update { it.copy(lookupToast = null) }
+
+    fun navigateCustomerLookup() = _state.update {
+        it.copy(
+            screen = Screen.CUSTOMER_LOOKUP,
+            customerName = "",
+            customerPhone = "",
+            customer = null,
+            lookupToast = null,
+            sidebarOpen = false,
+        )
+    }
+
+    fun lookupCustomer() {
+        val s = _state.value
+        val phone = s.customerPhone.trim()
+        if (phone.isBlank()) {
+            _state.update { it.copy(lookupToast = ToastMessage("Please enter a phone number.", isError = true)) }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(isLookingUp = true, lookupToast = null) }
+            try {
+                val customer = KioskApi.lookupCustomer(prefs.apiUrl, phone)
+                _state.update {
+                    it.copy(
+                        isLookingUp = false,
+                        customer = customer,
+                        customerName = customer.name,
+                        screen = Screen.FORM,
+                        questionIndex = 0,
+                        answers = emptyMap(),
+                        formError = null,
+                    )
+                }
+            } catch (e: Exception) {
+                val message = when {
+                    e.message?.contains("not found") == true ||
+                    e.message?.contains("404") == true -> "Customer does not exist in LoyaltyPlus."
+                    else -> e.message?.take(120) ?: "Lookup failed."
+                }
+                _state.update { it.copy(isLookingUp = false, lookupToast = ToastMessage(message, isError = true)) }
             }
-        } else {
-            _state.update { it.copy(pinError = "Wrong PIN. Default is ${KioskPreferences.DEFAULT_PIN}.") }
         }
     }
+
+    // ── Form navigation ───────────────────────────────────────────────────────
+
+    /** Called when Fill Form is tapped — goes to customer lookup first */
+    fun startForm() = navigateCustomerLookup()
 
     fun setAnswer(questionId: Int, value: String) {
         _state.update { it.copy(answers = it.answers + (questionId to value), formError = null) }
@@ -146,7 +202,13 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 val answers = s.answers.map { (qId, value) ->
                     mapOf("questionId" to qId.toString(), "value" to value)
                 }
-                KioskApi.submit(prefs.apiUrl, prefs.pairingCode, answers)
+                KioskApi.submit(
+                    apiUrl = prefs.apiUrl,
+                    pairingCode = prefs.pairingCode,
+                    answers = answers,
+                    customerName = s.customerName.ifBlank { null },
+                    customerPhone = s.customerPhone.ifBlank { null },
+                )
             } catch (_: Exception) {
                 // Submission failure is non-blocking — still show thank you
             } finally {
@@ -155,7 +217,37 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun resetForNextCustomer() {
-        _state.update { it.copy(screen = Screen.HOME, questionIndex = 0, answers = emptyMap(), formError = null) }
+    fun resetForNextCustomer() = _state.update {
+        it.copy(
+            screen = Screen.HOME,
+            questionIndex = 0,
+            answers = emptyMap(),
+            formError = null,
+            customer = null,
+            customerName = "",
+            customerPhone = "",
+        )
+    }
+
+    // ── Legacy PIN ────────────────────────────────────────────────────────────
+
+    fun requestSettings() = _state.update { it.copy(showPinDialog = true, pinError = null) }
+    fun dismissPin() = _state.update { it.copy(showPinDialog = false, pinError = null) }
+
+    fun submitPin(pin: String) {
+        if (pin == prefs.staffPin) {
+            _state.update {
+                it.copy(
+                    screen = Screen.SETTINGS_PANEL,
+                    showPinDialog = false,
+                    pinError = null,
+                    apiUrl = prefs.apiUrl,
+                    pairingCode = prefs.pairingCode,
+                    connectionToast = null,
+                )
+            }
+        } else {
+            _state.update { it.copy(pinError = "Wrong PIN. Default is ${KioskPreferences.DEFAULT_PIN}.") }
+        }
     }
 }

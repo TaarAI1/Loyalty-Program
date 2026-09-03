@@ -6,6 +6,14 @@ function generatePairingCode(): string {
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+/** Normalise a Pakistani mobile number to bare 10 digits (3XXXXXXXXX). */
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('92') && digits.length === 12) return digits.slice(2);
+  if (digits.startsWith('0') && digits.length === 11) return digits.slice(1);
+  return digits;
+}
+
 @Injectable()
 export class FormsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -207,7 +215,24 @@ export class FormsService {
     };
   }
 
-  async kioskSubmit(data: { pairingCode: string; answers: { questionId: number; value: string }[] }) {
+  async kioskLookupCustomer(phone: string) {
+    const normalized = normalizePhone(phone);
+    // Search all customers and normalize stored mobileNumber for comparison
+    const customers = await this.prisma.customer.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, mobileNumber: true, countryCode: true },
+    });
+    const match = customers.find((c) => normalizePhone(c.mobileNumber) === normalized);
+    if (!match) throw new NotFoundException('Customer not found in LoyaltyPlus.');
+    return { id: match.id, name: match.name, phone: match.mobileNumber };
+  }
+
+  async kioskSubmit(data: {
+    pairingCode: string;
+    customerName?: string;
+    customerPhone?: string;
+    answers: { questionId: number; value: string }[];
+  }) {
     const device = await this.prisma.device.findUnique({ where: { pairingCode: data.pairingCode.toUpperCase() } });
     if (!device) throw new NotFoundException('Device not found.');
 
@@ -218,8 +243,69 @@ export class FormsService {
     if (!assignment) throw new NotFoundException('No form assigned to this device.');
 
     const response = await this.prisma.formResponse.create({
-      data: { deviceId: device.id, formId: assignment.formId, answers: data.answers },
+      data: {
+        deviceId: device.id,
+        formId: assignment.formId,
+        customerName: data.customerName ?? null,
+        customerPhone: data.customerPhone ?? null,
+        answers: data.answers,
+      },
     });
     return { success: true, responseId: response.id };
+  }
+
+  async kioskGetResponses() {
+    const rows = await this.prisma.formResponse.findMany({
+      orderBy: { submittedAt: 'desc' },
+      include: {
+        form: { select: { id: true, name: true } },
+        device: { select: { id: true, name: true, store: true } },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Unknown',
+      deviceName: r.device?.name ?? 'Unknown',
+      store: r.device?.store ?? null,
+      submittedAt: r.submittedAt,
+    }));
+  }
+
+  async kioskGetResponse(id: number) {
+    const r = await this.prisma.formResponse.findUnique({
+      where: { id },
+      include: {
+        form: {
+          include: {
+            formQuestions: {
+              include: { question: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+        device: { select: { id: true, name: true, store: true } },
+      },
+    });
+    if (!r) throw new NotFoundException('Response not found.');
+
+    const answers = Array.isArray(r.answers) ? (r.answers as { questionId: number; value: string }[]) : [];
+    const questions = r.form?.formQuestions ?? [];
+
+    return {
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Unknown',
+      deviceName: r.device?.name ?? 'Unknown',
+      store: r.device?.store ?? null,
+      submittedAt: r.submittedAt,
+      answers: questions.map((fq) => ({
+        question: fq.question.text,
+        questionType: fq.question.questionType,
+        answer: answers.find((a) => a.questionId === fq.question.id)?.value ?? '',
+      })),
+    };
   }
 }

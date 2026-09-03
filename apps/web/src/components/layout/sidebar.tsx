@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Settings, BarChart3, Bell,
-  Gift, UserCog, LogOut, ChevronLeft, ChevronRight, Filter, ClipboardList,
+  Gift, UserCog, LogOut, ChevronLeft, ChevronRight, Filter, ClipboardList, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -20,6 +20,7 @@ const adminNavItems = [
   { href: '/notifications',  label: 'Notifications',   icon: Bell },
   { href: '/configuration',  label: 'Configuration',   icon: Settings },
   { href: '/forms',          label: 'Forms',            icon: ClipboardList },
+  { href: '/feedback',       label: 'Feedback',         icon: MessageSquare },
   { href: '/users',          label: 'User Management', icon: UserCog },
 ];
 
