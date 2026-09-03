@@ -10,7 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FormsService } from './forms.service';
-import { Public } from '../auth/api-key.guard';
+import { Public } from '../auth/public.decorator';
 
 @Controller('forms')
 export class FormsController {
