@@ -378,12 +378,13 @@ model SurveyFormQuestion {
 }
 
 model Device {
-  id         Int      @id @default(autoincrement())
-  name       String   @db.VarChar(100)
-  deviceType String   @default("workstation") @map("device_type") @db.VarChar(20)
-  store      String?  @db.VarChar(100)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  deviceType  String   @default("workstation") @map("device_type") @db.VarChar(20)
+  store       String?  @db.VarChar(100)
+  isActive    Boolean  @default(true) @map("is_active")
+  pairingCode String   @unique @map("pairing_code") @db.VarChar(10)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   assignments FormAssignment[]
 
@@ -402,4 +403,16 @@ model FormAssignment {
   @@index([formId])
   @@index([deviceId])
   @@map("form_assignments")
+}
+
+model FormResponse {
+  id          Int      @id @default(autoincrement())
+  deviceId    Int      @map("device_id")
+  formId      Int      @map("form_id")
+  answers     Json
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  @@index([deviceId])
+  @@index([formId])
+  @@map("form_responses")
 }

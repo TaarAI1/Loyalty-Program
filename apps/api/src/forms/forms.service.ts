@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+function generatePairingCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 @Injectable()
 export class FormsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -113,7 +118,13 @@ export class FormsService {
   }
 
   async createDevice(data: { name: string; deviceType: string; store?: string }) {
-    return this.prisma.device.create({ data });
+    let pairingCode: string;
+    let attempts = 0;
+    do {
+      pairingCode = generatePairingCode();
+      attempts++;
+    } while ((await this.prisma.device.findUnique({ where: { pairingCode } })) && attempts < 10);
+    return this.prisma.device.create({ data: { ...data, pairingCode } });
   }
 
   async updateDevice(id: number, data: { name?: string; deviceType?: string; store?: string; isActive?: boolean }) {
@@ -156,4 +167,58 @@ export class FormsService {
     await this.prisma.formAssignment.delete({ where: { id } });
     return { success: true };
   }
-}
+
+  // ── Kiosk ─────────────────────────────────────────────────────────────────────
+
+  async kioskConnect(code: string) {
+    const device = await this.prisma.device.findUnique({ where: { pairingCode: code.toUpperCase() } });
+    if (!device) throw new NotFoundException('Device not found. Check your pairing code.');
+
+    const assignment = await this.prisma.formAssignment.findFirst({
+      where: { deviceId: device.id },
+      orderBy: { assignedAt: 'desc' },
+      include: {
+        form: {
+          include: {
+            formQuestions: {
+              include: { question: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
+    });
+    if (!assignment) throw new NotFoundException('No form assigned to this device yet.');
+
+    const { form } = assignment;
+    return {
+      device: { id: device.id, name: device.name, store: device.store, deviceType: device.deviceType },
+      form: {
+        id: form.id,
+        name: form.name,
+        questions: form.formQuestions.map((fq) => ({
+          id: fq.question.id,
+          text: fq.question.text,
+          questionType: fq.question.questionType,
+          options: fq.question.options ?? null,
+          required: true,
+        })),
+      },
+    };
+  }
+
+  async kioskSubmit(data: { pairingCode: string; answers: { questionId: number; value: string }[] }) {
+    const device = await this.prisma.device.findUnique({ where: { pairingCode: data.pairingCode.toUpperCase() } });
+    if (!device) throw new NotFoundException('Device not found.');
+
+    const assignment = await this.prisma.formAssignment.findFirst({
+      where: { deviceId: device.id },
+      orderBy: { assignedAt: 'desc' },
+    });
+    if (!assignment) throw new NotFoundException('No form assigned to this device.');
+
+    const response = await this.prisma.formResponse.create({
+      data: { deviceId: device.id, formId: assignment.formId, answers: data.answers },
+    });
+    return { success: true, responseId: response.id };
+  }

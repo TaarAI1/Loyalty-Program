@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FormsService } from './forms.service';
+import { Public } from '../auth/api-key.guard';
 
 @Controller('forms')
 export class FormsController {
@@ -105,5 +106,19 @@ export class FormsController {
   @Delete('assignments/:id')
   deleteAssignment(@Param('id', ParseIntPipe) id: number) {
     return this.formsService.deleteAssignment(id);
+  }
+
+  // ── Kiosk (Public — no API key required) ─────────────────────────────────────
+
+  @Public()
+  @Get('kiosk/connect')
+  kioskConnect(@Query('code') code: string) {
+    return this.formsService.kioskConnect(code);
+  }
+
+  @Public()
+  @Post('kiosk/submit')
+  kioskSubmit(@Body() body: { pairingCode: string; answers: { questionId: number; value: string }[] }) {
+    return this.formsService.kioskSubmit(body);
   }
 }

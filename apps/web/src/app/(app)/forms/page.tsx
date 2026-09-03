@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
-  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown,
+  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ interface Device {
   deviceType: string;
   store: string | null;
   isActive: boolean;
+  pairingCode: string;
 }
 
 interface Assignment {
@@ -907,12 +908,17 @@ function FormAssignTab() {
                             <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
                               {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
                             </span>
-                            <span className="truncate">
-                              {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
-                              <span className="text-muted-foreground text-xs ml-1.5">
-                                {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                                {d.store ? ` · ${d.store}` : ''}
+                            <span className="flex-1 min-w-0">
+                              <span className="truncate block">
+                                {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
+                                <span className="text-muted-foreground text-xs ml-1.5">
+                                  {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                                  {d.store ? ` · ${d.store}` : ''}
+                                </span>
                               </span>
+                              {d.id > 0 && d.pairingCode && (
+                                <span className="text-[10px] font-mono text-muted-foreground/60">Code: {d.pairingCode}</span>
+                              )}
                             </span>
                           </button>
                         );
@@ -972,6 +978,7 @@ function FormAssignTab() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pairing Code</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
@@ -989,6 +996,13 @@ function FormAssignTab() {
                           </span>
                           <span className="font-medium">{a.device.name}</span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {a.device.pairingCode ? (
+                          <span className="inline-flex items-center rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 font-mono text-xs font-semibold text-amber-700 tracking-widest">
+                            {a.device.pairingCode}
+                          </span>
+                        ) : <span className="text-muted-foreground/40">—</span>}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {DEVICE_TYPE_OPTIONS.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
@@ -1053,6 +1067,25 @@ function FormAssignTab() {
               onChange={(e) => setDeviceForm({ ...deviceForm, store: e.target.value })}
             />
           </div>
+          {editingDevice?.pairingCode && (
+            <div className="space-y-1">
+              <Label>Pairing Code</Label>
+              <div className="flex items-center gap-2">
+                <span className="flex-1 rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm font-semibold tracking-widest text-amber-700">
+                  {editingDevice.pairingCode}
+                </span>
+                <button
+                  type="button"
+                  title="Copy code"
+                  onClick={() => navigator.clipboard.writeText(editingDevice.pairingCode)}
+                  className="rounded-md border p-2 hover:bg-muted/60 transition-colors"
+                >
+                  <Copy className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">Enter this code in the Android kiosk app settings.</p>
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDeviceDialog(false)}>Cancel</Button>
             <Button onClick={saveDevice}>{editingDevice ? 'Save Changes' : 'Add Device'}</Button>
