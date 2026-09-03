@@ -669,8 +669,8 @@ function FormBuildTab() {
 
 // Dummy devices shown when none are registered yet
 const DUMMY_DEVICES: Device[] = [
-  { id: -1, name: 'Register 1', deviceType: 'workstation', store: null, isActive: true },
-  { id: -2, name: 'Register 2', deviceType: 'kiosk',       store: null, isActive: true },
+  { id: -1, name: 'Register 1', deviceType: 'workstation', store: null, isActive: true, pairingCode: '' },
+  { id: -2, name: 'Register 2', deviceType: 'kiosk',       store: null, isActive: true, pairingCode: '' },
 ];
 
 function FormAssignTab() {
