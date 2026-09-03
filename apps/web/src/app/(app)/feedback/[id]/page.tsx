@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, MessageSquare, User, Phone, FileText, Monitor } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -54,9 +53,12 @@ export default function FeedbackDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <p className="text-sm text-destructive">{error ?? 'Not found.'}</p>
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Go back
-        </Button>
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-[#e8e8e8] bg-white px-4 py-2 text-sm font-bold text-[#111111] hover:border-[#FFD000] transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Go back
+        </button>
       </div>
     );
   }
@@ -64,10 +66,13 @@ export default function FeedbackDetailPage() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto">
       {/* Back */}
-      <Button variant="ghost" className="-ml-2 w-fit" onClick={() => router.push('/feedback')}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
+      <button
+        onClick={() => router.push('/feedback')}
+        className="inline-flex items-center gap-2 -ml-2 w-fit rounded-lg px-3 py-1.5 text-sm font-bold text-[#666] hover:bg-[#f5f5f5] hover:text-[#111111] transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
         Back to Feedback
-      </Button>
+      </button>
 
       {/* Header */}
       <div className="flex items-center gap-3">

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageSquare, Eye, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -96,12 +95,13 @@ export default function FeedbackPage() {
                     </TableCell>
                     <TableCell>{new Date(row.submittedAt).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/feedback/${row.id}`}>
-                          <Eye className="mr-1 h-4 w-4" />
-                          View
-                        </Link>
-                      </Button>
+                      <Link
+                        href={`/feedback/${row.id}`}
+                        className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-[#666] hover:bg-[#f5f5f5] hover:text-[#111111] transition-colors"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
