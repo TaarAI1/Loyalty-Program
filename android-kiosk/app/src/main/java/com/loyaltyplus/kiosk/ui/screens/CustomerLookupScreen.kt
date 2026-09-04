@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -77,18 +79,16 @@ fun CustomerLookupScreen(
         // Light scrim over the looping video background
         Box(modifier = Modifier.fillMaxSize().background(ScrimLayer))
 
-        // Centered card
-        Box(
+        // Scrollable content — scrolls up when keyboard opens so fields stay visible
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 32.dp),
-            contentAlignment = Alignment.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Column(
-                modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
                 // Brand label
                 Text(
                     text = "LOYALTYPLUS",
@@ -117,6 +117,7 @@ fun CustomerLookupScreen(
                 // Glass card
                 Box(
                     modifier = Modifier
+                        .widthIn(max = 560.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
                         .border(

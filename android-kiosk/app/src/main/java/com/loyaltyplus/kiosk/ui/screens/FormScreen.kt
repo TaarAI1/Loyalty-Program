@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -70,10 +71,12 @@ import com.loyaltyplus.kiosk.ui.theme.White
 
 // Crystal glass palette
 private val GlassBackground = Color(0x99FFFFFF)    // 60% white — video shows through
-private val GlassBorder = Color(0xAAFFFFFF)         // bright border for crystal look
-private val GlassScrim = Color(0x33000022)          // very light navy — video clearly visible
-private val CardShadow = Color(0x22000000)
-private val ChipGlass = Color(0x55FFFFFF)           // semi-transparent chip background
+private val GlassBorder     = Color(0xAAFFFFFF)
+private val GlassScrim      = Color(0x33000022)    // very light navy — video clearly visible
+private val CardShadow      = Color(0x22000000)
+private val ChipGlass       = Color(0x55FFFFFF)
+// Warm amber for the Back button
+private val BackButtonBg    = Color(0x55F5C518)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -90,19 +93,15 @@ fun FormScreen(
     onOpenSettings: () -> Unit,
 ) {
     val question = form.questions.getOrNull(questionIndex) ?: return
-    val isLast = questionIndex == form.questions.lastIndex
-    val answer = answers[question.id].orEmpty()
+    val isLast   = questionIndex == form.questions.lastIndex
+    val answer   = answers[question.id].orEmpty()
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Navy scrim layer over the video so card text is readable
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(GlassScrim)
-        )
+        // Scrim over video
+        Box(modifier = Modifier.fillMaxSize().background(GlassScrim))
 
-        // Back-to-home arrow (top-left)
+        // Back-to-home arrow (top-left, always visible)
         IconButton(
             onClick = onGoHome,
             modifier = Modifier
@@ -117,7 +116,7 @@ fun FormScreen(
             )
         }
 
-        // Centered crystal card
+        // Main layout — fills the screen and pins buttons to the bottom
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -128,15 +127,17 @@ fun FormScreen(
             Column(
                 modifier = Modifier
                     .widthIn(max = 680.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                // Header with long-press settings trigger
+                // ── Header: brand + progress dots ─────────────────────────
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = 12.dp),
                 ) {
                     Text(
                         text = "LOYALTYPLUS",
@@ -153,10 +154,11 @@ fun FormScreen(
                     ProgressDots(total = form.questions.size, current = questionIndex)
                 }
 
-                // Crystal card with AnimatedContent slide transition
+                // ── Crystal card — takes all available space between header and buttons ──
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .weight(1f)                       // expands to fill available space
                         .clip(RoundedCornerShape(28.dp))
                         .border(
                             width = 2.dp,
@@ -170,9 +172,9 @@ fun FormScreen(
                             shape = RoundedCornerShape(28.dp),
                         )
                         .background(GlassBackground)
-                        .padding(horizontal = 28.dp, vertical = 28.dp),
+                        .padding(horizontal = 28.dp, vertical = 20.dp),
                 ) {
-                    // Inner top shimmer line
+                    // Inner shimmer line
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -188,26 +190,26 @@ fun FormScreen(
                                 )
                             )
                     )
+
                     AnimatedContent(
                         targetState = questionIndex,
                         transitionSpec = {
-                            if (targetState > initialState) {
-                                // Forward: slide in from right
+                            if (targetState > initialState)
                                 (slideInHorizontally { it } + fadeIn()) togetherWith
                                         (slideOutHorizontally { -it } + fadeOut())
-                            } else {
-                                // Back: slide in from left
+                            else
                                 (slideInHorizontally { -it } + fadeIn()) togetherWith
                                         (slideOutHorizontally { it } + fadeOut())
-                            }
                         },
                         label = "question_transition",
                     ) { idx ->
                         val q = form.questions.getOrNull(idx) ?: return@AnimatedContent
                         val a = answers[q.id].orEmpty()
+
+                        // Scrollable so many options don't overflow the card
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -218,47 +220,52 @@ fun FormScreen(
                                 color = Color(0xFF888888),
                                 letterSpacing = 0.8.sp,
                             )
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(10.dp))
                             Text(
                                 text = q.text,
-                                fontSize = 26.sp,
+                                fontSize = 24.sp,
                                 fontWeight = FontWeight.Black,
                                 color = Ink,
                                 textAlign = TextAlign.Center,
-                                lineHeight = 32.sp,
+                                lineHeight = 30.sp,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             if (!q.required) {
                                 Spacer(Modifier.height(4.dp))
                                 Text("Optional", color = Color(0xFF999999), fontSize = 13.sp)
                             }
-                            Spacer(Modifier.height(24.dp))
-                            QuestionInput(question = q, answer = a, onAnswer = { onAnswer(q.id, it) }, onNext = onNext)
+                            Spacer(Modifier.height(20.dp))
+                            QuestionInput(
+                                question = q,
+                                answer = a,
+                                onAnswer = { onAnswer(q.id, it) },
+                                onNext = onNext,
+                            )
+                            Spacer(Modifier.height(8.dp))
                         }
                     }
                 }
 
-                // Error message
+                // ── Error message ──────────────────────────────────────────
                 AnimatedVisibility(visible = !error.isNullOrBlank()) {
                     Text(
                         text = error.orEmpty(),
                         color = Danger,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
 
-                Spacer(Modifier.height(20.dp))
-
-                // Navigation buttons
+                // ── Navigation buttons — always visible at the bottom ──────
                 Row(
                     modifier = Modifier
-                        .widthIn(max = 680.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (questionIndex > 0) {
+                        // Back — warm amber tint so it's clearly visible
                         Button(
                             onClick = onBack,
                             modifier = Modifier
@@ -266,17 +273,15 @@ fun FormScreen(
                                 .heightIn(min = 56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0x44FFFFFF),
-                                contentColor = Color.White,
+                                containerColor = BackButtonBg,
+                                contentColor = Ink,
                             ),
-                            border = BorderStroke(
-                                1.5.dp,
-                                Color.White.copy(alpha = 0.85f),
-                            ),
+                            border = BorderStroke(1.5.dp, Gold.copy(alpha = 0.8f)),
                         ) {
                             Text("Back", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                         }
                     }
+                    // Next / Submit
                     Button(
                         onClick = onNext,
                         enabled = !isSubmitting,
@@ -315,9 +320,7 @@ private fun ProgressDots(total: Int, current: Int) {
                 modifier = Modifier
                     .size(if (index == current) 10.dp else 7.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (index <= current) Gold else Color.White.copy(alpha = 0.3f)
-                    ),
+                    .background(if (index <= current) Gold else Color.White.copy(alpha = 0.3f)),
             )
         }
     }
@@ -396,7 +399,7 @@ private fun QuestionInput(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 CrystalChoiceChip("Yes", answer == "Yes", Modifier.weight(1f), textColor = Ink) { onAnswer("Yes") }
-                CrystalChoiceChip("No", answer == "No", Modifier.weight(1f), textColor = Ink) { onAnswer("No") }
+                CrystalChoiceChip("No",  answer == "No",  Modifier.weight(1f), textColor = Ink) { onAnswer("No") }
             }
         }
 
@@ -406,7 +409,8 @@ private fun QuestionInput(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 question.options.forEach { option ->
-                    CrystalChoiceChip(option, answer == option, Modifier.fillMaxWidth()) { onAnswer(option) }
+                    // textColor = Ink so options are always readable on glass background
+                    CrystalChoiceChip(option, answer == option, Modifier.fillMaxWidth(), textColor = Ink) { onAnswer(option) }
                 }
             }
         }
@@ -420,12 +424,8 @@ private fun QuestionInput(
                     .heightIn(min = 130.dp),
                 placeholder = { Text("Type here…", color = Color(0xAAFFFFFF)) },
                 shape = RoundedCornerShape(14.dp),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { onNext() },
-                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onNext() }),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Gold,
                     unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
@@ -451,7 +451,7 @@ private fun CrystalChoiceChip(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .heightIn(min = 62.dp)
+            .heightIn(min = 56.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) Gold else ChipGlass)
             .border(
@@ -465,13 +465,13 @@ private fun CrystalChoiceChip(
                 shape = RoundedCornerShape(16.dp),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
             text = label,
-            fontSize = 19.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
-            color = textColor ?: (if (selected) Ink else Gold),
+            color = textColor ?: Ink,   // default Ink — Gold background shows selection state
             textAlign = TextAlign.Center,
         )
     }
