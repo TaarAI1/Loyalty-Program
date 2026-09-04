@@ -259,12 +259,6 @@ fun FormScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (questionIndex > 0) {
-                        OutlinedButton(
-                            onClick = onBack,
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 56.dp),
-                            shape = RoundedCornerShape(16.dp),
                         Button(
                             onClick = onBack,
                             modifier = Modifier
