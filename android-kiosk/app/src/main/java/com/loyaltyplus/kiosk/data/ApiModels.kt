@@ -18,6 +18,20 @@ data class DeviceDto(
 )
 
 @Serializable
+data class AnswerDto(
+    val questionId: Int,
+    val value: String,
+)
+
+@Serializable
+data class KioskSubmitRequest(
+    val pairingCode: String,
+    val answers: List<AnswerDto>,
+    val customerName: String? = null,
+    val customerPhone: String? = null,
+)
+
+@Serializable
 data class CustomerDto(
     val id: String,
     val name: String,

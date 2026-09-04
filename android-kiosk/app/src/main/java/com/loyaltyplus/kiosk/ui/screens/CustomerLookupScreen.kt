@@ -173,9 +173,8 @@ fun CustomerLookupScreen(
                     }
                 }
             }
-        }
 
-        // Toast
+        // Toast — inside outer Box so .align(BottomCenter) works
         AnimatedVisibility(
             visible = toast != null,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),

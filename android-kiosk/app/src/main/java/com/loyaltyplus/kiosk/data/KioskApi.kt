@@ -68,7 +68,7 @@ object KioskApi {
     suspend fun submit(
         apiUrl: String,
         pairingCode: String,
-        answers: List<Map<String, String>>,
+        answers: List<AnswerDto>,
         customerName: String? = null,
         customerPhone: String? = null,
     ) {
@@ -76,12 +76,12 @@ object KioskApi {
         client.post("$base/forms/kiosk/submit") {
             contentType(ContentType.Application.Json)
             setBody(
-                buildMap {
-                    put("pairingCode", pairingCode.uppercase())
-                    put("answers", answers)
-                    if (customerName != null) put("customerName", customerName)
-                    if (customerPhone != null) put("customerPhone", customerPhone)
-                }
+                KioskSubmitRequest(
+                    pairingCode = pairingCode.uppercase(),
+                    answers = answers,
+                    customerName = customerName,
+                    customerPhone = customerPhone,
+                )
             )
         }
     }

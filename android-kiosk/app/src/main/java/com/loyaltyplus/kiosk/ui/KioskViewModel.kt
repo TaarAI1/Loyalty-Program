@@ -3,6 +3,7 @@ package com.loyaltyplus.kiosk.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.loyaltyplus.kiosk.data.AnswerDto
 import com.loyaltyplus.kiosk.data.CustomerDto
 import com.loyaltyplus.kiosk.data.DeviceDto
 import com.loyaltyplus.kiosk.data.KioskApi
@@ -200,7 +201,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(isSubmitting = true) }
             try {
                 val answers = s.answers.map { (qId, value) ->
-                    mapOf("questionId" to qId.toString(), "value" to value)
+                    AnswerDto(questionId = qId, value = value)
                 }
                 KioskApi.submit(
                     apiUrl = prefs.apiUrl,
