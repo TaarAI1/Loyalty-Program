@@ -398,8 +398,8 @@ private fun QuestionInput(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                CrystalChoiceChip("Yes", answer == "Yes", Modifier.weight(1f), textColor = Ink) { onAnswer("Yes") }
                 CrystalChoiceChip("No",  answer == "No",  Modifier.weight(1f), textColor = Ink) { onAnswer("No") }
+                CrystalChoiceChip("Yes", answer == "Yes", Modifier.weight(1f), textColor = Ink) { onAnswer("Yes") }
             }
         }
 

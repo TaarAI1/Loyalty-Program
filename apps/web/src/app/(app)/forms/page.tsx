@@ -201,7 +201,7 @@ function QuestionPreview({ question }: { question: Question }) {
 
       {question.questionType === 'boolean' && (
         <div className="flex gap-3 mt-1">
-          {['Yes', 'No'].map((opt) => (
+          {['No', 'Yes'].map((opt) => (
             <button key={opt} type="button" onClick={() => setYesNo(opt)}
               className={`rounded-full px-6 py-1.5 text-sm font-medium border transition-colors ${yesNo === opt ? opt === 'Yes' ? 'bg-green-500 text-white border-green-500' : 'bg-red-500 text-white border-red-500' : 'border-border hover:bg-muted/60'}`}>
               {opt}
