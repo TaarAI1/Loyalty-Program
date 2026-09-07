@@ -199,12 +199,16 @@ export class FormsService {
     if (!assignment) throw new NotFoundException('No form assigned to this device yet.');
 
     const { form } = assignment;
+    const TYPE_ORDER: Record<string, number> = { rating: 0, emoji: 1, boolean: 2, choice: 3, text: 4 };
     return {
       device: { id: device.id, name: device.name, store: device.store, deviceType: device.deviceType },
       form: {
         id: form.id,
         name: form.name,
-        questions: form.formQuestions.map((fq) => ({
+        questions: form.formQuestions
+          .slice()
+          .sort((a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99))
+          .map((fq) => ({
           id: fq.question.id,
           text: fq.question.text,
           questionType: fq.question.questionType,

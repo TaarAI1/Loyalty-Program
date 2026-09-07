@@ -234,6 +234,10 @@ function QuestionPreview({ question }: { question: Question }) {
 // ── Inline Form Preview Page ───────────────────────────────────────────────────
 
 function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
+  const TYPE_ORDER: Record<string, number> = { rating: 0, emoji: 1, boolean: 2, choice: 3, text: 4 };
+  const sortedQuestions = [...form.formQuestions].sort(
+    (a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99),
+  );
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -253,7 +257,7 @@ function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => v
         <div className="rounded-b-2xl border border-t-0 bg-background divide-y">
           {form.formQuestions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-10 text-center">No questions added yet.</p>
-          ) : form.formQuestions.map((fq, idx) => (
+          ) : sortedQuestions.map((fq, idx) => (
             <div key={fq.id} className="px-8 py-6">
               <p className="text-xs font-semibold text-primary/70 uppercase tracking-wider mb-1">Question {idx + 1}</p>
               <QuestionPreview question={fq.question} />
