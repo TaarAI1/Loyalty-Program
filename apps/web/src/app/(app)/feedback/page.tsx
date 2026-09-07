@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, Loader2 } from 'lucide-react';
+import { MessageSquare, Eye, Loader2, Search, X, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,13 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ── Filter state ────────────────────────────────────────────────────────────
+  const [dateFrom, setDateFrom]       = useState('');
+  const [dateTo, setDateTo]           = useState('');
+  const [customerSearch, setCustomer] = useState('');
+  const [deviceFilter, setDevice]     = useState('');
+  const [storeFilter, setStore]       = useState('');
+
   useEffect(() => {
     api
       .get('/forms/kiosk/responses')
@@ -31,8 +38,36 @@ export default function FeedbackPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Derived options from loaded data ────────────────────────────────────────
+  const deviceOptions = Array.from(new Set(rows.map((r) => r.deviceName))).filter(Boolean);
+  const storeOptions  = Array.from(new Set(rows.map((r) => r.store ?? ''))).filter(Boolean);
+
+  // ── Filtered rows ───────────────────────────────────────────────────────────
+  const filteredRows = rows.filter((r) => {
+    if (dateFrom && new Date(r.submittedAt) < new Date(dateFrom)) return false;
+    if (dateTo   && new Date(r.submittedAt) > new Date(dateTo + 'T23:59:59')) return false;
+    if (customerSearch) {
+      const q = customerSearch.toLowerCase();
+      if (!(r.customerName?.toLowerCase().includes(q) || r.customerPhone?.includes(q))) return false;
+    }
+    if (deviceFilter && r.deviceName !== deviceFilter) return false;
+    if (storeFilter  && r.store      !== storeFilter)  return false;
+    return true;
+  });
+
+  const hasFilters = dateFrom || dateTo || customerSearch || deviceFilter || storeFilter;
+
+  function clearFilters() {
+    setDateFrom('');
+    setDateTo('');
+    setCustomer('');
+    setDevice('');
+    setStore('');
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <MessageSquare className="h-7 w-7 text-primary" />
         <div>
@@ -43,9 +78,101 @@ export default function FeedbackPage() {
         </div>
       </div>
 
+      {/* Filter Bar */}
       <Card>
-        <CardHeader>
-          <CardTitle>All Submissions</CardTitle>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">Filters</span>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <X className="h-3 w-3" /> Clear all
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* Date From */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">From Date</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            {/* Date To */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">To Date</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            {/* Customer search */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">Customer</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Name or phone…"
+                  value={customerSearch}
+                  onChange={(e) => setCustomer(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            {/* Device */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">Device</label>
+              <select
+                value={deviceFilter}
+                onChange={(e) => setDevice(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">All devices</option>
+                {deviceOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            {/* Store */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-muted-foreground">Store</label>
+              <select
+                value={storeFilter}
+                onChange={(e) => setStore(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">All stores</option>
+                {storeOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle>All Submissions</CardTitle>
+            {!loading && !error && (
+              <span className="text-sm text-muted-foreground">
+                Showing <span className="font-semibold text-foreground">{filteredRows.length}</span> of{' '}
+                <span className="font-semibold text-foreground">{rows.length}</span> submissions
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading && (
@@ -58,13 +185,15 @@ export default function FeedbackPage() {
             <p className="py-8 text-center text-sm text-destructive">{error}</p>
           )}
 
-          {!loading && !error && rows.length === 0 && (
+          {!loading && !error && filteredRows.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No feedback submissions yet. Once customers fill in forms from the kiosk, they will appear here.
+              {rows.length === 0
+                ? 'No feedback submissions yet. Once customers fill in forms from the kiosk, they will appear here.'
+                : 'No submissions match the current filters.'}
             </p>
           )}
 
-          {!loading && !error && rows.length > 0 && (
+          {!loading && !error && filteredRows.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -78,7 +207,7 @@ export default function FeedbackPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell className="font-medium">
                       {row.customerName ?? <span className="text-muted-foreground">—</span>}
