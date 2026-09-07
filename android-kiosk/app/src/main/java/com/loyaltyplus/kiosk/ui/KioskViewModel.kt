@@ -40,6 +40,7 @@ data class KioskUiState(
     val isConnecting: Boolean = false,
     val connectionToast: ToastMessage? = null,
     val isSubmitting: Boolean = false,
+    val submitToast: ToastMessage? = null,
     val sidebarOpen: Boolean = false,
 )
 
@@ -216,13 +217,22 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                     customerName = s.customerName.ifBlank { null },
                     customerPhone = s.customerPhone.ifBlank { null },
                 )
-            } catch (_: Exception) {
-                // Submission failure is non-blocking — still show thank you
-            } finally {
                 _state.update { it.copy(isSubmitting = false, screen = Screen.THANKS) }
+            } catch (e: Exception) {
+                // Still navigate to THANKS so the customer isn't stuck,
+                // but record the error so it can be shown on screen.
+                _state.update {
+                    it.copy(
+                        isSubmitting = false,
+                        screen = Screen.THANKS,
+                        submitToast = ToastMessage("Save failed: ${e.message}", isError = true),
+                    )
+                }
             }
         }
     }
+
+    fun clearSubmitToast() = _state.update { it.copy(submitToast = null) }
 
     fun resetForNextCustomer() = _state.update {
         it.copy(
@@ -230,6 +240,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             questionIndex = 0,
             answers = emptyMap(),
             formError = null,
+            submitToast = null,
             customer = null,
             customerName = "",
             customerPhone = "",

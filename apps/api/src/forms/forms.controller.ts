@@ -139,8 +139,8 @@ export class FormsController {
   // ── Kiosk responses (JWT-protected — dashboard only) ─────────────────────────
 
   @Get('kiosk/responses')
-  kioskGetResponses() {
-    return this.formsService.kioskGetResponses();
+  kioskGetResponses(@Query('phone') phone?: string) {
+    return this.formsService.kioskGetResponses(phone);
   }
 
   @Get('kiosk/responses/:id')

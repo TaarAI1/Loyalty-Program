@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { customersApi, configApi } from '@/lib/api';
+import { customersApi, configApi, api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,13 +19,30 @@ import {
   formatDate,
   formatDateTime,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck, MessageSquare } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
 } from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
+
+// ── Feedback rating helpers (reused from feedback detail page) ────────────────
+const EMOJI_SCORE: Record<string, number> = {
+  'Very Bad': 1, 'Bad': 2, 'Okay': 3, 'Good': 4, 'Excellent': 5,
+};
+
+function computeRatingFromAnswers(answers: { questionType: string; answer: string }[]): number | null {
+  const scores: number[] = [];
+  for (const a of answers) {
+    if (!a.answer) continue;
+    if (a.questionType === 'rating') { const n = parseInt(a.answer, 10); if (!isNaN(n)) scores.push(n); }
+    else if (a.questionType === 'emoji') { const s = EMOJI_SCORE[a.answer]; if (s !== undefined) scores.push(s); }
+    else if (a.questionType === 'boolean') { scores.push(a.answer === 'Yes' ? 5 : 1); }
+  }
+  if (scores.length === 0) return null;
+  return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+}
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +57,29 @@ export default function CustomerDetailPage() {
   const [txItems, setTxItems] = useState<Record<string, { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[]>>({});
   const [personaOpen, setPersonaOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
+
+  // ── Customer feedback ──────────────────────────────────────────────────────
+  type FeedbackRow = {
+    id: number;
+    customerName: string | null;
+    customerPhone: string | null;
+    formName: string;
+    deviceName: string;
+    store: string | null;
+    submittedAt: string;
+  };
+  const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false);
+
+  useEffect(() => {
+    if (!customer?.mobileNumber) return;
+    setFeedbacksLoading(true);
+    api
+      .get('/forms/kiosk/responses', { params: { phone: customer.mobileNumber } })
+      .then((r) => setFeedbacks(r.data))
+      .catch(() => setFeedbacks([]))
+      .finally(() => setFeedbacksLoading(false));
+  }, [customer?.mobileNumber]);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
@@ -524,6 +564,7 @@ export default function CustomerDetailPage() {
             <TabsList>
               <TabsTrigger value="history">Transaction History</TabsTrigger>
               <TabsTrigger value="ledger">Points Ledger</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
             </TabsList>
 
             <TabsContent value="history">
@@ -766,6 +807,48 @@ export default function CustomerDetailPage() {
                   </Button>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Feedback Tab */}
+            <TabsContent value="feedback">
+              {feedbacksLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Star className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : feedbacks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm font-medium">No feedback yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Submissions from the kiosk will appear here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  {feedbacks.map((fb) => (
+                    <button
+                      key={fb.id}
+                      type="button"
+                      onClick={() => router.push(`/feedback/${fb.id}`)}
+                      className="text-left rounded-xl border bg-background hover:shadow-md hover:border-primary/40 transition-all p-4 flex flex-col gap-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {fb.formName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(fb.submittedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{fb.deviceName}{fb.store ? ` · ${fb.store}` : ''}</span>
+                      </div>
+                      <span className="text-xs font-medium text-primary hover:underline mt-auto">
+                        View details →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

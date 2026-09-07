@@ -254,9 +254,10 @@ export class FormsService {
     return { success: true, responseId: response.id };
   }
 
-  async kioskGetResponses() {
+  async kioskGetResponses(phone?: string) {
     const rows = await this.prisma.formResponse.findMany({
       orderBy: { submittedAt: 'desc' },
+      where: phone ? { customerPhone: { contains: phone } } : undefined,
       include: {
         form: { select: { id: true, name: true } },
         device: { select: { id: true, name: true, store: true } },
@@ -304,7 +305,7 @@ export class FormsService {
       answers: questions.map((fq) => ({
         question: fq.question.text,
         questionType: fq.question.questionType,
-        answer: answers.find((a) => a.questionId === fq.question.id)?.value ?? '',
+        answer: answers.find((a) => Number(a.questionId) === fq.question.id)?.value ?? '',
       })),
     };
   }

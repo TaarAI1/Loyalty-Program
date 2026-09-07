@@ -73,7 +73,7 @@ object KioskApi {
         customerPhone: String? = null,
     ) {
         val base = normalizeBaseUrl(apiUrl)
-        client.post("$base/forms/kiosk/submit") {
+        val response = client.post("$base/forms/kiosk/submit") {
             contentType(ContentType.Application.Json)
             setBody(
                 KioskSubmitRequest(
@@ -83,6 +83,16 @@ object KioskApi {
                     customerPhone = customerPhone,
                 )
             )
+        }
+        if (!response.status.isSuccess()) {
+            val body = response.bodyAsText()
+            val message = try {
+                json.parseToJsonElement(body).jsonObject["message"]?.jsonPrimitive?.content
+                    ?: "HTTP ${response.status.value}"
+            } catch (_: Exception) {
+                "HTTP ${response.status.value}"
+            }
+            throw Exception(message)
         }
     }
 
