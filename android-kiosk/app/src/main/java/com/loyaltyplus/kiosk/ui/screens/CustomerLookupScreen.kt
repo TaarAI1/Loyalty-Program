@@ -25,12 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -66,6 +68,7 @@ fun CustomerLookupScreen(
     onPhoneChange: (String) -> Unit,
     onContinue: () -> Unit,
     onToastDismissed: () -> Unit,
+    onGoHome: () -> Unit,
 ) {
     LaunchedEffect(toast) {
         if (toast != null) {
@@ -78,6 +81,21 @@ fun CustomerLookupScreen(
 
         // Light scrim over the looping video background
         Box(modifier = Modifier.fillMaxSize().background(ScrimLayer))
+
+        // Back-to-home arrow (top-left)
+        IconButton(
+            onClick = onGoHome,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Back to Home",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp),
+            )
+        }
 
         // Scrollable content — scrolls up when keyboard opens so fields stay visible
         Column(

@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Screen { SETUP, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
+enum class Screen { SPLASH, SETUP, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
 
 data class KioskUiState(
     val screen: Screen = Screen.SETUP,
@@ -54,12 +54,18 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(
         KioskUiState(
-            screen = Screen.SETUP,
+            screen = Screen.SPLASH,
             apiUrl = prefs.apiUrl,
             pairingCode = prefs.pairingCode,
         ),
     )
     val state: StateFlow<KioskUiState> = _state.asStateFlow()
+
+    fun finishSplash() {
+        _state.update {
+            it.copy(screen = if (prefs.setupComplete) Screen.HOME else Screen.SETUP)
+        }
+    }
 
     // ── Settings fields ───────────────────────────────────────────────────────
 

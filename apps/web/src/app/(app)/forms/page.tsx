@@ -531,6 +531,18 @@ function FormBuildTab() {
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }
 
+  function moveUp(idx: number) {
+    if (idx === 0) return;
+    setSelectedIds(prev => { const a = [...prev]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a; });
+  }
+
+  function moveDown(idx: number) {
+    setSelectedIds(prev => {
+      if (idx >= prev.length - 1) return prev;
+      const a = [...prev]; [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a;
+    });
+  }
+
   if (previewForm) {
     return <FormPreviewPage form={previewForm} onBack={() => setPreviewForm(null)}
       onEdit={() => { setPreviewForm(null); openEdit(previewForm); }} />;
@@ -655,6 +667,37 @@ function FormBuildTab() {
               </div>
             )}
           </div>
+          {selectedIds.length > 1 && (
+            <div className="space-y-1">
+              <Label>Question Order</Label>
+              <div className="border rounded-md divide-y">
+                {selectedIds.map((id, idx) => {
+                  const q = questions.find((x) => x.id === id);
+                  if (!q) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <span className="w-5 text-center text-xs text-muted-foreground font-medium">{idx + 1}</span>
+                      <span className="flex-1 truncate">{q.text}</span>
+                      <button
+                        type="button"
+                        onClick={() => moveUp(idx)}
+                        disabled={idx === 0}
+                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
+                        title="Move up"
+                      >↑</button>
+                      <button
+                        type="button"
+                        onClick={() => moveDown(idx)}
+                        disabled={idx === selectedIds.length - 1}
+                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
+                        title="Move down"
+                      >↓</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
             <Button onClick={save}>Save</Button>
