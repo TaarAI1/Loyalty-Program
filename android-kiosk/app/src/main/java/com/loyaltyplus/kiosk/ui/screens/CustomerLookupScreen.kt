@@ -82,21 +82,6 @@ fun CustomerLookupScreen(
         // Light scrim over the looping video background
         Box(modifier = Modifier.fillMaxSize().background(ScrimLayer))
 
-        // Back-to-home arrow (top-left)
-        IconButton(
-            onClick = onGoHome,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(12.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Back to Home",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp),
-            )
-        }
-
         // Scrollable content — scrolls up when keyboard opens so fields stay visible
         Column(
             modifier = Modifier
@@ -191,6 +176,21 @@ fun CustomerLookupScreen(
                     }
                 }
             }
+
+        // Back-to-home arrow (top-left) — declared after Column so it sits on top and receives touches
+        IconButton(
+            onClick = onGoHome,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Back to Home",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp),
+            )
+        }
 
         // Toast — inside outer Box so .align(BottomCenter) works
         AnimatedVisibility(
