@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -191,14 +192,14 @@ fun KioskApp(viewModel: KioskViewModel) {
 
                 // Back arrow on Settings Panel to return to Home
                 if (state.screen == Screen.SETTINGS_PANEL) {
-                    androidx.compose.material3.IconButton(
+                    IconButton(
                         onClick = viewModel::navigateHome,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(12.dp),
                     ) {
                         Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Filled.ArrowBack,
+                            imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp),
