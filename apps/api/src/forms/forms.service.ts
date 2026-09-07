@@ -199,7 +199,7 @@ export class FormsService {
     if (!assignment) throw new NotFoundException('No form assigned to this device yet.');
 
     const { form } = assignment;
-    const TYPE_ORDER: Record<string, number> = { rating: 0, emoji: 1, boolean: 2, choice: 3, text: 4 };
+    const TYPE_ORDER: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
     return {
       device: { id: device.id, name: device.name, store: device.store, deviceType: device.deviceType },
       form: {

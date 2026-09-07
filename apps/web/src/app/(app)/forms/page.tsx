@@ -234,7 +234,7 @@ function QuestionPreview({ question }: { question: Question }) {
 // ── Inline Form Preview Page ───────────────────────────────────────────────────
 
 function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
-  const TYPE_ORDER: Record<string, number> = { rating: 0, emoji: 1, boolean: 2, choice: 3, text: 4 };
+  const TYPE_ORDER: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
   const sortedQuestions = [...form.formQuestions].sort(
     (a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99),
   );
