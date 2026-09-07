@@ -58,6 +58,11 @@ export default function CustomerDetailPage() {
   const [personaOpen, setPersonaOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
 
+  const { data: customer, isLoading } = useQuery({
+    queryKey: ['customer', id],
+    queryFn: () => customersApi.getOne(id),
+  });
+
   // ── Customer feedback ──────────────────────────────────────────────────────
   type FeedbackRow = {
     id: number;
@@ -80,11 +85,6 @@ export default function CustomerDetailPage() {
       .catch(() => setFeedbacks([]))
       .finally(() => setFeedbacksLoading(false));
   }, [customer?.mobileNumber]);
-
-  const { data: customer, isLoading } = useQuery({
-    queryKey: ['customer', id],
-    queryFn: () => customersApi.getOne(id),
-  });
 
   const { data: tiers } = useQuery({
     queryKey: ['tiers'],
