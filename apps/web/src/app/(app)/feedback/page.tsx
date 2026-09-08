@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, Loader2, Filter, Download } from 'lucide-react';
+import { MessageSquare, Eye, Loader2, Filter, Download, User, CalendarDays, ShieldCheck, Monitor, Building2, FileText, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -129,78 +129,125 @@ export default function FeedbackPage() {
 
         {/* ── Filter Sidebar ── */}
         <aside className="w-64 flex-shrink-0">
-          <Card className="sticky top-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Filter className="w-4 h-4" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0 text-sm">
+          <Card className="sticky top-4 overflow-hidden">
+            {/* Sidebar header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary" />
+                <span className="font-bold text-sm">Filters</span>
+              </div>
+              {Object.values(applied).some(Boolean) && (
+                <span className="inline-flex items-center justify-center h-5 min-w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                  {Object.values(applied).filter(Boolean).length}
+                </span>
+              )}
+            </div>
 
-              <div className="space-y-1">
-                <Label>Date From</Label>
-                <Input type="date" value={filters.dateFrom}
-                  onChange={(e) => setF('dateFrom', e.target.value)} />
+            <CardContent className="p-4 space-y-5 text-sm">
+
+              {/* ── Search ─────────────────────────────────────────── */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search</p>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <User className="h-3.5 w-3.5 text-muted-foreground" /> Customer
+                  </Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="text"
+                      placeholder="Name or phone…"
+                      value={filters.customer}
+                      onChange={(e) => setF('customer', e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <Label>Date To</Label>
-                <Input type="date" value={filters.dateTo}
-                  onChange={(e) => setF('dateTo', e.target.value)} />
+              <hr className="border-border/60" />
+
+              {/* ── Date Range ─────────────────────────────────────── */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date Range</p>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> From
+                  </Label>
+                  <Input type="date" value={filters.dateFrom}
+                    onChange={(e) => setF('dateFrom', e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> To
+                  </Label>
+                  <Input type="date" value={filters.dateTo}
+                    onChange={(e) => setF('dateTo', e.target.value)} />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <Label>Customer</Label>
-                <Input type="text" placeholder="Name or phone…"
-                  value={filters.customer}
-                  onChange={(e) => setF('customer', e.target.value)} />
+              <hr className="border-border/60" />
+
+              {/* ── Narrow By ──────────────────────────────────────── */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Narrow By</p>
+
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" /> Tier
+                  </Label>
+                  <Select options={tierSelectOptions} value={filters.tierId}
+                    onChange={(e) => setF('tierId', e.target.value)} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Monitor className="h-3.5 w-3.5 text-muted-foreground" /> Device
+                  </Label>
+                  <Select
+                    options={[{ value: '', label: 'All Devices' }, ...deviceOptions.map((d) => ({ value: d, label: d }))]}
+                    value={filters.device}
+                    onChange={(e) => setF('device', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" /> Store
+                  </Label>
+                  <Select
+                    options={[{ value: '', label: 'All Stores' }, ...storeOptions.map((s) => ({ value: s, label: s }))]}
+                    value={filters.store}
+                    onChange={(e) => setF('store', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" /> Form
+                  </Label>
+                  <Select
+                    options={[{ value: '', label: 'All Forms' }, ...formOptions.map((f) => ({ value: f, label: f }))]}
+                    value={filters.form}
+                    onChange={(e) => setF('form', e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <Label>Tier</Label>
-                <Select
-                  options={tierSelectOptions}
-                  value={filters.tierId}
-                  onChange={(e) => setF('tierId', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Device</Label>
-                <Select
-                  options={[{ value: '', label: 'All Devices' }, ...deviceOptions.map((d) => ({ value: d, label: d }))]}
-                  value={filters.device}
-                  onChange={(e) => setF('device', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Store</Label>
-                <Select
-                  options={[{ value: '', label: 'All Stores' }, ...storeOptions.map((s) => ({ value: s, label: s }))]}
-                  value={filters.store}
-                  onChange={(e) => setF('store', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>Form</Label>
-                <Select
-                  options={[{ value: '', label: 'All Forms' }, ...formOptions.map((f) => ({ value: f, label: f }))]}
-                  value={filters.form}
-                  onChange={(e) => setF('form', e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button className="flex-1" size="sm" onClick={applyFilters}>
-                  Apply
+              {/* ── Actions ────────────────────────────────────────── */}
+              <div className="space-y-2 pt-1">
+                <Button className="w-full" size="sm" onClick={applyFilters}>
+                  Apply Filters
                 </Button>
-                <Button variant="outline" size="sm" onClick={resetFilters}>
-                  Reset
-                </Button>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="w-full text-xs text-muted-foreground hover:text-destructive transition-colors py-1"
+                >
+                  Reset all filters
+                </button>
               </div>
+
             </CardContent>
           </Card>
         </aside>
