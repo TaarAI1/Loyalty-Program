@@ -125,6 +125,7 @@ fun KioskApp(viewModel: KioskViewModel) {
                         device = state.device,
                         formName = state.form.name,
                         hasVideo = showVideo,
+                        isAutoConnecting = state.isAutoConnecting,
                         onFillForm = viewModel::startForm,
                     )
 

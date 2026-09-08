@@ -42,6 +42,7 @@ data class KioskUiState(
     val isSubmitting: Boolean = false,
     val submitToast: ToastMessage? = null,
     val sidebarOpen: Boolean = false,
+    val isAutoConnecting: Boolean = false,
 )
 
 data class ToastMessage(
@@ -63,8 +64,37 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     val state: StateFlow<KioskUiState> = _state.asStateFlow()
 
     fun finishSplash() {
-        _state.update {
-            it.copy(screen = if (prefs.setupComplete) Screen.HOME else Screen.SETUP)
+        if (prefs.setupComplete) {
+            _state.update { it.copy(screen = Screen.HOME, isAutoConnecting = true) }
+            autoConnect()
+        } else {
+            _state.update { it.copy(screen = Screen.SETUP) }
+        }
+    }
+
+    private fun autoConnect() {
+        viewModelScope.launch {
+            try {
+                val response = KioskApi.connect(prefs.apiUrl, prefs.pairingCode)
+                _state.update {
+                    it.copy(
+                        isAutoConnecting = false,
+                        device = response.device,
+                        form = response.form.toSurveyForm(),
+                        connectionToast = null,
+                    )
+                }
+            } catch (_: Exception) {
+                _state.update {
+                    it.copy(
+                        isAutoConnecting = false,
+                        connectionToast = ToastMessage(
+                            "Could not load form data. Tap the gear icon to reconnect.",
+                            isError = true,
+                        ),
+                    )
+                }
+            }
         }
     }
 

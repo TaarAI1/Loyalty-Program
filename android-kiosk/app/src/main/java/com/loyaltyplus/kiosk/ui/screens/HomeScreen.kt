@@ -7,6 +7,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +55,7 @@ fun HomeScreen(
     device: DeviceDto?,
     formName: String,
     hasVideo: Boolean,
+    isAutoConnecting: Boolean = false,
     onFillForm: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -165,10 +169,34 @@ fun HomeScreen(
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(28.dp))
-                PulsingButton(onClick = onFillForm)
+                if (isAutoConnecting) {
+                    // Show a loading pill while the form data is fetched in the background
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 64.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = Gold,
+                            strokeWidth = 2.5.dp,
+                        )
+                        androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+                        Text(
+                            text = "Loading form…",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.7f),
+                        )
+                    }
+                } else {
+                    PulsingButton(onClick = onFillForm)
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = formName,
+                    text = if (isAutoConnecting) "Connecting to device…" else formName,
                     fontSize = 11.sp,
                     color = Color.White.copy(alpha = 0.3f),
                     letterSpacing = 1.sp,
