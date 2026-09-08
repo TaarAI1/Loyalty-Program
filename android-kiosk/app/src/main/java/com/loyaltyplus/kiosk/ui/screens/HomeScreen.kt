@@ -231,7 +231,7 @@ private fun PulsingButton(onClick: () -> Unit) {
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
     ) {
         Text(
-            text = "Fill Form",
+            text = "Start Survey",
             fontWeight = FontWeight.Black,
             fontSize = 20.sp,
             letterSpacing = 1.sp,
