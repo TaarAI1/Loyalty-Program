@@ -258,10 +258,21 @@ export class FormsService {
     return { success: true, responseId: response.id };
   }
 
-  async kioskGetResponses(phone?: string) {
+  async kioskGetResponses(phone?: string, tierId?: string) {
+    let where: Record<string, unknown> = phone ? { customerPhone: { contains: phone } } : {};
+
+    if (tierId) {
+      const customers = await this.prisma.customer.findMany({
+        where: { tierId: Number(tierId) },
+        select: { mobileNumber: true },
+      });
+      const phones = customers.map((c) => c.mobileNumber);
+      where = { ...where, customerPhone: { in: phones } };
+    }
+
     const rows = await this.prisma.formResponse.findMany({
       orderBy: { submittedAt: 'desc' },
-      where: phone ? { customerPhone: { contains: phone } } : undefined,
+      where,
       include: {
         form: { select: { id: true, name: true } },
         device: { select: { id: true, name: true, store: true } },
