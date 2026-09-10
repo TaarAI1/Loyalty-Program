@@ -387,10 +387,24 @@ model Device {
   pairingCode String   @unique @map("pairing_code") @db.VarChar(10)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  assignments   FormAssignment[]
-  formResponses FormResponse[]
+  assignments     FormAssignment[]
+  formResponses   FormResponse[]
+  pendingSurveys  PendingSurvey[]
 
   @@map("devices")
+}
+
+model PendingSurvey {
+  id            Int      @id @default(autoincrement())
+  deviceId      Int      @map("device_id")
+  customerName  String?  @map("customer_name") @db.VarChar(255)
+  customerPhone String?  @map("customer_phone") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@map("pending_surveys")
 }
 
 model FormAssignment {

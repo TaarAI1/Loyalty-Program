@@ -289,6 +289,29 @@ export class FormsService {
     }));
   }
 
+  // ── Kiosk pending survey (push from POS, poll from tablet) ──────────────────
+
+  async kioskPushSurvey(deviceCode: string, customerName?: string, customerPhone?: string) {
+    const device = await this.prisma.device.findUnique({ where: { pairingCode: deviceCode.toUpperCase() } });
+    if (!device) throw new NotFoundException('Device not found. Check the kiosk device code.');
+    await this.prisma.pendingSurvey.create({
+      data: { deviceId: device.id, customerName: customerName ?? null, customerPhone: customerPhone ?? null },
+    });
+    return { success: true };
+  }
+
+  async kioskPollSurvey(code: string) {
+    const device = await this.prisma.device.findUnique({ where: { pairingCode: code.toUpperCase() } });
+    if (!device) return null;
+    const survey = await this.prisma.pendingSurvey.findFirst({
+      where: { deviceId: device.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!survey) return null;
+    await this.prisma.pendingSurvey.delete({ where: { id: survey.id } });
+    return { customerName: survey.customerName, customerPhone: survey.customerPhone };
+  }
+
   async kioskGetResponse(id: number) {
     const r = await this.prisma.formResponse.findUnique({
       where: { id },

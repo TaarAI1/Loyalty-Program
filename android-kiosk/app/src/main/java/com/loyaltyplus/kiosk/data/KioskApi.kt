@@ -96,6 +96,17 @@ object KioskApi {
         }
     }
 
+    suspend fun pollPendingSurvey(apiUrl: String, pairingCode: String): PendingSurveyDto? {
+        val base = normalizeBaseUrl(apiUrl)
+        val response = client.get("$base/forms/kiosk/pending-survey") {
+            parameter("code", pairingCode.trim().uppercase())
+        }
+        if (!response.status.isSuccess()) return null
+        val body = response.bodyAsText()
+        if (body.isBlank() || body == "null") return null
+        return try { json.decodeFromString(PendingSurveyDto.serializer(), body) } catch (_: Exception) { null }
+    }
+
     /**
      * Normalises the API base URL so users can paste either:
      *   https://my-api.up.railway.app        (no /api suffix — auto-appended)

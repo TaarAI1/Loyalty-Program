@@ -138,6 +138,20 @@ export class FormsController {
 
   // ── Kiosk responses (JWT-protected — dashboard only) ─────────────────────────
 
+  @Public()
+  @Post('kiosk/push-survey')
+  kioskPushSurvey(
+    @Body() body: { deviceCode: string; customerName?: string; customerPhone?: string },
+  ) {
+    return this.formsService.kioskPushSurvey(body.deviceCode, body.customerName, body.customerPhone);
+  }
+
+  @Public()
+  @Get('kiosk/pending-survey')
+  kioskPollSurvey(@Query('code') code: string) {
+    return this.formsService.kioskPollSurvey(code);
+  }
+
   @Get('kiosk/responses')
   kioskGetResponses(@Query('phone') phone?: string, @Query('tierId') tierId?: string) {
     return this.formsService.kioskGetResponses(phone, tierId);

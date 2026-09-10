@@ -11,6 +11,8 @@ import com.loyaltyplus.kiosk.data.KioskPreferences
 import com.loyaltyplus.kiosk.data.SampleForm
 import com.loyaltyplus.kiosk.data.SurveyForm
 import com.loyaltyplus.kiosk.data.toSurveyForm
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,6 +65,8 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     )
     val state: StateFlow<KioskUiState> = _state.asStateFlow()
 
+    private var pollingJob: Job? = null
+
     fun finishSplash() {
         if (prefs.setupComplete) {
             _state.update { it.copy(screen = Screen.HOME, isAutoConnecting = true) }
@@ -84,6 +88,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         connectionToast = null,
                     )
                 }
+                startPolling()
             } catch (_: Exception) {
                 _state.update {
                     it.copy(
@@ -96,6 +101,37 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    private fun startPolling() {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            while (true) {
+                delay(5_000L)
+                val s = _state.value
+                // Only poll when sitting on the Home screen and not busy
+                if (s.screen != Screen.HOME) continue
+                try {
+                    val pending = KioskApi.pollPendingSurvey(prefs.apiUrl, prefs.pairingCode)
+                    if (pending != null) {
+                        _state.update {
+                            it.copy(
+                                screen = Screen.CUSTOMER_LOOKUP,
+                                customerName = pending.customerName ?: "",
+                                customerPhone = pending.customerPhone ?: "",
+                                customer = null,
+                                lookupToast = null,
+                            )
+                        }
+                    }
+                } catch (_: Exception) { /* silent — polling should never crash the app */ }
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
     }
 
     // ── Settings fields ───────────────────────────────────────────────────────
@@ -128,6 +164,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         connectionToast = ToastMessage("Connected to ${response.device.name}!", isError = false),
                     )
                 }
+                startPolling()
             } catch (e: Exception) {
                 val message = when {
                     e.message?.contains("404") == true -> "Device not found. Check your pairing code."

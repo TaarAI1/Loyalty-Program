@@ -73,3 +73,9 @@ fun FormDto.toSurveyForm() = SurveyForm(
     name = name,
     questions = questions.map { it.toQuestion() },
 )
+
+@Serializable
+data class PendingSurveyDto(
+    val customerName: String? = null,
+    val customerPhone: String? = null,
+)
