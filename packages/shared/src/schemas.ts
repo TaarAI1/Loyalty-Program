@@ -46,8 +46,17 @@ export const WebhookCustomerSchema = z.object({
   gender: z.string().optional().transform((v) => v === '' ? undefined : v)
     .pipe(z.enum(['Male', 'Female', 'Other']).optional()),
   region: z.string().optional().transform((v) => v === '' ? undefined : v),
-  store: z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
-  country_code: z.string().max(5).default('92'),
+  store:            z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
+  country_code:     z.string().max(5).default('92'),
+  preferred_name:   z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
+  nationality:      z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
+  city:             z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
+  home_address:     z.string().optional().transform((v) => v === '' ? undefined : v),
+  marital_status:   z.string().optional().transform((v) => v === '' ? undefined : v)
+    .pipe(z.enum(['Single', 'Married', 'Divorced', 'Widowed']).optional()),
+  delivery_address: z.string().optional().transform((v) => v === '' ? undefined : v),
+  alternate_phone:  z.string().max(20).optional().transform((v) => v === '' ? undefined : v),
+  occupation:       z.string().max(100).optional().transform((v) => v === '' ? undefined : v),
 });
 export type WebhookCustomerDto = z.infer<typeof WebhookCustomerSchema>;
 
@@ -60,6 +69,17 @@ export const CustomerUpdateSchema = z.object({
   store: z.string().max(100).optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['active', 'inactive', 'blocked']).optional(),
+  occupation: z.string().max(100).optional().nullable(),
+  preferredChannel: z.enum(['WhatsApp', 'SMS', 'Email']).optional().nullable(),
+  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed']).optional().nullable(),
+  legalName: z.string().max(255).optional().nullable(),
+  preferredName: z.string().max(100).optional().nullable(),
+  nationality: z.string().max(100).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  area: z.string().max(100).optional().nullable(),
+  homeAddress: z.string().optional().nullable(),
+  deliveryAddress: z.string().optional().nullable(),
+  alternatePhone: z.string().max(20).optional().nullable(),
 });
 export type CustomerUpdateDto = z.infer<typeof CustomerUpdateSchema>;
 

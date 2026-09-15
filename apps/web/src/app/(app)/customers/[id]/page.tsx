@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { customersApi, configApi } from '@/lib/api';
+import { customersApi, configApi, api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,30 @@ import {
   formatDate,
   formatDateTime,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck, MessageSquare } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
+} from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
+
+// ── Feedback rating helpers (reused from feedback detail page) ────────────────
+const EMOJI_SCORE: Record<string, number> = {
+  'Very Bad': 1, 'Bad': 2, 'Okay': 3, 'Good': 4, 'Excellent': 5,
+};
+
+function computeRatingFromAnswers(answers: { questionType: string; answer: string }[]): number | null {
+  const scores: number[] = [];
+  for (const a of answers) {
+    if (!a.answer) continue;
+    if (a.questionType === 'rating') { const n = parseInt(a.answer, 10); if (!isNaN(n)) scores.push(n); }
+    else if (a.questionType === 'emoji') { const s = EMOJI_SCORE[a.answer]; if (s !== undefined) scores.push(s); }
+    else if (a.questionType === 'boolean') { scores.push(a.answer === 'Yes' ? 5 : 1); }
+  }
+  if (scores.length === 0) return null;
+  return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+}
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,11 +55,36 @@ export default function CustomerDetailPage() {
   const [ledgerPage, setLedgerPage] = useState(1);
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
   const [txItems, setTxItems] = useState<Record<string, { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[]>>({});
+  const [personaOpen, setPersonaOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
     queryFn: () => customersApi.getOne(id),
   });
+
+  // ── Customer feedback ──────────────────────────────────────────────────────
+  type FeedbackRow = {
+    id: number;
+    customerName: string | null;
+    customerPhone: string | null;
+    formName: string;
+    deviceName: string;
+    store: string | null;
+    submittedAt: string;
+  };
+  const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false);
+
+  useEffect(() => {
+    if (!customer?.mobileNumber) return;
+    setFeedbacksLoading(true);
+    api
+      .get('/forms/kiosk/responses', { params: { phone: customer.mobileNumber } })
+      .then((r) => setFeedbacks(r.data))
+      .catch(() => setFeedbacks([]))
+      .finally(() => setFeedbacksLoading(false));
+  }, [customer?.mobileNumber]);
 
   const { data: tiers } = useQuery({
     queryKey: ['tiers'],
@@ -59,6 +105,30 @@ export default function CustomerDetailPage() {
     staleTime: 0,
   });
 
+  const { data: activityData } = useQuery({
+    queryKey: ['customer-activity', id],
+    queryFn: () => customersApi.getActivity(id),
+    enabled: !!customer && personaOpen,
+  });
+
+  const { data: notesData, refetch: refetchNotes } = useQuery({
+    queryKey: ['customer-notes', id],
+    queryFn: () => customersApi.getNotes(id),
+    enabled: !!customer && personaOpen,
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: (body: string) => customersApi.addNote(id, body),
+    onSuccess: () => { setNoteText(''); refetchNotes(); },
+    onError: () => toast.error('Failed to add note'),
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: number) => customersApi.deleteNote(id, noteId),
+    onSuccess: () => refetchNotes(),
+    onError: () => toast.error('Failed to delete note'),
+  });
+
   function refreshAll() {
     qc.invalidateQueries({ queryKey: ['customer', id] });
     refetchHistory();
@@ -75,6 +145,15 @@ export default function CustomerDetailPage() {
     gender: '',
     status: 'active',
     isActive: true,
+    occupation: '',
+    maritalStatus: '',
+    preferredName: '',
+    nationality: '',
+    city: '',
+    area: '',
+    homeAddress: '',
+    deliveryAddress: '',
+    alternatePhone: '',
   });
 
   const updateMutation = useMutation({
@@ -122,6 +201,15 @@ export default function CustomerDetailPage() {
         gender: (customer as any).gender ?? '',
         status: (customer as any).status ?? 'active',
         isActive: (customer as any).isActive !== false,
+        occupation: (customer as any).occupation ?? '',
+        maritalStatus: (customer as any).maritalStatus ?? '',
+        preferredName: (customer as any).preferredName ?? '',
+        nationality: (customer as any).nationality ?? '',
+        city: (customer as any).city ?? '',
+        area: (customer as any).area ?? '',
+        homeAddress: (customer as any).homeAddress ?? '',
+        deliveryAddress: (customer as any).deliveryAddress ?? '',
+        alternatePhone: (customer as any).alternatePhone ?? '',
       });
     }
     setEditOpen(true);
@@ -297,6 +385,16 @@ export default function CustomerDetailPage() {
                   return `+${cc} ${d}`;
                 })()}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
+                {/* Auto persona tags */}
+                {(customer as any).persona?.personaTags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {((customer as any).persona.personaTags as string[]).map((tag: string) => (
+                      <span key={tag} className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Milestone tier progress bar */}
@@ -466,6 +564,7 @@ export default function CustomerDetailPage() {
             <TabsList>
               <TabsTrigger value="history">Transaction History</TabsTrigger>
               <TabsTrigger value="ledger">Points Ledger</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
             </TabsList>
 
             <TabsContent value="history">
@@ -709,9 +808,538 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             </TabsContent>
+
+            {/* Feedback Tab */}
+            <TabsContent value="feedback">
+              {feedbacksLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Star className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : feedbacks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm font-medium">No feedback yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Submissions from the kiosk will appear here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  {feedbacks.map((fb) => (
+                    <button
+                      key={fb.id}
+                      type="button"
+                      onClick={() => router.push(`/feedback/${fb.id}`)}
+                      className="text-left rounded-xl border bg-background hover:shadow-md hover:border-primary/40 transition-all p-4 flex flex-col gap-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {fb.formName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(fb.submittedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{fb.deviceName}{fb.store ? ` · ${fb.store}` : ''}</span>
+                      </div>
+                      <span className="text-xs font-medium text-primary hover:underline mt-auto">
+                        View details →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Customer Persona Section */}
+      <div className="border border-border rounded-xl overflow-hidden">
+        <button
+          onClick={() => setPersonaOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4 text-[#FFD000]" />
+            <span className="font-bold text-[14px]">Customer Persona</span>
+            {customer?.persona && (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/20 text-[#b89b00]">
+                {customer.persona.label}
+              </span>
+            )}
+          </div>
+          {personaOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+
+        {personaOpen && customer?.persona && (
+          <div className="p-5 space-y-5 bg-background">
+
+            {/* ── Full Customer Profile table ── */}
+            {(() => {
+              const p = customer.persona as {
+                age: number | null; generation: string | null; birthdayDaysLeft: number | null;
+                enrolledDaysAgo: number; daysSinceVisit: number | null; redemptionRate: number;
+                preferredStore: string | null; preferredDay: string | null;
+                redeemerType: string;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+              };
+              const stats = (customer as any).stats as {
+                totalSpent: number; totalTransactions: number; avgOrderValue: number;
+                totalPointsEarned: number; totalPointsRedeemed: number; avgVisitsPerMonth: number;
+              };
+              const phone = (() => {
+                let d = (customer.mobileNumber ?? '').replace(/\D/g, '');
+                const cc = customer.countryCode ?? '92';
+                if (d.startsWith(cc)) d = d.slice(cc.length);
+                if (d.startsWith('0')) d = d.slice(1);
+                return `+${cc} ${d}`;
+              })();
+              const profileFields: { label: string; value: string; highlight?: string }[] = [
+                /* ── Identity ── */
+                { label: 'Full Name',              value: customer.name ?? '—' },
+                { label: 'Preferred Name',         value: (customer as any).preferredName ?? '—' },
+                { label: 'Phone',                  value: phone },
+                { label: 'Alternate Phone',        value: (customer as any).alternatePhone ?? '—' },
+                { label: 'Email',                  value: customer.email ?? '—' },
+                /* ── Demographics ── */
+                { label: 'Date of Birth',          value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : '—' },
+                { label: 'Age',                    value: p.age != null ? `${p.age} years (${p.generation ?? ''})` : '—' },
+                { label: 'Gender',                 value: (customer as any).gender ?? '—' },
+                { label: 'Marital Status',         value: (customer as any).maritalStatus ?? '—' },
+                { label: 'Nationality',            value: (customer as any).nationality ?? '—' },
+                { label: 'Occupation',             value: (customer as any).occupation ?? '—' },
+                /* ── Location ── */
+                { label: 'City',                   value: (customer as any).city ?? '—' },
+                { label: 'Area / Neighborhood',    value: (customer as any).area ?? '—' },
+                { label: 'Region',                 value: customer.region ?? '—' },
+                { label: 'Home Address',           value: (customer as any).homeAddress ?? '—' },
+                { label: 'Delivery Address',       value: (customer as any).deliveryAddress ?? '—' },
+                /* ── Loyalty account ── */
+                { label: 'Loyalty Tier',           value: customer.tier?.name ?? '—' },
+                { label: 'Status',                 value: (customer as any).status ?? '—' },
+                { label: 'Store',                  value: customer.store ?? '—' },
+                { label: 'Preferred Store',        value: p.preferredStore ?? '—' },
+                { label: 'Preferred Visit Day',    value: p.preferredDay ? `${p.preferredDay}s` : '—' },
+                { label: 'Enrolled',               value: `${p.enrolledDaysAgo} days ago` },
+                { label: 'Last Visit',             value: customer.lastVisitDate ? formatDate(customer.lastVisitDate) : '—' },
+                { label: 'Days Since Last Visit',  value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
+                /* ── Scoring ── */
+                { label: 'Engagement Score',       value: `${customer.engagementScore ?? 0} / 100` },
+                { label: 'Redeemer Type',          value: p.redeemerType },
+                { label: 'RFM — Recency',          value: `${p.rfmScores.recency} / 5` },
+                { label: 'RFM — Frequency',        value: `${p.rfmScores.frequency} / 5` },
+                { label: 'RFM — Monetary',         value: `${p.rfmScores.monetary} / 5` },
+                /* ── Points & spend ── */
+                { label: 'Available Points',       value: formatNumber(customer.totalPoints) },
+                { label: 'Lifetime Sale',          value: formatCurrency(Number(customer.lifetimeSale)) },
+                { label: 'Total Spend (tx)',       value: formatCurrency(stats.totalSpent) },
+                { label: 'Total Transactions',     value: String(stats.totalTransactions) },
+                { label: 'Avg. Order Value',       value: formatCurrency(stats.avgOrderValue) },
+                { label: 'Avg. Visits / Month',    value: stats.avgVisitsPerMonth.toFixed(1) },
+                { label: 'Points Earned',          value: formatNumber(stats.totalPointsEarned) },
+                { label: 'Points Redeemed',        value: formatNumber(stats.totalPointsRedeemed) },
+                { label: 'Redemption Rate',        value: `${p.redemptionRate}%` },
+                { label: 'Points Expiring Next',   value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
+              ];
+              return (
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Complete Customer Profile</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2">
+                    {profileFields.map(({ label, value, highlight }, i) => (
+                      <div
+                        key={label}
+                        className={`flex items-start justify-between px-4 py-2.5 border-b border-border/60 ${
+                          i % 4 < 2 ? 'bg-background' : 'bg-muted/10'
+                        }`}
+                      >
+                        <span className="text-xs text-muted-foreground font-medium w-1/2 shrink-0">{label}</span>
+                        <span className={`text-xs font-semibold text-right ${highlight ?? ''}`}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Row 1: Persona ICP card + Demographics grid ── */}
+            {(() => {
+              const p = customer.persona as {
+                label: string; summary: string; insights: { issue: string; strategy: string }[]; actionItems: string[];
+                behaviors: string[]; personaTags: string[]; daysSinceVisit: number | null;
+                enrolledDaysAgo: number; redemptionRate: number; preferredStore: string | null;
+                preferredDay: string | null; redeemerType: string;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+                age: number | null; generation: string | null; birthdayDaysLeft: number | null;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+              };
+              const badgeConfig: Record<string, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
+                'Champion':    { icon: <Trophy className="w-5 h-5" />,        color: 'text-yellow-700', bg: 'bg-yellow-50',  border: 'border-yellow-200' },
+                'Loyal':       { icon: <UserCheck className="w-5 h-5" />,     color: 'text-green-700',  bg: 'bg-green-50',   border: 'border-green-200' },
+                'Promising':   { icon: <Sparkles className="w-5 h-5" />,      color: 'text-blue-700',   bg: 'bg-blue-50',    border: 'border-blue-200' },
+                'At Risk':     { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-orange-700', bg: 'bg-orange-50',  border: 'border-orange-200' },
+                'Cannot Lose': { icon: <Flame className="w-5 h-5" />,         color: 'text-purple-700', bg: 'bg-purple-50',  border: 'border-purple-200' },
+                'Lost':        { icon: <UserX className="w-5 h-5" />,         color: 'text-red-700',    bg: 'bg-red-50',     border: 'border-red-200' },
+                'New':         { icon: <Star className="w-5 h-5" />,          color: 'text-sky-700',    bg: 'bg-sky-50',     border: 'border-sky-200' },
+              };
+              const bc = badgeConfig[p.label] ?? badgeConfig['New'];
+              const rfmData = [
+                { axis: 'Recency',   value: p.rfmScores.recency,   fullMark: 5 },
+                { axis: 'Frequency', value: p.rfmScores.frequency, fullMark: 5 },
+                { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
+              ];
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Persona ICP */}
+                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
+                    <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
+                      {bc.icon} {p.label}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {p.daysSinceVisit !== null && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                        <RotateCcw className="w-3 h-3" /> {p.redemptionRate}% redeemed
+                      </span>
+                      {p.preferredStore && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Building2 className="w-3 h-3" /> {p.preferredStore}
+                        </span>
+                      )}
+                      {p.preferredDay && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <Calendar className="w-3 h-3" /> {p.preferredDay}s
+                        </span>
+                      )}
+                      {p.nextExpiryDate && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-700">
+                          <Zap className="w-3 h-3" /> {p.nextExpiryPoints} pts expiring {formatDate(p.nextExpiryDate)}
+                        </span>
+                      )}
+                      {p.birthdayDaysLeft !== null && p.birthdayDaysLeft <= 30 && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-pink-100 border border-pink-200 text-pink-700">
+                          🎂 Birthday in {p.birthdayDaysLeft}d
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Demographics grid */}
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" /> Demographics
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      {[
+                        { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
+                        { label: 'Generation', value: p.generation ?? '—' },
+                        { label: 'Redeemer',   value: p.redeemerType },
+                        { label: 'Occupation', value: (customer as any).occupation ?? '—' },
+                        { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
+                        { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+                          <p className="text-sm font-semibold">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Strategic Insights + Recommended Actions */}
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
+                      </p>
+                      <ul className="space-y-3">
+                        {p.insights.map((insight, i) => (
+                          <li key={i} className="space-y-0.5">
+                            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                              {insight.issue}
+                            </p>
+                            <p className="text-xs font-semibold pl-3 text-foreground leading-snug">
+                              {insight.strategy}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-2 pt-1 border-t border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
+                      </p>
+                      <ul className="space-y-1.5">
+                        {p.actionItems.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Behaviors row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-1">Behaviors:</span>
+              {((customer.persona as { behaviors?: string[] }).behaviors ?? []).map((b: string, i: number) => (
+                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
+                  {b}
+                </span>
+              ))}
+            </div>
+
+            {/* ── Quick-facts strip ── */}
+            {(() => {
+              const p = customer.persona as {
+                daysSinceVisit: number | null; preferredDay: string | null;
+              };
+              const chips = [
+                { label: 'Last Visit',    value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days ago` : '—', color: '' },
+                { label: 'Avg. Basket',   value: formatCurrency((customer as any).stats?.avgOrderValue ?? 0),      color: '' },
+                { label: 'Preferred Day', value: p.preferredDay ? `${p.preferredDay}s` : '—',                      color: '' },
+              ];
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {chips.map(({ label, value, color }) => (
+                    <div key={label} className={`rounded-lg border px-4 py-3 ${color || 'bg-muted/20 border-border'}`}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</p>
+                      <p className="text-sm font-bold mt-0.5">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* ── Loyalty Stats table + RFM score table ── */}
+            {(() => {
+              const stats = (customer as any).stats as {
+                totalSpent: number; totalTransactions: number; avgOrderValue: number;
+                totalPointsEarned: number; totalPointsRedeemed: number;
+              };
+              const p = customer.persona as {
+                redemptionRate: number; enrolledDaysAgo: number; daysSinceVisit: number | null;
+                nextExpiryDate: string | null; nextExpiryPoints: number | null;
+                rfmScores: { recency: number; frequency: number; monetary: number };
+              };
+              const balance = (customer as any).totalPoints ?? 0;
+              const enrolledDate = (customer as any).createdAt
+                ? new Date(Date.now() - p.enrolledDaysAgo * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '—';
+              const loyaltyRows = [
+                { label: 'Total Spend',          value: formatCurrency(stats.totalSpent) },
+                { label: 'Total Transactions',   value: String(stats.totalTransactions) },
+                { label: 'Avg. Order Value',     value: formatCurrency(stats.avgOrderValue) },
+                { label: 'Points Earned',        value: formatNumber(stats.totalPointsEarned) },
+                { label: 'Points Redeemed',      value: formatNumber(stats.totalPointsRedeemed) },
+                { label: 'Current Balance',      value: formatNumber(balance) },
+                { label: 'Redemption Rate',      value: `${p.redemptionRate}%` },
+                { label: 'Enrolled',             value: enrolledDate },
+                { label: 'Days Since Last Visit',value: p.daysSinceVisit != null ? `${p.daysSinceVisit} days` : '—' },
+                { label: 'Points Expiring Next', value: p.nextExpiryDate && p.nextExpiryPoints ? `${formatNumber(p.nextExpiryPoints)} pts · ${formatDate(p.nextExpiryDate)}` : 'None' },
+              ];
+              const rfmRows = [
+                { label: 'Recency',   score: p.rfmScores.recency,   desc: 'How recently they visited' },
+                { label: 'Frequency', score: p.rfmScores.frequency, desc: 'How often they shop' },
+                { label: 'Monetary',  score: p.rfmScores.monetary,  desc: 'How much they spend' },
+              ];
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Loyalty Stats table */}
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Loyalty Stats</p>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {loyaltyRows.map(({ label, value }, i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/10'}>
+                            <td className="px-4 py-2 text-muted-foreground font-medium text-xs w-1/2">{label}</td>
+                            <td className="px-4 py-2 font-semibold text-xs text-right">{value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* RFM score table */}
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">RFM Scores</p>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {rfmRows.map(({ label, score, desc }) => (
+                        <div key={label} className="px-4 py-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div>
+                              <span className="text-sm font-bold">{label}</span>
+                              <span className="text-[11px] text-muted-foreground ml-2">{desc}</span>
+                            </div>
+                            <span className="text-sm font-black tabular-nums">{score}<span className="text-muted-foreground font-normal">/5</span></span>
+                          </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <div
+                                key={n}
+                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#FFD000]' : 'bg-muted'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* RFM interpretation */}
+                    <div className="px-4 py-3 bg-muted/10 border-t border-border">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Score guide</p>
+                      <div className="grid grid-cols-5 gap-1 text-center">
+                        {[
+                          { n: 1, label: 'Cold', color: 'text-red-500' },
+                          { n: 2, label: 'Weak', color: 'text-orange-400' },
+                          { n: 3, label: 'Fair', color: 'text-yellow-500' },
+                          { n: 4, label: 'Good', color: 'text-lime-600' },
+                          { n: 5, label: 'Best', color: 'text-green-600' },
+                        ].map(({ n, label, color }) => (
+                          <div key={n}>
+                            <div className="text-xs font-black">{n}</div>
+                            <div className={`text-[10px] font-semibold ${color}`}>{label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Row 3: 3 charts ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Chart 1: Monthly Spend trend */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Spend Trend (12 mo)</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={activityData?.data ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="spend" name="Spend" fill="#FFD000" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Chart 2: RFM Radar */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">RFM Score</p>
+                {(() => {
+                  const p2 = customer.persona as { rfmScores: { recency: number; frequency: number; monetary: number } };
+                  const rfmData2 = [
+                    { axis: 'Recency',   value: p2.rfmScores.recency   },
+                    { axis: 'Frequency', value: p2.rfmScores.frequency },
+                    { axis: 'Monetary',  value: p2.rfmScores.monetary  },
+                  ];
+                  return (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RadarChart data={rfmData2} margin={{ top: 4, right: 20, left: 20, bottom: 4 }}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
+                        <Radar name="RFM" dataKey="value" stroke="#FFD000" fill="#FFD000" fillOpacity={0.35} dot />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
+              </div>
+
+              {/* Chart 3: Weekday Visit Breakdown */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Weekday Visit Breakdown</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={activityData?.dayOfWeek ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload as { day: string; visits: number; dates: string[] };
+                        return (
+                          <div className="rounded-lg border border-border bg-background shadow-md px-3 py-2.5 space-y-1.5 max-w-[200px]">
+                            <p className="text-xs font-bold">{d.day} — {d.visits} visit{d.visits !== 1 ? 's' : ''}</p>
+                            {d.dates?.length > 0 && (
+                              <div className="space-y-0.5">
+                                {d.dates.map((date) => (
+                                  <p key={date} className="text-[11px] text-muted-foreground">{formatDate(date)}</p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="visits" name="Visits" fill="#a78bfa" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* ── Notes ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <StickyNote className="w-3.5 h-3.5" /> Staff Notes
+              </p>
+              <div className="space-y-2">
+                <textarea
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#FFD000]/50"
+                  rows={3}
+                  placeholder="Add a note about this customer..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  className="w-full"
+                  disabled={!noteText.trim() || addNoteMutation.isPending}
+                  onClick={() => noteText.trim() && addNoteMutation.mutate(noteText.trim())}
+                >
+                  Add Note
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {(notesData?.data ?? []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No notes yet.</p>
+                ) : (
+                  (notesData?.data ?? []).map((note: { id: number; body: string; addedBy: string; createdAt: string }) => (
+                    <div key={note.id} className="border border-border rounded-lg px-3 py-2.5 text-sm space-y-1 bg-muted/20">
+                      <p className="leading-snug">{note.body}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">{note.addedBy} · {formatDate(note.createdAt)}</span>
+                        <button
+                          onClick={() => deleteNoteMutation.mutate(note.id)}
+                          className="p-1 rounded hover:bg-red-100 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Edit Dialog */}
       <Dialog
@@ -786,6 +1414,86 @@ export default function CustomerDetailPage() {
               <option value="inactive">Inactive</option>
               <option value="blocked">Blocked</option>
             </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Occupation (optional)</Label>
+            <Input
+              placeholder="e.g. Doctor, Engineer..."
+              value={editForm.occupation}
+              onChange={(e) => setEditForm((f) => ({ ...f, occupation: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Marital Status</Label>
+            <select
+              value={editForm.maritalStatus}
+              onChange={(e) => setEditForm((f) => ({ ...f, maritalStatus: e.target.value }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Not specified</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Widowed">Widowed</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Preferred Name / Nickname</Label>
+            <Input
+              placeholder="e.g. Ali, Maha..."
+              value={editForm.preferredName}
+              onChange={(e) => setEditForm((f) => ({ ...f, preferredName: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Nationality</Label>
+            <Input
+              placeholder="e.g. Pakistani, British..."
+              value={editForm.nationality}
+              onChange={(e) => setEditForm((f) => ({ ...f, nationality: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Alternate Phone</Label>
+            <Input
+              placeholder="e.g. 03001234567"
+              value={editForm.alternatePhone}
+              onChange={(e) => setEditForm((f) => ({ ...f, alternatePhone: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>City</Label>
+            <Input
+              placeholder="e.g. Lahore"
+              value={editForm.city}
+              onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Area / Neighborhood</Label>
+            <Input
+              placeholder="e.g. DHA Phase 5"
+              value={editForm.area}
+              onChange={(e) => setEditForm((f) => ({ ...f, area: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Home Address</Label>
+            <textarea
+              className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              placeholder="Full home address..."
+              value={editForm.homeAddress}
+              onChange={(e) => setEditForm((f) => ({ ...f, homeAddress: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Delivery Address (if different)</Label>
+            <textarea
+              className="flex min-h-16 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              placeholder="Delivery address..."
+              value={editForm.deliveryAddress}
+              onChange={(e) => setEditForm((f) => ({ ...f, deliveryAddress: e.target.value }))}
+            />
           </div>
           <div className="flex gap-2 pt-2">
             <Button

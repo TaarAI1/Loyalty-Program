@@ -49,6 +49,12 @@ export const customersApi = {
     api.post(`/customers/${id}/award-points`, data).then((r) => r.data),
   getTransactionItems: (customerId: string, txId: string) =>
     api.get(`/customers/${customerId}/transactions/${txId}/items`).then((r) => r.data),
+  getActivity: (id: string) => api.get(`/customers/${id}/activity`).then((r) => r.data),
+  getNotes: (id: string) => api.get(`/customers/${id}/notes`).then((r) => r.data),
+  addNote: (id: string, body: string, addedBy?: string) =>
+    api.post(`/customers/${id}/notes`, { body, addedBy }).then((r) => r.data),
+  deleteNote: (customerId: string, noteId: number) =>
+    api.delete(`/customers/${customerId}/notes/${noteId}`).then((r) => r.data),
 };
 
 // Configuration
@@ -72,6 +78,20 @@ export const configApi = {
   verifySmtp: () => api.post('/configuration/verify-smtp').then((r) => r.data),
   triggerForensicAlert: () => api.post('/configuration/trigger-forensic-alert').then((r) => r.data),
   getEmailLogs: () => api.get('/configuration/email-logs').then((r) => r.data),
+  getRetailProStores: () =>
+    api.get('/configuration/retailpro/stores').then((r) => r.data) as Promise<
+      { sid: string; store_name: string; store_number: string; store_code: string }[]
+    >,
+  getOracleConfig: () =>
+    api.get('/configuration/oracle').then((r) => r.data) as Promise<{
+      host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; hasPassword: boolean;
+    }>,
+  saveOracleConfig: (data: {
+    host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
+  }) => api.post('/configuration/oracle', data).then((r) => r.data),
+  testOracleConnection: (data: {
+    host: string; port: number; dbUser: string; password?: string; service: string;
+  }) => api.post('/configuration/oracle/test', data).then((r) => r.data) as Promise<{ success: boolean; message: string }>,
 };
 
 // Reports
@@ -97,6 +117,12 @@ export const notificationsApi = {
   resend: (id: string | number) => api.post(`/notifications/${id}/resend`).then((r) => r.data),
 };
 
+// Segments
+export const segmentsApi = {
+  getCustomers: (params: Record<string, unknown>) =>
+    api.get('/segments/customers', { params }).then((r) => r.data),
+};
+
 // Users
 export const usersApi = {
   getAll: () => api.get('/users').then((r) => r.data),
@@ -105,4 +131,36 @@ export const usersApi = {
   update: (id: number, data: { password?: string; role?: string; isActive?: boolean }) =>
     api.patch(`/users/${id}`, data).then((r) => r.data),
   remove: (id: number) => api.delete(`/users/${id}`).then((r) => r.data),
+};
+
+// Forms
+export const formsApi = {
+  // Questions
+  getQuestions: () => api.get('/forms/questions').then((r) => r.data),
+  createQuestion: (data: { text: string; questionType: string; options?: string[]; status?: string }) =>
+    api.post('/forms/questions', data).then((r) => r.data),
+  updateQuestion: (id: number, data: { text?: string; questionType?: string; options?: string[]; status?: string }) =>
+    api.put(`/forms/questions/${id}`, data).then((r) => r.data),
+  deleteQuestion: (id: number) => api.delete(`/forms/questions/${id}`).then((r) => r.data),
+  // Forms
+  getForms: () => api.get('/forms').then((r) => r.data),
+  createForm: (data: { name: string; questionIds: number[]; status?: string }) =>
+    api.post('/forms', data).then((r) => r.data),
+  updateForm: (id: number, data: { name?: string; status?: string; questionIds?: number[] }) =>
+    api.put(`/forms/${id}`, data).then((r) => r.data),
+  deleteForm: (id: number) => api.delete(`/forms/${id}`).then((r) => r.data),
+  // Devices
+  getDevices: (params?: { store?: string; deviceType?: string }) =>
+    api.get('/forms/devices', { params }).then((r) => r.data),
+  createDevice: (data: { name: string; deviceType: string; store?: string }) =>
+    api.post('/forms/devices', data).then((r) => r.data),
+  updateDevice: (id: number, data: { name?: string; deviceType?: string; store?: string; isActive?: boolean }) =>
+    api.put(`/forms/devices/${id}`, data).then((r) => r.data),
+  deleteDevice: (id: number) => api.delete(`/forms/devices/${id}`).then((r) => r.data),
+  getStores: () => api.get('/configuration/stores').then((r) => r.data as { store_no: string; store_name: string }[]),
+  // Assignments
+  getAssignments: () => api.get('/forms/assignments').then((r) => r.data),
+  assignForm: (data: { formId: number; deviceIds: number[] }) =>
+    api.post('/forms/assignments', data).then((r) => r.data),
+  deleteAssignment: (id: number) => api.delete(`/forms/assignments/${id}`).then((r) => r.data),
 };

@@ -36,5 +36,11 @@ Thumbs.db
 .idea
 *.swp
 
+# Android kiosk
+android-kiosk/.gradle/
+android-kiosk/**/build/
+android-kiosk/local.properties
+android-kiosk/.cxx/
+
 # Prisma
 prisma/migrations/dev.db

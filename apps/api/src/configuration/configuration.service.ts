@@ -5,6 +5,7 @@ import FormData from 'form-data';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from './encryption.service';
 import { QueueService } from '../queue/queue.service';
+import { OracleService } from '../oracle/oracle.service';
 import { formatPhoneNumber } from '@loyalty/shared';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class ConfigurationService {
     private readonly prisma: PrismaService,
     private readonly encryption: EncryptionService,
     private readonly queue: QueueService,
+    private readonly oracle: OracleService,
   ) {}
 
   // ── Loyalty Tiers ──────────────────────────────────────────────────────────
@@ -793,6 +795,152 @@ export class ConfigurationService {
     </td></tr>
   </table>
 </body></html>`;
+  }
+
+  // ── Oracle — Config ───────────────────────────────────────────────────────────
+
+  async getOracleConfig(): Promise<{
+    host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; hasPassword: boolean;
+  }> {
+    const row = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    if (row) {
+      return {
+        host:          row.host,
+        port:          row.port,
+        dbUser:        row.dbUser,
+        service:       row.service,
+        subsidiarySid: row.subsidiarySid ?? null,
+        hasPassword:   !!row.password,
+      };
+    }
+    // Fall back to env vars as defaults
+    return {
+      host:          process.env['ORACLE_HOST']     ?? '',
+      port:          parseInt(process.env['ORACLE_PORT'] ?? '1521', 10),
+      dbUser:        process.env['ORACLE_USER']     ?? '',
+      service:       process.env['ORACLE_SERVICE']  ?? '',
+      subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
+      hasPassword:   false,
+    };
+  }
+
+  async saveOracleConfig(data: {
+    host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
+  }): Promise<{ success: boolean }> {
+    const existing = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    const password = data.password
+      ? this.encryption.encrypt(data.password)
+      : (existing?.password ?? '');
+
+    await this.prisma.oracleConfig.upsert({
+      where:  { id: 1 },
+      update: { host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
+      create: { id: 1, host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
+    });
+
+    // Reinitialize Oracle pool with new credentials
+    const plainPassword = data.password ?? (existing ? this.encryption.decrypt(existing.password) : '');
+    if (data.host && data.dbUser && plainPassword && data.service) {
+      await this.oracle.reinitialize(data.host, data.port, data.dbUser, plainPassword, data.service);
+    }
+
+    this.logger.log({ host: data.host, service: data.service }, 'Oracle config saved and pool reinitialized');
+    return { success: true };
+  }
+
+  async testOracleConnection(data: {
+    host: string; port: number; dbUser: string; password?: string; service: string;
+  }): Promise<{ success: boolean; message: string }> {
+    let pwd = data.password;
+    if (!pwd) {
+      const saved = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+      if (!saved?.password) {
+        return { success: false, message: 'No password provided and none saved. Enter a password to test.' };
+      }
+      pwd = this.encryption.decrypt(saved.password);
+    }
+    try {
+      const conn = await (await import('oracledb')).getConnection({
+        user:          data.dbUser,
+        password:      pwd,
+        connectString: `${data.host}:${data.port}/${data.service}`,
+      });
+      await conn.close();
+      return { success: true, message: 'Connection successful — Oracle database is reachable.' };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, message };
+    }
+  }
+
+  // ── Oracle — Stores ──────────────────────────────────────────────────────────
+
+  async getStoresFromOracle(): Promise<{ store_no: string; store_name: string }[]> {
+    // Prefer subsidiary SID from DB config, fall back to env var
+    const dbConfig = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    const subsidiarySid = dbConfig?.subsidiarySid ?? process.env['RETAILPRO_SUBSIDIARY_SID'];
+
+    if (!subsidiarySid) {
+      this.logger.warn('Subsidiary SID not configured — cannot fetch stores');
+      return [];
+    }
+    if (!this.oracle.isConnected) {
+      this.logger.warn('Oracle pool not available — cannot fetch stores');
+      return [];
+    }
+    try {
+      const rows = await this.oracle.getStores(subsidiarySid);
+      this.logger.log({ count: rows.length }, 'Stores loaded from Oracle');
+      return rows;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error({ message }, 'Failed to fetch stores from Oracle');
+      return [];
+    }
+  }
+
+  getOracleStatus(): { connected: boolean; lastError: string | null; subsidiarySid: string | null } {
+    const status = this.oracle.getStatus();
+    return {
+      ...status,
+      subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
+    };
+  }
+
+  // ── RetailPro Prism — Stores ────────────────────────────────────────────────
+
+  async getRetailProStores(): Promise<{ sid: string; store_name: string; store_number: string; store_code: string }[]> {
+    const baseUrl = process.env['RETAILPRO_BASE_URL'];
+    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
+
+    if (!baseUrl) {
+      this.logger.warn('RETAILPRO_BASE_URL not configured — returning empty store list');
+      return [];
+    }
+
+    const url = `${baseUrl.replace(/\/$/, '')}/v1/rest/store`;
+    const params: Record<string, string> = {
+      cols: 'sid,store_name,store_number,store_code,active,subsidiary_sid,active_price_level_sid',
+      filter: `(active,eq,true)${subsidiarySid ? `AND(subsidiary_sid,eq,${subsidiarySid})` : ''}`,
+      sort: 'store_code,asc',
+    };
+
+    try {
+      const response = await axios.get(url, { params, timeout: 8000 });
+      const data = response.data;
+      // Prism wraps results in { Records: [...] } or returns an array directly
+      const records: Record<string, string>[] = Array.isArray(data) ? data : (data?.Records ?? data?.records ?? []);
+      return records.map((r) => ({
+        sid:          r['sid']          ?? '',
+        store_name:   r['store_name']   ?? '',
+        store_number: r['store_number'] ?? '',
+        store_code:   r['store_code']   ?? '',
+      }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error({ message }, 'Failed to fetch stores from RetailPro Prism');
+      return [];
+    }
   }
 
   // ── Audit Log ──────────────────────────────────────────────────────────────

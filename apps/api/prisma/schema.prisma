@@ -43,7 +43,18 @@ model Customer {
   lastVisitDate   DateTime? @map("last_visit_date")
   segment         String?   @default("new") @db.VarChar(30)
   engagementScore Int       @default(0) @map("engagement_score")
-  isActive        Boolean   @default(true) @map("is_active")
+  occupation       String?   @db.VarChar(100)
+  preferredChannel String?   @map("preferred_channel") @db.VarChar(20)
+  maritalStatus    String?   @map("marital_status") @db.VarChar(20)
+  legalName        String?   @map("legal_name") @db.VarChar(255)
+  preferredName    String?   @map("preferred_name") @db.VarChar(100)
+  nationality      String?   @db.VarChar(100)
+  city             String?   @db.VarChar(100)
+  area             String?   @db.VarChar(100)
+  homeAddress      String?   @map("home_address")
+  deliveryAddress  String?   @map("delivery_address")
+  alternatePhone   String?   @map("alternate_phone") @db.VarChar(20)
+  isActive         Boolean   @default(true) @map("is_active")
   status          String    @default("active") @map("status") @db.VarChar(20)
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -53,10 +64,24 @@ model Customer {
   pointsLedger      PointsLedger[]
   pointsExpiry      PointsExpiry[]
   notificationLogs  NotificationLog[]
+  customerNotes     CustomerNote[]
 
   @@unique([mobileNumber, countryCode])
   @@index([tierId])
   @@map("customers")
+}
+
+model CustomerNote {
+  id         Int      @id @default(autoincrement())
+  customerId String   @map("customer_id") @db.Uuid
+  body       String
+  addedBy    String   @default("admin") @map("added_by") @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@map("customer_notes")
 }
 
 model Transaction {
@@ -204,6 +229,19 @@ model EmailConfig {
   @@map("email_config")
 }
 
+model OracleConfig {
+  id            Int      @id @default(1)
+  host          String   @default("")
+  port          Int      @default(1521)
+  dbUser        String   @default("") @map("db_user")
+  password      String   @default("")
+  service       String   @default("")
+  subsidiarySid String?  @map("subsidiary_sid")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("oracle_config")
+}
+
 model NotificationLog {
   id            BigInt    @id @default(autoincrement())
   customerId    String?   @map("customer_id") @db.Uuid
@@ -296,4 +334,106 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@map("audit_log")
+}
+
+model SurveyQuestion {
+  id           Int      @id @default(autoincrement())
+  text         String
+  questionType String   @default("text") @map("question_type") @db.VarChar(20)
+  options      Json?
+  status       String   @default("active") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  formQuestions SurveyFormQuestion[]
+
+  @@map("survey_questions")
+}
+
+model SurveyForm {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  status    String   @default("active") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  formQuestions SurveyFormQuestion[]
+  assignments   FormAssignment[]
+  formResponses FormResponse[]
+
+  @@map("survey_forms")
+}
+
+model SurveyFormQuestion {
+  id         Int    @id @default(autoincrement())
+  formId     Int    @map("form_id")
+  questionId Int    @map("question_id")
+  sortOrder  Int    @default(0) @map("sort_order")
+
+  form     SurveyForm     @relation(fields: [formId],     references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([questionId])
+  @@map("survey_form_questions")
+}
+
+model Device {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  deviceType  String   @default("workstation") @map("device_type") @db.VarChar(20)
+  store       String?  @db.VarChar(100)
+  isActive    Boolean  @default(true) @map("is_active")
+  pairingCode String   @unique @map("pairing_code") @db.VarChar(10)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  assignments     FormAssignment[]
+  formResponses   FormResponse[]
+  pendingSurveys  PendingSurvey[]
+
+  @@map("devices")
+}
+
+model PendingSurvey {
+  id            Int      @id @default(autoincrement())
+  deviceId      Int      @map("device_id")
+  customerName  String?  @map("customer_name") @db.VarChar(255)
+  customerPhone String?  @map("customer_phone") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@map("pending_surveys")
+}
+
+model FormAssignment {
+  id         Int      @id @default(autoincrement())
+  formId     Int      @map("form_id")
+  deviceId   Int      @map("device_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  form   SurveyForm @relation(fields: [formId],   references: [id], onDelete: Cascade)
+  device Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([deviceId])
+  @@map("form_assignments")
+}
+
+model FormResponse {
+  id             Int      @id @default(autoincrement())
+  deviceId       Int      @map("device_id")
+  formId         Int      @map("form_id")
+  customerName   String?  @map("customer_name") @db.VarChar(255)
+  customerPhone  String?  @map("customer_phone") @db.VarChar(20)
+  answers        Json
+  submittedAt    DateTime @default(now()) @map("submitted_at")
+
+  device  Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  form    SurveyForm @relation(fields: [formId],   references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([formId])
+  @@map("form_responses")
 }
