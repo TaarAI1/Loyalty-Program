@@ -88,7 +88,6 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         connectionToast = null,
                     )
                 }
-                startPolling()
             } catch (_: Exception) {
                 _state.update {
                     it.copy(
@@ -99,6 +98,8 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         ),
                     )
                 }
+            } finally {
+                startPolling()
             }
         }
     }

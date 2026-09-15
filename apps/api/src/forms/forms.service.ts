@@ -206,6 +206,7 @@ export class FormsService {
         id: form.id,
         name: form.name,
         questions: form.formQuestions
+          .filter((fq) => fq.question.status === 'active')
           .slice()
           .sort((a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99))
           .map((fq) => ({
