@@ -12,6 +12,7 @@ import {
   Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
   AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy, QrCode,
+  GripVertical,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -88,6 +89,16 @@ const TYPE_META: Record<string, { icon: React.ReactNode; bg: string; text: strin
   rating:   { icon: <Star        className="h-4 w-4" />, bg: 'bg-amber-100',  text: 'text-amber-600' },
   boolean:  { icon: <ToggleLeft  className="h-4 w-4" />, bg: 'bg-green-100',  text: 'text-green-600' },
   select:   { icon: <List        className="h-4 w-4" />, bg: 'bg-purple-100', text: 'text-purple-600' },
+};
+
+// Default sort order when auto-inserting a newly-checked question
+// (Star Rating first → Emoji → others). Drag-and-drop overrides this.
+const TYPE_PRIORITY: Record<string, number> = {
+  rating:   0,  // Star Rating
+  textarea: 1,  // Emoji Feedback
+  boolean:  2,
+  select:   3,
+  text:     4,
 };
 
 const DEVICE_ICON: Record<string, React.ReactNode> = {
@@ -495,6 +506,7 @@ function FormBuildTab() {
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
     open: false, message: '', onConfirm: () => {},
   });
+  const dragIdx = useRef<number | null>(null);
 
   function askConfirm(message: string, action: () => void) {
     setConfirmState({ open: true, message, onConfirm: action });
@@ -532,18 +544,18 @@ function FormBuildTab() {
   }
 
   function toggleQuestion(id: number) {
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  }
-
-  function moveUp(idx: number) {
-    if (idx === 0) return;
-    setSelectedIds(prev => { const a = [...prev]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a; });
-  }
-
-  function moveDown(idx: number) {
-    setSelectedIds(prev => {
-      if (idx >= prev.length - 1) return prev;
-      const a = [...prev]; [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a;
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      // Auto-insert at the correct default-priority position
+      const q = questions.find((x) => x.id === id);
+      const priority = TYPE_PRIORITY[q?.questionType ?? 'text'] ?? 99;
+      const insertAt = prev.findIndex((existingId) => {
+        const eq = questions.find((x) => x.id === existingId);
+        return (TYPE_PRIORITY[eq?.questionType ?? 'text'] ?? 99) > priority;
+      });
+      const arr = [...prev];
+      insertAt === -1 ? arr.push(id) : arr.splice(insertAt, 0, id);
+      return arr;
     });
   }
 
@@ -678,24 +690,32 @@ function FormBuildTab() {
                 {selectedIds.map((id, idx) => {
                   const q = questions.find((x) => x.id === id);
                   if (!q) return null;
+                  const meta = TYPE_META[q.questionType] ?? TYPE_META['text'];
                   return (
-                    <div key={id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                    <div
+                      key={id}
+                      draggable
+                      onDragStart={() => { dragIdx.current = idx; }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        const from = dragIdx.current;
+                        if (from === null || from === idx) return;
+                        setSelectedIds((prev) => {
+                          const arr = [...prev];
+                          const [item] = arr.splice(from, 1);
+                          arr.splice(idx, 0, item);
+                          return arr;
+                        });
+                        dragIdx.current = null;
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 text-sm cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-colors select-none"
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                       <span className="w-5 text-center text-xs text-muted-foreground font-medium">{idx + 1}</span>
+                      <div className={`h-5 w-5 rounded flex items-center justify-center shrink-0 ${meta.bg} ${meta.text}`}>
+                        {meta.icon}
+                      </div>
                       <span className="flex-1 truncate">{q.text}</span>
-                      <button
-                        type="button"
-                        onClick={() => moveUp(idx)}
-                        disabled={idx === 0}
-                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
-                        title="Move up"
-                      >↑</button>
-                      <button
-                        type="button"
-                        onClick={() => moveDown(idx)}
-                        disabled={idx === selectedIds.length - 1}
-                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
-                        title="Move down"
-                      >↓</button>
                     </div>
                   );
                 })}
