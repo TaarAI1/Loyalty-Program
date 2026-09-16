@@ -1,7 +1,21 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import * as zlib from 'zlib';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { formatPhoneNumber, getExpiryDate } from '@loyalty/shared';
+
+/** Decode a Retail Pro qryenc value (base64 + zlib) and extract the SID. */
+function decodeQryenc(qryenc: string): string | null {
+  try {
+    const buf = Buffer.from(qryenc, 'base64');
+    const decoded = zlib.inflateSync(buf).toString('utf8');
+    // Typical formats: (sid=791257591000210697)  or  (cust_sid='123')
+    const match = decoded.match(/sid[=\s']+(\d+)/i);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
 
 @Injectable()
 export class CustomersService {
@@ -14,6 +28,7 @@ export class CustomersService {
 
   async findAll(params: {
     search?: string;
+    qryenc?: string;
     tierId?: number;
     region?: string;
     store?: string;
@@ -21,7 +36,22 @@ export class CustomersService {
     page: number;
     pageSize: number;
   }) {
-    const { search, tierId, region, store, isActive, page, pageSize } = params;
+    const { search, qryenc, tierId, region, store, isActive, page, pageSize } = params;
+
+    // If qryenc is provided, decode the Retail Pro zlib+base64 query and find by retailproId
+    if (qryenc) {
+      const sid = decodeQryenc(qryenc);
+      if (sid) {
+        const customer = await this.prisma.customer.findFirst({
+          where: { retailproId: sid },
+          include: { tier: true },
+        });
+        return {
+          data: customer ? [customer] : [],
+          meta: { total: customer ? 1 : 0, page: 1, pageSize: 1, totalPages: customer ? 1 : 0 },
+        };
+      }
+    }
     const skip = (page - 1) * pageSize;
 
     const where = {

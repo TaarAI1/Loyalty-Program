@@ -23,6 +23,7 @@ export class CustomersController {
   @Get()
   findAll(
     @Query('search') search?: string,
+    @Query('qryenc') qryenc?: string,
     @Query('tierId', new DefaultValuePipe(0), ParseIntPipe) tierId?: number,
     @Query('region') region?: string,
     @Query('store') store?: string,
@@ -31,6 +32,7 @@ export class CustomersController {
   ) {
     return this.customersService.findAll({
       search,
+      qryenc,
       tierId: tierId || undefined,
       region,
       store,
