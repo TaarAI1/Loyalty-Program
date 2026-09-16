@@ -59,14 +59,9 @@ fun KioskApp(viewModel: KioskViewModel) {
     val activity = context as? Activity
     val hasVideo = remember { hasRawVideo(context) }
 
-    // ── Lock orientation per screen ───────────────────────────────────────────
-    LaunchedEffect(state.screen) {
-        activity?.requestedOrientation = when (state.screen) {
-            Screen.SPLASH,
-            Screen.SETUP,
-            Screen.SETTINGS_PANEL -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        }
+    // ── Lock orientation to landscape for all screens ─────────────────────────
+    LaunchedEffect(Unit) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     }
 
     val showVideo = hasVideo && state.screen in setOf(
