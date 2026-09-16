@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, Loader2, Search, Filter, Download } from 'lucide-react';
+import { MessageSquare, Eye, Loader2, Search, Filter, Download, Phone, Tablet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -22,17 +22,43 @@ interface FeedbackRow {
   submittedAt: string;
 }
 
+/** Coloured avatar circle from a name string */
+function Avatar({ name }: { name: string | null }) {
+  const initials = name
+    ? name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
+  const colours = [
+    'bg-blue-100 text-blue-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-violet-100 text-violet-700',
+    'bg-amber-100 text-amber-700',
+    'bg-rose-100 text-rose-700',
+    'bg-cyan-100 text-cyan-700',
+  ];
+  const idx = name ? name.charCodeAt(0) % colours.length : 0;
+  return (
+    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${colours[idx]}`}>
+      {initials}
+    </span>
+  );
+}
+
+const emptyFilters = { customerSearch: '', dateFrom: '', dateTo: '', deviceFilter: '', storeFilter: '' };
+
 export default function FeedbackPage() {
   const [rows, setRows]       = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
-  // ── Filter state ────────────────────────────────────────────────────────────
+  // ── Live filter state (what the inputs show) ────────────────────────────────
   const [customerSearch, setCustomer] = useState('');
   const [dateFrom, setDateFrom]       = useState('');
   const [dateTo, setDateTo]           = useState('');
   const [deviceFilter, setDevice]     = useState('');
   const [storeFilter, setStore]       = useState('');
+
+  // ── Applied filter state (used for actual filtering, updated on Apply click) ─
+  const [applied, setApplied] = useState(emptyFilters);
 
   const fetchRows = useCallback(() => {
     setLoading(true);
@@ -50,18 +76,22 @@ export default function FeedbackPage() {
   const deviceOptions = Array.from(new Set(rows.map((r) => r.deviceName))).filter(Boolean);
   const storeOptions  = Array.from(new Set(rows.map((r) => r.store ?? ''))).filter(Boolean);
 
-  // ── Client-side filtering ───────────────────────────────────────────────────
+  // ── Filtering uses applied state ────────────────────────────────────────────
   const filteredRows = rows.filter((r) => {
-    if (dateFrom && new Date(r.submittedAt) < new Date(dateFrom)) return false;
-    if (dateTo   && new Date(r.submittedAt) > new Date(dateTo + 'T23:59:59')) return false;
-    if (customerSearch) {
-      const q = customerSearch.toLowerCase();
+    if (applied.dateFrom && new Date(r.submittedAt) < new Date(applied.dateFrom)) return false;
+    if (applied.dateTo   && new Date(r.submittedAt) > new Date(applied.dateTo + 'T23:59:59')) return false;
+    if (applied.customerSearch) {
+      const q = applied.customerSearch.toLowerCase();
       if (!(r.customerName?.toLowerCase().includes(q) || r.customerPhone?.includes(q))) return false;
     }
-    if (deviceFilter && r.deviceName !== deviceFilter) return false;
-    if (storeFilter  && r.store      !== storeFilter)  return false;
+    if (applied.deviceFilter && r.deviceName !== applied.deviceFilter) return false;
+    if (applied.storeFilter  && r.store      !== applied.storeFilter)  return false;
     return true;
   });
+
+  function applyFilters() {
+    setApplied({ customerSearch, dateFrom, dateTo, deviceFilter, storeFilter });
+  }
 
   function resetFilters() {
     setCustomer('');
@@ -69,6 +99,7 @@ export default function FeedbackPage() {
     setDateTo('');
     setDevice('');
     setStore('');
+    setApplied(emptyFilters);
   }
 
   // ── Export CSV ──────────────────────────────────────────────────────────────
@@ -174,6 +205,9 @@ export default function FeedbackPage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
+                <Button className="flex-1" size="sm" onClick={applyFilters}>
+                  Apply
+                </Button>
                 <Button className="flex-1" size="sm" onClick={resetFilters} variant="outline">
                   Reset
                 </Button>
@@ -238,28 +272,62 @@ export default function FeedbackPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredRows.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell className="font-medium">
-                          {row.customerName ?? <span className="text-muted-foreground">—</span>}
-                        </TableCell>
+                      <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
+                        {/* Customer with avatar */}
                         <TableCell>
-                          {row.customerPhone ?? <span className="text-muted-foreground">—</span>}
+                          <div className="flex items-center gap-2.5">
+                            <Avatar name={row.customerName} />
+                            <span className="font-medium">
+                              {row.customerName ?? <span className="text-muted-foreground italic text-xs">Unknown</span>}
+                            </span>
+                          </div>
                         </TableCell>
+                        {/* Phone with icon */}
                         <TableCell>
-                          <Badge variant="outline">{row.formName}</Badge>
+                          {row.customerPhone
+                            ? <span className="inline-flex items-center gap-1.5 text-sm">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                {row.customerPhone}
+                              </span>
+                            : <span className="text-muted-foreground">—</span>}
                         </TableCell>
-                        <TableCell>{row.deviceName}</TableCell>
+                        {/* Form badge — yellow tinted */}
                         <TableCell>
-                          {row.store ?? <span className="text-muted-foreground">—</span>}
+                          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                            {row.formName}
+                          </span>
                         </TableCell>
-                        <TableCell>{new Date(row.submittedAt).toLocaleString()}</TableCell>
+                        {/* Device with icon */}
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Tablet className="h-3.5 w-3.5 flex-shrink-0" />
+                            {row.deviceName}
+                          </span>
+                        </TableCell>
+                        {/* Store */}
+                        <TableCell>
+                          {row.store
+                            ? <span className="text-sm">{row.store}</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        {/* Submitted — date + time stacked */}
+                        <TableCell>
+                          <div className="flex flex-col leading-tight">
+                            <span className="text-sm font-medium">
+                              {new Date(row.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(row.submittedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </TableCell>
+                        {/* View button */}
                         <TableCell className="text-right">
-                          <Link
-                            href={`/feedback/${row.id}`}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-[#666] hover:bg-[#f5f5f5] hover:text-[#111111] transition-colors"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View
+                          <Link href={`/feedback/${row.id}`}>
+                            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7 px-2.5">
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </Button>
                           </Link>
                         </TableCell>
                       </TableRow>
