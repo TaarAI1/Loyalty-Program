@@ -279,15 +279,18 @@ export class FormsService {
         device: { select: { id: true, name: true, store: true } },
       },
     });
-    return rows.map((r) => ({
-      id: r.id,
-      customerName: r.customerName,
-      customerPhone: r.customerPhone,
-      formName: r.form?.name ?? 'Unknown',
-      deviceName: r.device?.name ?? 'Unknown',
-      store: r.device?.store ?? null,
-      submittedAt: r.submittedAt,
-    }));
+    return rows
+      // Skip any rows where device or form no longer exists (orphaned FK — belt-and-suspenders)
+      .filter((r) => r.device != null && r.form != null)
+      .map((r) => ({
+        id: r.id,
+        customerName: r.customerName,
+        customerPhone: r.customerPhone,
+        formName: r.form?.name ?? 'Unknown',
+        deviceName: r.device?.name ?? 'Unknown',
+        store: r.device?.store ?? null,
+        submittedAt: r.submittedAt,
+      }));
   }
 
   // ── Kiosk pending survey (push from POS, poll from tablet) ──────────────────
