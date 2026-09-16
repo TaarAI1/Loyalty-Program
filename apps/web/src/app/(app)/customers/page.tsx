@@ -31,7 +31,7 @@ export default function CustomersPage() {
     queryFn: configApi.getTiers,
   });
 
-  type CustomerRow = { id: string; name: string; mobileNumber: string; countryCode: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; };
+  type CustomerRow = { id: string; name: string; mobileNumber: string; countryCode: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; status: string; isActive: boolean; };
   type CustomerListResult = { data: CustomerRow[]; meta: { total: number; page: number; pageSize: number; totalPages: number } };
 
   const { data, isLoading } = useQuery<CustomerListResult>({
@@ -133,13 +133,14 @@ export default function CustomersPage() {
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">Lifetime Sale</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Store</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Visit</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading
                   ? [...Array(8)].map((_, i) => (
                       <tr key={i} className="border-b border-border/50">
-                        {[...Array(7)].map((__, j) => (
+                        {[...Array(8)].map((__, j) => (
                           <td key={j} className="py-3 px-4">
                             <Skeleton className="h-4 w-full" />
                           </td>
@@ -174,6 +175,15 @@ export default function CustomersPage() {
                           <td className="py-3 px-4 text-muted-foreground">{c.store ?? '—'}</td>
                           <td className="py-3 px-4 text-muted-foreground">
                             {c.lastVisitDate ? formatDate(c.lastVisitDate) : '—'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              c.status === 'active'  ? 'bg-green-100 text-green-700' :
+                              c.status === 'blocked' ? 'bg-orange-100 text-orange-700' :
+                                                       'bg-red-100 text-red-700'
+                            }`}>
+                              {c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : '—'}
+                            </span>
                           </td>
                         </tr>
                       ),
