@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Screen { SPLASH, SETUP, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
+enum class Screen { SPLASH, SETUP, SCAN_QR, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
 
 data class KioskUiState(
     val screen: Screen = Screen.SETUP,
@@ -72,7 +72,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(screen = Screen.HOME, isAutoConnecting = true) }
             autoConnect()
         } else {
-            _state.update { it.copy(screen = Screen.SETUP) }
+            _state.update { it.copy(screen = Screen.SCAN_QR) }
         }
     }
 
@@ -179,6 +179,29 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearToast() = _state.update { it.copy(connectionToast = null) }
+
+    // ── QR scan helpers ───────────────────────────────────────────────────────
+
+    /** Called when the QR scanner successfully reads a code. Expected JSON: {"url":"…","code":"…"} */
+    fun onQrScanned(rawValue: String) {
+        try {
+            val json = org.json.JSONObject(rawValue)
+            val url  = json.optString("url").trim()
+            val code = json.optString("code").trim().uppercase()
+            if (url.isBlank() || code.isBlank()) {
+                _state.update { it.copy(connectionToast = ToastMessage("QR code is invalid. Try manual entry.", isError = true)) }
+                return
+            }
+            _state.update { it.copy(apiUrl = url, pairingCode = code, screen = Screen.SETUP) }
+            // Auto-connect immediately
+            connect()
+        } catch (_: Exception) {
+            _state.update { it.copy(connectionToast = ToastMessage("Could not read QR code. Try manual entry.", isError = true)) }
+        }
+    }
+
+    /** Switch from Scan QR screen to manual Setup screen */
+    fun navigateToManualSetup() = _state.update { it.copy(screen = Screen.SETUP) }
 
     // ── Sidebar navigation ────────────────────────────────────────────────────
 

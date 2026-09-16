@@ -47,6 +47,7 @@ import com.loyaltyplus.kiosk.ui.screens.CustomerLookupScreen
 import com.loyaltyplus.kiosk.ui.screens.FormScreen
 import com.loyaltyplus.kiosk.ui.screens.HomeScreen
 import com.loyaltyplus.kiosk.ui.screens.PinDialog
+import com.loyaltyplus.kiosk.ui.screens.ScanQrScreen
 import com.loyaltyplus.kiosk.ui.screens.SettingsScreen
 import com.loyaltyplus.kiosk.ui.screens.ThankYouScreen
 import com.loyaltyplus.kiosk.ui.theme.Gold
@@ -82,7 +83,16 @@ fun KioskApp(viewModel: KioskViewModel) {
                 }
             }
 
-            // ── Full-screen setup (first launch) ──────────────────────────────
+            // ── QR scan screen (first launch, step 1) ────────────────────────
+            Screen.SCAN_QR -> ScanQrScreen(
+                toast = state.connectionToast,
+                isConnecting = state.isConnecting,
+                onQrScanned = viewModel::onQrScanned,
+                onManualEntry = viewModel::navigateToManualSetup,
+                onToastDismissed = viewModel::clearToast,
+            )
+
+            // ── Full-screen setup (manual entry / first launch step 2) ────────
             Screen.SETUP -> SettingsScreen(
                 apiUrl = state.apiUrl,
                 pairingCode = state.pairingCode,

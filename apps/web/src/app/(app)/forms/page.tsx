@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
-  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy,
+  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy, QrCode,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -712,6 +712,32 @@ function FormBuildTab() {
   );
 }
 
+// ── QR Code Modal ─────────────────────────────────────────────────────────────
+
+function QrModal({ open, onClose, deviceName, qrValue }: {
+  open: boolean;
+  onClose: () => void;
+  deviceName: string;
+  qrValue: string;
+}) {
+  if (!open) return null;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrValue)}&size=220x220&margin=10`;
+  return (
+    <Dialog open={open} onClose={onClose} title={`QR Code — ${deviceName}`} className="max-w-xs">
+      <div className="flex flex-col items-center gap-4 py-2">
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrUrl} alt="QR Code" width={220} height={220} className="block" />
+        </div>
+        <p className="text-xs text-muted-foreground text-center leading-relaxed">
+          Scan this code with the Android kiosk app to automatically connect this device.
+        </p>
+        <Button variant="outline" className="w-full" onClick={onClose}>Close</Button>
+      </div>
+    </Dialog>
+  );
+}
+
 // ── Form Assign Tab ────────────────────────────────────────────────────────────
 
 // Dummy devices shown when none are registered yet
@@ -747,6 +773,11 @@ function FormAssignTab() {
   });
   const [deviceDropdownOpen, setDeviceDropdownOpen] = useState(false);
   const deviceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // QR modal state
+  const [qrModal, setQrModal] = useState<{ open: boolean; deviceName: string; qrValue: string }>({
+    open: false, deviceName: '', qrValue: '',
+  });
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -868,6 +899,14 @@ function FormAssignTab() {
     }
     setShowDeviceDialog(false);
     load();
+  }
+
+  function openQrModal(assignment: Assignment) {
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+    // Strip trailing /api so the Android app can use normalizeBaseUrl on it
+    const baseUrl = rawApiUrl.replace(/\/api\/?$/, '');
+    const qrValue = JSON.stringify({ url: baseUrl, code: assignment.device.pairingCode });
+    setQrModal({ open: true, deviceName: assignment.device.name, qrValue });
   }
 
   const formOptions = [
@@ -1043,6 +1082,7 @@ function FormAssignTab() {
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pairing Code</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">QR Code</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
@@ -1066,6 +1106,19 @@ function FormAssignTab() {
                           <span className="inline-flex items-center rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 font-mono text-xs font-semibold text-amber-700 tracking-widest">
                             {a.device.pairingCode}
                           </span>
+                        ) : <span className="text-muted-foreground/40">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {a.device.pairingCode ? (
+                          <button
+                            type="button"
+                            title="Show QR code"
+                            onClick={() => openQrModal(a)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium transition-colors"
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                            QR Code
+                          </button>
                         ) : <span className="text-muted-foreground/40">—</span>}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
@@ -1103,6 +1156,13 @@ function FormAssignTab() {
         message={confirmState.message}
         onConfirm={() => { confirmState.onConfirm(); }}
         onCancel={closeConfirm}
+      />
+
+      <QrModal
+        open={qrModal.open}
+        onClose={() => setQrModal((s) => ({ ...s, open: false }))}
+        deviceName={qrModal.deviceName}
+        qrValue={qrModal.qrValue}
       />
 
       {/* Add / Edit Device Dialog */}
