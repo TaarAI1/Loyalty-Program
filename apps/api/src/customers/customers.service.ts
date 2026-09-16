@@ -21,6 +21,14 @@ function decodeQryenc(qryenc: string): string | null {
   }
 }
 
+/** Strip Pakistani dialing prefixes so stored 10-digit numbers are matched regardless of input format. */
+function normalizePhone(s: string): string {
+  if (s.startsWith('+92')) return s.slice(3);
+  if (s.startsWith('92') && s.length > 10) return s.slice(2);
+  if (s.startsWith('0')) return s.slice(1);
+  return s;
+}
+
 @Injectable()
 export class CustomersService {
   private readonly logger = new Logger(CustomersService.name);
@@ -67,7 +75,7 @@ export class CustomersService {
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
-          { mobileNumber: { contains: search } },
+          { mobileNumber: { contains: normalizePhone(search) } },
           { email: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
