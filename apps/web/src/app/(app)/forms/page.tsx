@@ -946,28 +946,45 @@ function FormAssignTab() {
                       {filteredDevices.map((d) => {
                         const checked = selectedDeviceIds.includes(d.id);
                         return (
-                          <button
+                          <div
                             key={d.id}
-                            type="button"
-                            onClick={() => toggleDevice(d.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
+                            className={`flex items-center gap-1 pr-2 transition-colors divide-x ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
                           >
-                            <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                              {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
-                            </span>
-                            <span className="flex-1 min-w-0">
-                              <span className="truncate block">
-                                {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
-                                <span className="text-muted-foreground text-xs ml-1.5">
-                                  {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                                  {d.store ? ` · ${d.store}` : ''}
-                                </span>
+                            {/* Selection area */}
+                            <button
+                              type="button"
+                              onClick={() => toggleDevice(d.id)}
+                              className="flex-1 flex items-center gap-3 px-3 py-2.5 text-left text-sm"
+                            >
+                              <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                                {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
                               </span>
-                              {d.id > 0 && d.pairingCode && (
-                                <span className="text-[10px] font-mono text-muted-foreground/60">Code: {d.pairingCode}</span>
-                              )}
-                            </span>
-                          </button>
+                              <span className="flex-1 min-w-0">
+                                <span className="truncate block">
+                                  {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
+                                  <span className="text-muted-foreground text-xs ml-1.5">
+                                    {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                                    {d.store ? ` · ${d.store}` : ''}
+                                  </span>
+                                </span>
+                                {d.id > 0 && d.pairingCode && (
+                                  <span className="text-[10px] font-mono text-muted-foreground/60">Code: {d.pairingCode}</span>
+                                )}
+                              </span>
+                            </button>
+
+                            {/* Delete button — real devices only */}
+                            {d.id > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeDevice(d.id); }}
+                                className="p-1.5 ml-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                                title="Delete device"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
