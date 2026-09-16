@@ -4,12 +4,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { formatPhoneNumber, getExpiryDate } from '@loyalty/shared';
 
-/** Decode a Retail Pro qryenc value (base64 + zlib) and extract the SID. */
+/** Decode a Retail Pro qryenc value (base64 + zlib) and extract the search term. */
 function decodeQryenc(qryenc: string): string | null {
   try {
     const buf = Buffer.from(qryenc, 'base64');
     const decoded = zlib.inflateSync(buf).toString('utf8');
-    // Typical formats: (sid=791257591000210697)  or  (cust_sid='123')
+    // Retail Pro encodes a URL query string, e.g. "search=3204827767"
+    const params = new URLSearchParams(decoded);
+    const search = params.get('search');
+    if (search) return search;
+    // Fallback: legacy SID format  (sid=123...)
     const match = decoded.match(/sid[=\s']+(\d+)/i);
     return match ? match[1] : null;
   } catch {
@@ -38,12 +42,17 @@ export class CustomersService {
   }) {
     const { search, qryenc, tierId, region, store, isActive, page, pageSize } = params;
 
-    // If qryenc is provided, decode the Retail Pro zlib+base64 query and find by retailproId
+    // If qryenc is provided, decode the Retail Pro zlib+base64 query and find by mobile/retailproId
     if (qryenc) {
-      const sid = decodeQryenc(qryenc);
-      if (sid) {
+      const qrySearch = decodeQryenc(qryenc);
+      if (qrySearch) {
         const customer = await this.prisma.customer.findFirst({
-          where: { retailproId: sid },
+          where: {
+            OR: [
+              { mobileNumber: qrySearch },  // "search=PHONE" format (primary)
+              { retailproId: qrySearch },    // legacy SID format fallback
+            ],
+          },
           include: { tier: true },
         });
         return {
