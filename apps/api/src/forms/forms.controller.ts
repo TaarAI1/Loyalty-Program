@@ -152,6 +152,12 @@ export class FormsController {
     return this.formsService.kioskPollSurvey(code);
   }
 
+  @Public()
+  @Get('kiosk/status')
+  kioskStatus(@Query('code') code: string) {
+    return this.formsService.kioskStatus(code);
+  }
+
   @Get('kiosk/responses')
   kioskGetResponses(@Query('phone') phone?: string, @Query('tierId') tierId?: string) {
     return this.formsService.kioskGetResponses(phone, tierId);

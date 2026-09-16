@@ -259,6 +259,17 @@ export class FormsService {
     return { success: true, responseId: response.id };
   }
 
+  async kioskStatus(code: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { pairingCode: code.toUpperCase() },
+    });
+    if (!device) return { connected: false };
+    const assignment = await this.prisma.formAssignment.findFirst({
+      where: { deviceId: device.id },
+    });
+    return { connected: assignment != null };
+  }
+
   async kioskGetResponses(phone?: string, tierId?: string) {
     let where: Record<string, unknown> = phone ? { customerPhone: { contains: phone } } : {};
 

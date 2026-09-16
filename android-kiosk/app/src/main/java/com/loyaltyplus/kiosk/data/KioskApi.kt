@@ -108,6 +108,22 @@ object KioskApi {
     }
 
     /**
+     * Returns false only if the server confirms the device no longer exists or has no active
+     * assignment. Returns true on any network/parse error so flaky wifi does NOT trigger a reset.
+     */
+    suspend fun checkStatus(apiUrl: String, pairingCode: String): Boolean {
+        return try {
+            val base = normalizeBaseUrl(apiUrl)
+            val response = client.get("$base/forms/kiosk/status") {
+                parameter("code", pairingCode.trim().uppercase())
+            }
+            if (!response.status.isSuccess()) return false
+            json.parseToJsonElement(response.bodyAsText())
+                .jsonObject["connected"]?.jsonPrimitive?.content == "true"
+        } catch (_: Exception) { true }
+    }
+
+    /**
      * Normalises the API base URL so users can paste either:
      *   https://my-api.up.railway.app        (no /api suffix — auto-appended)
      *   https://my-api.up.railway.app/       (trailing slash only — /api appended)

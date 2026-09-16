@@ -88,15 +88,33 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         connectionToast = null,
                     )
                 }
-            } catch (_: Exception) {
-                _state.update {
-                    it.copy(
-                        isAutoConnecting = false,
-                        connectionToast = ToastMessage(
-                            "Could not load form data. Tap the gear icon to reconnect.",
-                            isError = true,
-                        ),
-                    )
+            } catch (e: Exception) {
+                val isGone = e.message?.contains("not found", ignoreCase = true) == true ||
+                             e.message?.contains("404") == true ||
+                             e.message?.contains("no form assigned", ignoreCase = true) == true
+                if (isGone) {
+                    // Device or assignment was removed — reset and ask to re-pair
+                    prefs.setupComplete = false
+                    _state.update {
+                        it.copy(
+                            isAutoConnecting = false,
+                            screen = Screen.SCAN_QR,
+                            connectionToast = ToastMessage(
+                                "Device was removed. Please scan the QR code to reconnect.",
+                                isError = true,
+                            ),
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            isAutoConnecting = false,
+                            connectionToast = ToastMessage(
+                                "Could not load form data. Tap the gear icon to reconnect.",
+                                isError = true,
+                            ),
+                        )
+                    }
                 }
             } finally {
                 startPolling()
@@ -107,11 +125,33 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     private fun startPolling() {
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
+            var statusCheckCounter = 0
             while (true) {
                 delay(5_000L)
                 val s = _state.value
                 // Only poll when sitting on the Home screen and not busy
                 if (s.screen != Screen.HOME) continue
+
+                // ── Status check every 30 s (every 6th cycle) ─────────────────
+                statusCheckCounter++
+                if (statusCheckCounter % 6 == 0) {
+                    val connected = KioskApi.checkStatus(prefs.apiUrl, prefs.pairingCode)
+                    if (!connected) {
+                        prefs.setupComplete = false
+                        _state.update {
+                            it.copy(
+                                screen = Screen.SCAN_QR,
+                                connectionToast = ToastMessage(
+                                    "Device was removed. Please scan the QR code to reconnect.",
+                                    isError = true,
+                                ),
+                            )
+                        }
+                        break // stop this polling loop; a new one starts on next connect()
+                    }
+                }
+
+                // ── Pending-survey poll ────────────────────────────────────────
                 try {
                     val pending = KioskApi.pollPendingSurvey(prefs.apiUrl, prefs.pairingCode)
                     if (pending != null) {
