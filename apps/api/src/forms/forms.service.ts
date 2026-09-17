@@ -39,12 +39,8 @@ export class FormsService {
 
   async updateQuestion(id: number, data: { text?: string; questionType?: string; options?: string[]; status?: string }) {
     await this.prisma.surveyQuestion.findFirstOrThrow({ where: { id } });
-
-    // If deactivating, remove this question from every form it belongs to
-    if (data.status === 'inactive') {
-      await this.prisma.surveyFormQuestion.deleteMany({ where: { questionId: id } });
-    }
-
+    // DB link (SurveyFormQuestion) is intentionally kept intact so that
+    // re-activating a question restores it to all its forms automatically.
     return this.prisma.surveyQuestion.update({
       where: { id },
       data: {

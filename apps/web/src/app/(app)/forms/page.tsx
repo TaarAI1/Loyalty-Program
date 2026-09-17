@@ -246,7 +246,9 @@ function QuestionPreview({ question }: { question: Question }) {
 
 function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
   const TYPE_ORDER: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
-  const sortedQuestions = [...form.formQuestions].sort(
+  const sortedQuestions = [...form.formQuestions]
+    .filter((fq) => fq.question.status === 'active')
+    .sort(
     (a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99),
   );
   return (
@@ -501,6 +503,7 @@ function FormBuildTab() {
   const [editing, setEditing]       = useState<Form | null>(null);
   const [name, setName]             = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [hiddenIds, setHiddenIds]     = useState<number[]>([]);
   const [status, setStatus]         = useState('active');
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
@@ -524,8 +527,15 @@ function FormBuildTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setStatus('active'); setShowDialog(true); }
-  function openEdit(f: Form) { setEditing(f); setName(f.name); setSelectedIds(f.formQuestions.map((fq) => fq.question.id)); setStatus(f.status); setShowDialog(true); }
+  function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setHiddenIds([]); setStatus('active'); setShowDialog(true); }
+  function openEdit(f: Form) {
+    setEditing(f); setName(f.name); setStatus(f.status);
+    // Active question IDs → shown in the order list and picker
+    setSelectedIds(f.formQuestions.filter((fq) => fq.question.status === 'active').map((fq) => fq.question.id));
+    // Inactive question IDs → preserved silently, never shown in UI, restored when re-activated
+    setHiddenIds(f.formQuestions.filter((fq) => fq.question.status !== 'active').map((fq) => fq.question.id));
+    setShowDialog(true);
+  }
 
   async function handleDeleteForm(f: Form) {
     askConfirm(`Delete form "${f.name}"? This cannot be undone.`, async () => {
@@ -537,8 +547,10 @@ function FormBuildTab() {
 
   async function save() {
     if (!name.trim()) return;
+    // Merge active (visible) + inactive (hidden) IDs so inactive links are preserved in the DB
+    const questionIds = [...selectedIds, ...hiddenIds];
     editing
-      ? await formsApi.updateForm(editing.id, { name, status, questionIds: selectedIds })
+      ? await formsApi.updateForm(editing.id, { name, status, questionIds })
       : await formsApi.createForm({ name, status, questionIds: selectedIds });
     setShowDialog(false); load();
   }
