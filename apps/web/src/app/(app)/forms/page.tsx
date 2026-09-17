@@ -268,7 +268,7 @@ function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => v
           <p className="text-sm text-primary-foreground/70 mt-1">Please take a moment to fill out this survey.</p>
         </div>
         <div className="rounded-b-2xl border border-t-0 bg-background divide-y">
-          {form.formQuestions.length === 0 ? (
+          {sortedQuestions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-10 text-center">No questions added yet.</p>
           ) : sortedQuestions.map((fq, idx) => (
             <div key={fq.id} className="px-8 py-6">
@@ -596,7 +596,8 @@ function FormBuildTab() {
       ) : (
         <div className="space-y-3">
           {forms.map((f) => {
-            const typeIcons = Array.from(new Set(f.formQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
+            const activeQuestions = f.formQuestions.filter((fq) => fq.question.status === 'active');
+            const typeIcons = Array.from(new Set(activeQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
             return (
               <div key={f.id} className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow group flex">
                 <div className="w-1.5 bg-primary shrink-0" />
@@ -618,9 +619,9 @@ function FormBuildTab() {
                           </span>
                         );
                       })}
-                      {f.formQuestions.length > 4 && (
+                      {activeQuestions.length > 4 && (
                         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                          +{f.formQuestions.length - 4} more
+                          +{activeQuestions.length - 4} more
                         </span>
                       )}
                     </div>
@@ -628,7 +629,7 @@ function FormBuildTab() {
                   {/* right: question count + actions */}
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-xs text-muted-foreground">
-                      {f.formQuestions.length} Q
+                      {activeQuestions.length} Q
                     </span>
                     <button type="button" onClick={() => setPreviewForm(f)}
                       className="rounded-lg border border-primary text-primary text-xs font-semibold px-3 py-1.5 hover:bg-primary/5 transition-colors">
