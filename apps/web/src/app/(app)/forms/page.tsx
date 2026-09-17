@@ -245,12 +245,9 @@ function QuestionPreview({ question }: { question: Question }) {
 // ── Inline Form Preview Page ───────────────────────────────────────────────────
 
 function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
-  const TYPE_ORDER: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
   const sortedQuestions = [...form.formQuestions]
     .filter((fq) => fq.question.status === 'active')
-    .sort(
-    (a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99),
-  );
+    .sort((a, b) => a.sortOrder - b.sortOrder);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
