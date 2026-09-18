@@ -81,6 +81,22 @@ export class ConfigurationController {
     return this.configurationService.sendRedemptionOtp(body.to, body.code, body.customer_name);
   }
 
+  @Post('whatsapp/send-receipt')
+  sendReceipt(@Body() body: {
+    to: string;
+    customerName?: string;
+    storeName?: string;
+    transactionNo?: string;
+    date?: string;
+    items: { name: string; qty: number; unitPrice: number; total: number }[];
+    subtotal: number;
+    discount?: number;
+    tax: number;
+    gross: number;
+  }) {
+    return this.configurationService.sendReceipt(body);
+  }
+
   // ── SMS ────────────────────────────────────────────────────────────────────
 
   @Get('sms')
