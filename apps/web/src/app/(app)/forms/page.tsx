@@ -1112,7 +1112,6 @@ function FormAssignTab() {
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pairing Code</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">QR Code</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
@@ -1138,19 +1137,6 @@ function FormAssignTab() {
                           </span>
                         ) : <span className="text-muted-foreground/40">—</span>}
                       </td>
-                      <td className="px-4 py-3">
-                        {a.device.pairingCode ? (
-                          <button
-                            type="button"
-                            title="Show QR code"
-                            onClick={() => openQrModal(a)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium transition-colors"
-                          >
-                            <QrCode className="h-3.5 w-3.5" />
-                            QR Code
-                          </button>
-                        ) : <span className="text-muted-foreground/40">—</span>}
-                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {DEVICE_TYPE_OPTIONS.find((t) => t.value === a.device.deviceType)?.label ?? a.device.deviceType}
                       </td>
@@ -1167,10 +1153,22 @@ function FormAssignTab() {
                         {new Date(a.assignedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button type="button" onClick={() => removeAssignment(a.id)}
-                          className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          {a.device.pairingCode && (
+                            <button
+                              type="button"
+                              title="Show QR code"
+                              onClick={() => openQrModal(a)}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button type="button" onClick={() => removeAssignment(a.id)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
