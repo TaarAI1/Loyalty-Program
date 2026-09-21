@@ -293,15 +293,14 @@ export class FormsService {
       },
     });
     return rows
-      // Skip any rows where device or form no longer exists (orphaned FK — belt-and-suspenders)
-      .filter((r) => r.device != null && r.form != null)
+      // Responses are kept even when form/device is deleted (FK set to null) — show with fallback labels
       .map((r) => ({
         id: r.id,
         customerName: r.customerName,
         customerPhone: r.customerPhone,
-        formName: r.form?.name ?? 'Unknown',
-        deviceName: r.device?.name ?? 'Unknown',
-        store: r.device?.store ?? null,
+        formName:   r.form?.name   ?? 'Deleted Form',
+        deviceName: r.device?.name ?? 'Deleted Device',
+        store:      r.device?.store ?? null,
         submittedAt: r.submittedAt,
       }));
   }
@@ -353,8 +352,8 @@ export class FormsService {
       id: r.id,
       customerName: r.customerName,
       customerPhone: r.customerPhone,
-      formName: r.form?.name ?? 'Unknown',
-      deviceName: r.device?.name ?? 'Unknown',
+      formName: r.form?.name ?? 'Deleted Form',
+      deviceName: r.device?.name ?? 'Deleted Device',
       store: r.device?.store ?? null,
       submittedAt: r.submittedAt,
       answers: questions.map((fq) => ({
