@@ -1245,6 +1245,29 @@ export default function CustomerDetailPage() {
                       <RadarChart data={rfmData2} margin={{ top: 4, right: 20, left: 20, bottom: 4 }}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload as { axis: string; value: number };
+                            const labels: Record<number, { label: string; color: string }> = {
+                              1: { label: 'Cold', color: 'text-red-500'    },
+                              2: { label: 'Weak', color: 'text-orange-400' },
+                              3: { label: 'Fair', color: 'text-yellow-500' },
+                              4: { label: 'Good', color: 'text-lime-600'   },
+                              5: { label: 'Best', color: 'text-green-600'  },
+                            };
+                            const meta = labels[d.value] ?? { label: '', color: '' };
+                            return (
+                              <div className="rounded-lg border border-border bg-background shadow-md px-3 py-2 space-y-0.5">
+                                <p className="text-xs font-bold">{d.axis}</p>
+                                <p className="text-sm font-black tabular-nums">
+                                  {d.value}<span className="text-muted-foreground font-normal text-xs">/5</span>
+                                  {meta.label && <span className={`ml-2 text-xs font-semibold ${meta.color}`}>{meta.label}</span>}
+                                </p>
+                              </div>
+                            );
+                          }}
+                        />
                         <Radar name="RFM" dataKey="value" stroke="#FFD000" fill="#FFD000" fillOpacity={0.35} dot />
                       </RadarChart>
                     </ResponsiveContainer>
