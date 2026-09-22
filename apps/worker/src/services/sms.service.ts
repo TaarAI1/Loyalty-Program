@@ -74,6 +74,13 @@ export class SmsService {
   }
 
   private async logNotification(payload: SMSJobPayload, status: string, errorMessage?: string) {
+    if (payload.existingLogId) {
+      await this.prisma.notificationLog.update({
+        where: { id: BigInt(payload.existingLogId) },
+        data: { status, errorMessage: errorMessage ?? null, sentAt: new Date() },
+      });
+      return;
+    }
     await this.prisma.notificationLog.create({
       data: {
         customerId: payload.customerId ?? null,

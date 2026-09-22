@@ -64,13 +64,28 @@ export default function NotificationsPage() {
     refetchInterval: 60000,
   });
 
+  const [resendingIds, setResendingIds] = useState<Set<string>>(new Set());
+
   const resendMutation = useMutation({
     mutationFn: (id: string) => notificationsApi.resend(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       toast.success('Notification re-queued');
-      qc.invalidateQueries({ queryKey: ['notifications'] });
+      // Optimistically flip just this row to 'pending' — no full list reload
+      qc.setQueryData(['notifications', channel, status, page], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((r: any) =>
+            String(r.id) === id ? { ...r, status: 'pending', errorMessage: null } : r
+          ),
+        };
+      });
+      setResendingIds((s) => { const n = new Set(s); n.delete(id); return n; });
     },
-    onError: (err) => toast.error(String(err)),
+    onError: (err, id) => {
+      toast.error(String(err));
+      setResendingIds((s) => { const n = new Set(s); n.delete(id); return n; });
+    },
   });
 
   const logs = data?.data ?? [];
@@ -222,8 +237,12 @@ export default function NotificationsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => resendMutation.mutate(String(log.id))}
-                                  loading={resendMutation.isPending}
+                                  onClick={() => {
+                                    const id = String(log.id);
+                                    setResendingIds((s) => new Set(s).add(id));
+                                    resendMutation.mutate(id);
+                                  }}
+                                  loading={resendingIds.has(String(log.id))}
                                   className="text-indigo-600 hover:text-indigo-700"
                                 >
                                   <RotateCcw className="w-3 h-3" />

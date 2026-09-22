@@ -110,6 +110,14 @@ export class WhatsAppService {
   }
 
   private async logNotification(payload: WhatsAppJobPayload, status: string, errorMessage?: string) {
+    // On resend, update the existing log row instead of creating a duplicate
+    if (payload.existingLogId) {
+      await this.prisma.notificationLog.update({
+        where: { id: BigInt(payload.existingLogId) },
+        data: { status, errorMessage: errorMessage ?? null, sentAt: new Date() },
+      });
+      return;
+    }
     await this.prisma.notificationLog.create({
       data: {
         customerId: payload.customerId ?? null,
