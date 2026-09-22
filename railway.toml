@@ -1,2 +1,3 @@
 [build]
 builder = "nixpacks"
+installCmd = "pnpm install --no-frozen-lockfile"
