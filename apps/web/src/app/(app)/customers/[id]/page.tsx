@@ -1424,9 +1424,18 @@ export default function CustomerDetailPage() {
                   toast.error('Enter a valid email address');
                   return;
                 }
+                // Only send fields shown in the modal; convert empty strings to
+                // undefined so Zod enum validators (gender, maritalStatus, etc.)
+                // do not throw on empty-string values for removed fields.
                 updateMutation.mutate({
-                  ...editForm,
-                  isActive: editForm.status === 'active',
+                  name:        editForm.name        || undefined,
+                  email:       editForm.email       || undefined,
+                  region:      editForm.region      || undefined,
+                  store:       editForm.store       || undefined,
+                  dateOfBirth: editForm.dateOfBirth || undefined,
+                  gender:      (editForm.gender as 'Male' | 'Female' | 'Other') || undefined,
+                  status:      editForm.status      as 'active' | 'inactive' | 'blocked',
+                  isActive:    editForm.status === 'active',
                 } as typeof editForm);
               }}
             >
