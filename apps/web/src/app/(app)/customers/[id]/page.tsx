@@ -385,16 +385,6 @@ export default function CustomerDetailPage() {
                   return `+${cc} ${d}`;
                 })()}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
-                {/* Auto persona tags */}
-                {(customer as any).persona?.personaTags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {((customer as any).persona.personaTags as string[]).map((tag: string) => (
-                      <span key={tag} className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Milestone tier progress bar */}
