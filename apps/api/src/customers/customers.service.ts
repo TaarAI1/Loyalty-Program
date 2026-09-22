@@ -18,10 +18,11 @@ export class CustomersService {
     region?: string;
     store?: string;
     isActive?: boolean;
+    status?: string;
     page: number;
     pageSize: number;
   }) {
-    const { search, tierId, region, store, isActive, page, pageSize } = params;
+    const { search, tierId, region, store, isActive, status, page, pageSize } = params;
     const skip = (page - 1) * pageSize;
 
     const where = {
@@ -36,6 +37,7 @@ export class CustomersService {
       ...(region && { region }),
       ...(store && { store: { contains: store, mode: 'insensitive' as const } }),
       ...(isActive !== undefined && { isActive }),
+      ...(status && { status }),
     };
 
     const [total, customers] = await this.prisma.$transaction([

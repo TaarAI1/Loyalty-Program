@@ -21,6 +21,7 @@ export default function CustomersPage() {
   const [tierId, setTierId] = useState('');
   const [region, setRegion] = useState('');
   const [store, setStore] = useState('');
+  const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
@@ -35,13 +36,14 @@ export default function CustomersPage() {
   type CustomerListResult = { data: CustomerRow[]; meta: { total: number; page: number; pageSize: number; totalPages: number } };
 
   const { data, isLoading } = useQuery<CustomerListResult>({
-    queryKey: ['customers', debouncedSearch, tierId, region, store, page],
+    queryKey: ['customers', debouncedSearch, tierId, region, store, status, page],
     queryFn: () =>
       customersApi.getAll({
         search: debouncedSearch || undefined,
         tierId: tierId || undefined,
         region: region || undefined,
         store: store || undefined,
+        status: status || undefined,
         page,
         pageSize,
       }),
@@ -54,6 +56,7 @@ export default function CustomersPage() {
       tierId: tierId || undefined,
       region: region || undefined,
       store: store || undefined,
+      status: status || undefined,
       page: 1,
       pageSize: 5000,
     });
@@ -72,7 +75,7 @@ export default function CustomersPage() {
       })),
       'customers-export',
     );
-  }, [debouncedSearch, tierId, region, store]);
+  }, [debouncedSearch, tierId, region, store, status]);
 
   const tierOptions = [
     { value: '', label: 'All Tiers' },
@@ -103,6 +106,17 @@ export default function CustomersPage() {
               options={tierOptions}
               value={tierId}
               onChange={(e) => { setTierId(e.target.value); setPage(1); }}
+              className="w-36"
+            />
+            <Select
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'active',   label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+                { value: 'blocked',  label: 'Blocked' },
+              ]}
+              value={status}
+              onChange={(e) => { setStatus(e.target.value); setPage(1); }}
               className="w-36"
             />
             <Input

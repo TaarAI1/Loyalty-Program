@@ -26,6 +26,7 @@ export class CustomersController {
     @Query('tierId', new DefaultValuePipe(0), ParseIntPipe) tierId?: number,
     @Query('region') region?: string,
     @Query('store') store?: string,
+    @Query('status') status?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize = 50,
   ) {
@@ -34,6 +35,7 @@ export class CustomersController {
       tierId: tierId || undefined,
       region,
       store,
+      status,
       page,
       pageSize,
     });
