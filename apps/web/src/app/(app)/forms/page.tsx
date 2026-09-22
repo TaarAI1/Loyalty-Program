@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -783,6 +783,15 @@ function FormAssignTab() {
   const [loading, setLoading]         = useState(true);
   const [assigning, setAssigning]     = useState(false);
 
+  // For each device, the assignment with the latest assignedAt is "active"
+  const activeIds = useMemo(() => {
+    const map = new Map<number, number>(); // deviceId → assignment id
+    [...assignments]
+      .sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
+      .forEach((a) => { if (!map.has(a.deviceId)) map.set(a.deviceId, a.id); });
+    return new Set(map.values());
+  }, [assignments]);
+
   // Filter / selection state
   const [filterStore, setFilterStore]           = useState('');
   const [filterDeviceType, setFilterDeviceType] = useState('');
@@ -1115,6 +1124,7 @@ function FormAssignTab() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned At</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                   </tr>
@@ -1148,6 +1158,17 @@ function FormAssignTab() {
                           <LayoutTemplate className="h-3 w-3 shrink-0" />
                           {a.form.name}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {activeIds.has(a.id) ? (
+                          <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 border border-green-200 px-2.5 py-0.5 text-xs font-medium">
+                            Active on Device
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground border px-2.5 py-0.5 text-xs font-medium">
+                            Inactive on Device
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                         {new Date(a.assignedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
