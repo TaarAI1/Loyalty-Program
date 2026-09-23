@@ -12,6 +12,47 @@ export class CustomersService {
     private readonly queue: QueueService,
   ) {}
 
+  async findByPhone(phone: string) {
+    // Normalize the input: strip spaces, dashes, parentheses
+    const raw = phone.replace(/[\s\-().]/g, '');
+
+    // Build candidate variants so we can find the number regardless of how it was stored
+    const candidates: string[] = [raw]; // e.g. +923451837170
+    if (raw.startsWith('+92')) {
+      candidates.push('0' + raw.slice(3));  // → 03451837170
+      candidates.push(raw.slice(3));         // → 3451837170
+    } else if (raw.startsWith('92')) {
+      candidates.push('0' + raw.slice(2));  // → 03451837170
+      candidates.push(raw.slice(2));         // → 3451837170
+      candidates.push('+' + raw);           // → +923451837170
+    } else if (raw.startsWith('0')) {
+      candidates.push(raw.slice(1));         // → 3451837170
+      candidates.push('+92' + raw.slice(1)); // → +923451837170
+      candidates.push('92' + raw.slice(1));  // → 923451837170
+    }
+
+    // Try each candidate with an exact match first, then fall back to contains
+    for (const candidate of candidates) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { mobileNumber: candidate },
+        select: { id: true, name: true, mobileNumber: true, totalPoints: true },
+      });
+      if (customer) return customer;
+    }
+
+    // Fall back to a contains search on the last 9 digits (handles any prefix format)
+    const suffix = raw.replace(/^\+?0*92|^0/, '').slice(-9);
+    if (suffix.length >= 7) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { mobileNumber: { contains: suffix } },
+        select: { id: true, name: true, mobileNumber: true, totalPoints: true },
+      });
+      if (customer) return customer;
+    }
+
+    throw new NotFoundException(`No customer found with phone number ${phone}`);
+  }
+
   async findAll(params: {
     search?: string;
     tierId?: number;
@@ -475,6 +516,9 @@ export class CustomersService {
       where: { id },
       select: {
         id: true,
+        totalPoints: true,
+        createdAt: true,
+        lastVisitDate: true,
         segment: true,
         engagementScore: true,
         occupation: true,
@@ -489,10 +533,66 @@ export class CustomersService {
         homeAddress: true,
         deliveryAddress: true,
         alternatePhone: true,
+        tier: {
+          select: {
+            id: true,
+            name: true,
+            rewardPercentage: true,
+            benefits: true,
+          },
+        },
       },
     });
     if (!customer) throw new NotFoundException(`Customer ${id} not found`);
-    return customer;
+
+    // Aggregate loyalty stats (same logic as findOne)
+    const [txAgg, redemptionAgg, txCount] = await this.prisma.$transaction([
+      this.prisma.transaction.aggregate({
+        where: { customerId: id },
+        _sum: { saleAmount: true, pointsEarned: true },
+        _avg: { saleAmount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { customerId: id },
+        _sum: { pointsRedeemed: true },
+      }),
+      this.prisma.transaction.count({ where: { customerId: id } }),
+    ]);
+
+    const nextExpiry = await this.prisma.pointsExpiry.findFirst({
+      where: { customerId: id, isExpired: false, pointsRemaining: { gt: 0 } },
+      orderBy: { expiryDate: 'asc' },
+      select: { expiryDate: true, pointsRemaining: true },
+    });
+
+    const now = Date.now();
+    const lastVisitMs = customer.lastVisitDate ? customer.lastVisitDate.getTime() : 0;
+    const daysSinceLastVisit = lastVisitMs ? Math.floor((now - lastVisitMs) / 86400000) : null;
+    const totalPointsEarned = txAgg._sum.pointsEarned ?? 0;
+    const totalPointsRedeemed = redemptionAgg._sum.pointsRedeemed ?? 0;
+    const redemptionRate = totalPointsEarned > 0
+      ? Math.round((totalPointsRedeemed / totalPointsEarned) * 100)
+      : 0;
+
+    const { totalPoints, createdAt, lastVisitDate: _lvd, ...personaFields } = customer;
+
+    return {
+      ...personaFields,
+      loyaltyStats: {
+        totalSpend: Number(txAgg._sum.saleAmount ?? 0),
+        totalTransactions: txCount,
+        avgOrderValue: Math.round(Number(txAgg._avg.saleAmount ?? 0)),
+        pointsEarned: totalPointsEarned,
+        pointsRedeemed: totalPointsRedeemed,
+        currentBalance: totalPoints,
+        redemptionRate,
+        enrolled: createdAt,
+        daysSinceLastVisit,
+        pointsExpiringNext: nextExpiry
+          ? { points: nextExpiry.pointsRemaining, expiryDate: nextExpiry.expiryDate }
+          : null,
+      },
+    };
   }
 
   async updatePersona(
