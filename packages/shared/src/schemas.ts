@@ -14,6 +14,16 @@ export const TransactionItemSchema = z.object({
 });
 export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 
+// ── Webhook: DCS Item ─────────────────────────────────────────────────────────
+export const DcsItemSchema = z.object({
+  dname:      z.string().optional(),
+  cname:      z.string().optional(),
+  sname:      z.string().optional(),
+  dscname:    z.string().optional(),
+  categories: z.string().optional(),
+});
+export type DcsItemDto = z.infer<typeof DcsItemSchema>;
+
 // ── Webhook: Inbound Transaction ──────────────────────────────────────────────
 export const WebhookTransactionSchema = z.object({
   transaction_id:   z.string().min(1).optional(),
@@ -33,6 +43,8 @@ export const WebhookTransactionSchema = z.object({
   redeem_points:        z.number().int().nonnegative().default(0),
   items:                z.array(TransactionItemSchema).optional(),
   test_expiry_minutes:  z.number().int().positive().optional(),
+  dcs:                  z.array(DcsItemSchema).optional(),
+  text:                 z.string().optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
 

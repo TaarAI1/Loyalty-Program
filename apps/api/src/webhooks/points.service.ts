@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { calculatePoints, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
+import { calculatePoints, formatPhoneNumber, TransactionItemDto, DcsItemDto } from '@loyalty/shared';
 import { LoyaltyTier, Customer } from '@prisma/client';
 
 export interface ProcessTransactionResult {
@@ -51,6 +51,8 @@ export class PointsService {
     outlet?: string;
     countryCode?: string;
     items?: TransactionItemDto[];
+    dcs?: DcsItemDto[];
+    text?: string;
   }): Promise<ProcessTransactionResult> {
     const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, netAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
@@ -172,6 +174,8 @@ export class PointsService {
           taxAmount: taxAmount ?? null,
           grossAmount: grossAmount ?? null,
           status: 'completed',
+          dcs: params.dcs ?? null,
+          text: params.text ?? null,
         },
       });
 

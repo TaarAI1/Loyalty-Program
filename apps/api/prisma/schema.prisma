@@ -100,6 +100,8 @@ model Transaction {
   taxAmount               Decimal?  @map("tax_amount") @db.Decimal(10, 2)
   grossAmount             Decimal?  @map("gross_amount") @db.Decimal(10, 2)
   status                  String    @default("completed") @db.VarChar(20)
+  dcs                     Json?     @map("dcs")
+  text                    String?   @map("text") @db.Text
   createdAt               DateTime  @default(now()) @map("created_at")
 
   customer      Customer         @relation(fields: [customerId], references: [id])
