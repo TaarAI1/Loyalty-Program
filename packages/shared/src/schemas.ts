@@ -1,19 +1,6 @@
 import { z } from 'zod';
 import { optionalEmailSchema, phoneNumberSchema } from './validation';
 
-// ── Webhook: Transaction Item ──────────────────────────────────────────────────
-export const TransactionItemSchema = z.object({
-  sku:          z.string().max(100).optional(),
-  description:  z.string().max(500).optional(),
-  qty:          z.number().positive().optional(),
-  unit_price:   z.number().nonnegative().optional(),
-  total_price:  z.number().nonnegative().optional(),
-  tax_amount:   z.number().nonnegative().optional(),
-  gross_amount: z.number().nonnegative().optional(),
-  net_amount:   z.number().nonnegative().optional(),
-});
-export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
-
 // ── Webhook: DCS Item ─────────────────────────────────────────────────────────
 export const DcsItemSchema = z.object({
   dname:      z.string().optional(),
@@ -24,6 +11,20 @@ export const DcsItemSchema = z.object({
   typo:       z.string().optional(),
 });
 export type DcsItemDto = z.infer<typeof DcsItemSchema>;
+
+// ── Webhook: Transaction Item ──────────────────────────────────────────────────
+export const TransactionItemSchema = z.object({
+  sku:          z.string().max(100).optional(),
+  description:  z.string().max(500).optional(),
+  qty:          z.number().positive().optional(),
+  unit_price:   z.number().nonnegative().optional(),
+  total_price:  z.number().nonnegative().optional(),
+  tax_amount:   z.number().nonnegative().optional(),
+  gross_amount: z.number().nonnegative().optional(),
+  net_amount:   z.number().nonnegative().optional(),
+  dcs:          z.array(DcsItemSchema).optional(),
+});
+export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 
 // ── Webhook: Inbound Transaction ──────────────────────────────────────────────
 export const WebhookTransactionSchema = z.object({

@@ -899,7 +899,7 @@
             "url": { "raw": "{{baseUrl}}/webhooks/transaction", "host": ["{{baseUrl}}"], "path": ["webhooks","transaction"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"transaction_id\": \"TXN-001\",\n  \"customer_id\": \"CUST-001\",\n  \"mobile\": \"+923001234567\",\n  \"store\": \"HeadOffice\",\n  \"sale_amount\": 5000,\n  \"tax_amount\": 750,\n  \"gross_amount\": 5750,\n  \"redeem_points\": 0,\n  \"transaction_date\": \"2026-09-22T10:00:00Z\",\n  \"items\": [\n    { \"sku\": \"ABC-001\", \"description\": \"Product A\", \"qty\": 2, \"unit_price\": 2500, \"total_price\": 5000 }\n  ]\n}"
+              "raw": "{\n  \"transaction_id\": \"TXN-001\",\n  \"customer_id\": \"CUST-001\",\n  \"mobile\": \"+923001234567\",\n  \"store\": \"HeadOffice\",\n  \"sale_amount\": 5000,\n  \"tax_amount\": 750,\n  \"gross_amount\": 5750,\n  \"redeem_points\": 0,\n  \"transaction_date\": \"2026-09-22T10:00:00Z\",\n  \"items\": [\n    {\n      \"sku\": \"ABC-001\",\n      \"description\": \"Product A\",\n      \"qty\": 2,\n      \"unit_price\": 2500,\n      \"total_price\": 5000,\n      \"dcs\": [\n        {\n          \"dname\": \"\",\n          \"cname\": \"\",\n          \"sname\": \"\",\n          \"dscname\": \"\",\n          \"categories\": \"\",\n          \"typo\": \"\"\n        }\n      ]\n    }\n  ],\n  \"text\": \"\",\n  \"dcs\": [\n    {\n      \"dname\": \"\",\n      \"cname\": \"\",\n      \"sname\": \"\",\n      \"dscname\": \"\",\n      \"categories\": \"\",\n      \"typo\": \"\"\n    }\n  ]\n}"
             }
           }
         },
