@@ -220,6 +220,7 @@ export class PointsService {
             taxAmount: item.tax_amount ?? null,
             grossAmount: item.gross_amount ?? null,
             netAmount: item.net_amount ?? null,
+            dcs: item.dcs ?? null,
           })),
         });
       }

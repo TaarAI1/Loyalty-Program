@@ -125,6 +125,7 @@ model TransactionItem {
   taxAmount     Decimal? @map("tax_amount") @db.Decimal(10, 2)
   grossAmount   Decimal? @map("gross_amount") @db.Decimal(10, 2)
   netAmount     Decimal? @map("net_amount") @db.Decimal(10, 2)
+  dcs           Json?    @map("dcs")
   createdAt     DateTime @default(now()) @map("created_at")
 
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
