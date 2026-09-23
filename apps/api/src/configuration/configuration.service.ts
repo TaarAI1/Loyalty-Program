@@ -297,21 +297,10 @@ export class ConfigurationService {
 
     const form = new FormData();
     form.append('file', pdfBuffer, { filename: 'receipt.pdf', contentType: 'application/pdf' });
-
-    // Check for an active web form to append the survey link
-    const webForm = await this.prisma.surveyForm.findFirst({
-      where: { formType: 'web', status: 'active' },
-      select: { webToken: true, name: true },
-    });
-    const webAppUrl = process.env.WEB_APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
-    const surveyLine = webForm?.webToken && webAppUrl
-      ? `\n\nWe'd love your feedback! Fill out our quick survey: ${webAppUrl}/survey/${webForm.webToken}`
-      : '';
-
     form.append(
       'caption',
       `Hi ${data.customerName || 'Valued Customer'}, thank you for shopping at ${data.storeName || 'our store'}! ` +
-      `Your receipt for transaction ${data.transactionNo || ''} is attached. We appreciate your business! 🛍️${surveyLine}`,
+      `Your receipt for transaction ${data.transactionNo || ''} is attached. We appreciate your business! 🛍️`,
     );
 
     const sendUrl = `https://live-mt-server.wati.io/${tenantId}/api/v1/sendDocument/${phone}`;

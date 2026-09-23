@@ -12,7 +12,7 @@ import {
   Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
   AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy, QrCode,
-  GripVertical, Globe,
+  GripVertical,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -30,8 +30,6 @@ interface Form {
   id: number;
   name: string;
   status: string;
-  formType: string;
-  webToken: string | null;
   createdAt: string;
   formQuestions: { id: number; sortOrder: number; question: Question }[];
 }
@@ -504,7 +502,6 @@ function FormBuildTab() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hiddenIds, setHiddenIds]     = useState<number[]>([]);
   const [status, setStatus]         = useState('active');
-  const [formType, setFormType]     = useState<'kiosk' | 'web'>('kiosk');
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
     open: false, message: '', onConfirm: () => {},
@@ -527,9 +524,9 @@ function FormBuildTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  function openAdd(type: 'kiosk' | 'web' = 'kiosk') { setEditing(null); setName(''); setSelectedIds([]); setHiddenIds([]); setStatus('active'); setFormType(type); setShowDialog(true); }
+  function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setHiddenIds([]); setStatus('active'); setShowDialog(true); }
   function openEdit(f: Form) {
-    setEditing(f); setName(f.name); setStatus(f.status); setFormType((f.formType as 'kiosk' | 'web') ?? 'kiosk');
+    setEditing(f); setName(f.name); setStatus(f.status);
     // Active question IDs → shown in the order list and picker
     setSelectedIds(f.formQuestions.filter((fq) => fq.question.status === 'active').map((fq) => fq.question.id));
     // Inactive question IDs → preserved silently, never shown in UI, restored when re-activated
@@ -551,7 +548,7 @@ function FormBuildTab() {
     const questionIds = [...selectedIds, ...hiddenIds];
     editing
       ? await formsApi.updateForm(editing.id, { name, status, questionIds })
-      : await formsApi.createForm({ name, status, questionIds: selectedIds, formType });
+      : await formsApi.createForm({ name, status, questionIds: selectedIds });
     setShowDialog(false); load();
   }
 
@@ -580,12 +577,7 @@ function FormBuildTab() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Combine questions into named survey forms.</p>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => openAdd('web')}>
-            <Globe className="h-4 w-4 mr-1" /> Create Web Form
-          </Button>
-          <Button size="sm" onClick={() => openAdd('kiosk')}><Plus className="h-4 w-4 mr-1" /> New Form</Button>
-        </div>
+        <Button size="sm" onClick={openAdd}><Plus className="h-4 w-4 mr-1" /> New Form</Button>
       </div>
 
       {loading ? (
@@ -614,16 +606,6 @@ function FormBuildTab() {
                       <Badge variant={f.status === 'active' ? 'default' : 'outline'} className="shrink-0 text-[10px]">
                         {f.status}
                       </Badge>
-                      {/* Form type badge */}
-                      {f.formType === 'web' ? (
-                        <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 shrink-0">
-                          <Globe className="h-2.5 w-2.5" /> Web
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 shrink-0">
-                          <Tablet className="h-2.5 w-2.5" /> Kiosk
-                        </span>
-                      )}
                     </div>
                     <div className="flex gap-1.5 flex-wrap">
                       {typeIcons.map((type) => {
@@ -646,20 +628,6 @@ function FormBuildTab() {
                     <span className="text-xs text-muted-foreground">
                       {activeQuestions.length} Q
                     </span>
-                    {/* Copy survey link for active web forms */}
-                    {f.formType === 'web' && f.webToken && (
-                      <button
-                        type="button"
-                        title="Copy survey link"
-                        onClick={() => {
-                          const url = `${window.location.origin}/survey/${f.webToken}`;
-                          navigator.clipboard.writeText(url);
-                        }}
-                        className="rounded-lg border border-blue-300 text-blue-600 text-xs font-semibold px-2.5 py-1.5 hover:bg-blue-50 transition-colors flex items-center gap-1"
-                      >
-                        <Copy className="h-3.5 w-3.5" /> Copy Link
-                      </button>
-                    )}
                     <button type="button" onClick={() => setPreviewForm(f)}
                       className="rounded-lg border border-primary text-primary text-xs font-semibold px-3 py-1.5 hover:bg-primary/5 transition-colors">
                       Preview
@@ -689,22 +657,12 @@ function FormBuildTab() {
       />
 
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}
-        title={editing ? `Edit Form` : formType === 'web' ? 'New Web Form' : 'New Form'} className="max-w-lg">
+        title={editing ? 'Edit Form' : 'New Form'} className="max-w-lg">
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           <div className="space-y-1">
             <Label>Form Name</Label>
             <Input placeholder="e.g. Post-Purchase Survey" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          {/* Show form type as a read-only indicator */}
-          {!editing && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground rounded-lg bg-muted/40 px-3 py-2">
-              {formType === 'web' ? (
-                <><Globe className="h-3.5 w-3.5 text-blue-500" /><span>This form will be accessible via a public <strong>web link</strong> (sent via WhatsApp).</span></>
-              ) : (
-                <><Tablet className="h-3.5 w-3.5" /><span>This form will be assigned to <strong>kiosk devices</strong>.</span></>
-              )}
-            </div>
-          )}
           <div className="space-y-1">
             <Label>Status</Label>
             <Select options={STATUS_OPTIONS} value={status} onChange={(e) => setStatus(e.target.value)} />

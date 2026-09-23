@@ -144,7 +144,7 @@ export const formsApi = {
   deleteQuestion: (id: number) => api.delete(`/forms/questions/${id}`).then((r) => r.data),
   // Forms
   getForms: () => api.get('/forms').then((r) => r.data),
-  createForm: (data: { name: string; questionIds: number[]; status?: string; formType?: string }) =>
+  createForm: (data: { name: string; questionIds: number[]; status?: string }) =>
     api.post('/forms', data).then((r) => r.data),
   updateForm: (id: number, data: { name?: string; status?: string; questionIds?: number[] }) =>
     api.put(`/forms/${id}`, data).then((r) => r.data),

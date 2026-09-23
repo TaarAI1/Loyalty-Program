@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomUUID } from 'crypto';
 
 function generatePairingCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -73,25 +72,11 @@ export class FormsService {
     });
   }
 
-  async createForm(data: { name: string; questionIds: number[]; status?: string; formType?: string }) {
-    const formType = data.formType ?? 'kiosk';
-
-    // For web forms: generate a unique token; deactivate other active web forms
-    let webToken: string | undefined;
-    if (formType === 'web') {
-      webToken = randomUUID();
-      await this.prisma.surveyForm.updateMany({
-        where: { formType: 'web', status: 'active' },
-        data: { status: 'inactive' },
-      });
-    }
-
+  async createForm(data: { name: string; questionIds: number[]; status?: string }) {
     return this.prisma.surveyForm.create({
       data: {
         name: data.name,
         status: data.status ?? 'active',
-        formType,
-        webToken: webToken ?? null,
         formQuestions: {
           create: data.questionIds.map((qid, i) => ({
             questionId: qid,
@@ -104,15 +89,7 @@ export class FormsService {
   }
 
   async updateForm(id: number, data: { name?: string; status?: string; questionIds?: number[] }) {
-    const existing = await this.prisma.surveyForm.findFirstOrThrow({ where: { id } });
-
-    // If activating a web form, deactivate all other active web forms first
-    if (data.status === 'active' && existing.formType === 'web') {
-      await this.prisma.surveyForm.updateMany({
-        where: { formType: 'web', status: 'active', id: { not: id } },
-        data: { status: 'inactive' },
-      });
-    }
+    await this.prisma.surveyForm.findFirstOrThrow({ where: { id } });
 
     if (data.questionIds !== undefined) {
       await this.prisma.surveyFormQuestion.deleteMany({ where: { formId: id } });
@@ -136,66 +113,6 @@ export class FormsService {
     await this.prisma.surveyFormQuestion.deleteMany({ where: { formId: id } });
     await this.prisma.surveyForm.delete({ where: { id } });
     return { success: true };
-  }
-
-  // ── Web Form (public) ─────────────────────────────────────────────────────────
-
-  /** Return the active web form by its token (for the public survey page). */
-  async getWebForm(token: string) {
-    const form = await this.prisma.surveyForm.findUnique({
-      where: { webToken: token },
-      include: {
-        formQuestions: {
-          include: { question: true },
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-    });
-    if (!form) throw new NotFoundException('Survey not found.');
-
-    return {
-      id: form.id,
-      name: form.name,
-      status: form.status,
-      questions: form.formQuestions
-        .filter((fq) => fq.question.status === 'active')
-        .map((fq) => ({
-          id: fq.question.id,
-          text: fq.question.text,
-          questionType: fq.question.questionType,
-          options: fq.question.options ?? null,
-          required: true,
-        })),
-    };
-  }
-
-  /** Save a web form response (no device required). */
-  async submitWebResponse(data: {
-    token: string;
-    customerName?: string;
-    customerPhone?: string;
-    answers: { questionId: number; value: string }[];
-  }) {
-    const form = await this.prisma.surveyForm.findUnique({ where: { webToken: data.token } });
-    if (!form) throw new NotFoundException('Survey not found.');
-
-    return this.prisma.formResponse.create({
-      data: {
-        formId: form.id,
-        deviceId: null,
-        customerName: data.customerName ?? null,
-        customerPhone: data.customerPhone ?? null,
-        answers: data.answers,
-      },
-    });
-  }
-
-  /** Return the active web form token (used by WhatsApp receipt to append the survey link). */
-  async getActiveWebForm() {
-    return this.prisma.surveyForm.findFirst({
-      where: { formType: 'web', status: 'active' },
-      select: { id: true, webToken: true, name: true },
-    });
   }
 
   // ── Devices ───────────────────────────────────────────────────────────────────
