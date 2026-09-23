@@ -49,7 +49,7 @@ export class FormsController {
   }
 
   @Post()
-  createForm(@Body() body: { name: string; questionIds: number[]; status?: string }) {
+  createForm(@Body() body: { name: string; questionIds: number[]; status?: string; formType?: string }) {
     return this.formsService.createForm(body);
   }
 
@@ -64,6 +64,27 @@ export class FormsController {
   @Delete(':id')
   deleteForm(@Param('id', ParseIntPipe) id: number) {
     return this.formsService.deleteForm(id);
+  }
+
+  // ── Web Form (public) ─────────────────────────────────────────────────────────
+
+  @Public()
+  @Get('web/:token')
+  getWebForm(@Param('token') token: string) {
+    return this.formsService.getWebForm(token);
+  }
+
+  @Public()
+  @Post('web/submit')
+  submitWebResponse(
+    @Body() body: {
+      token: string;
+      customerName?: string;
+      customerPhone?: string;
+      answers: { questionId: number; value: string }[];
+    },
+  ) {
+    return this.formsService.submitWebResponse(body);
   }
 
   // ── Devices ───────────────────────────────────────────────────────────────────
