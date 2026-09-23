@@ -21,6 +21,7 @@ export const DcsItemSchema = z.object({
   sname:      z.string().optional(),
   dscname:    z.string().optional(),
   categories: z.string().optional(),
+  typo:       z.string().optional(),
 });
 export type DcsItemDto = z.infer<typeof DcsItemSchema>;
 
