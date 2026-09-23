@@ -45,7 +45,6 @@ export const WebhookTransactionSchema = z.object({
   redeem_points:        z.number().int().nonnegative().default(0),
   items:                z.array(TransactionItemSchema).optional(),
   test_expiry_minutes:  z.number().int().positive().optional(),
-  dcs:                  z.array(DcsItemSchema).optional(),
   text:                 z.string().optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
