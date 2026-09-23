@@ -6,7 +6,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "https://your-api.railway.app/api", "type": "string" },
+    { "key": "baseUrl", "value": "https://backend-dev-ccff.up.railway.app/api", "type": "string" },
     { "key": "token",   "value": "",                                  "type": "string" },
     { "key": "customerId", "value": "00000000-0000-0000-0000-000000000000", "type": "string" },
     { "key": "txId",    "value": "00000000-0000-0000-0000-000000000000", "type": "string" }
@@ -22,6 +22,23 @@
       "item": [
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('token', json.access_token);",
+                  "        console.log('Token saved:', json.access_token.substring(0, 20) + '...');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -29,7 +46,7 @@
             "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"yourpassword\"\n}"
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
             }
           }
         }
