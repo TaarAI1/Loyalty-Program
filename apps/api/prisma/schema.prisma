@@ -54,6 +54,8 @@ model Customer {
   homeAddress      String?   @map("home_address")
   deliveryAddress  String?   @map("delivery_address")
   alternatePhone   String?   @map("alternate_phone") @db.VarChar(20)
+  dcsname          String?   @map("dcsname") @db.VarChar(255)
+  categories       String?   @map("categories") @db.VarChar(255)
   isActive         Boolean   @default(true) @map("is_active")
   status          String    @default("active") @map("status") @db.VarChar(20)
   createdAt       DateTime  @default(now()) @map("created_at")

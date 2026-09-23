@@ -42,6 +42,12 @@ export class CustomersController {
     });
   }
 
+  @Get('lookup/by-phone')
+  findByPhone(@Query('phone') phone: string) {
+    if (!phone) throw new BadRequestException('phone query param is required');
+    return this.customersService.findByPhone(phone);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.customersService.findOne(id);
@@ -153,6 +159,8 @@ export class CustomersController {
       homeAddress: string | null;
       deliveryAddress: string | null;
       alternatePhone: string | null;
+      dcsname: string | null;
+      categories: string | null;
     }>,
   ) {
     return this.customersService.updatePersona(id, body);

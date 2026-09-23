@@ -533,6 +533,8 @@ export class CustomersService {
         homeAddress: true,
         deliveryAddress: true,
         alternatePhone: true,
+        dcsname: true,
+        categories: true,
         tier: {
           select: {
             id: true,
@@ -612,6 +614,8 @@ export class CustomersService {
       homeAddress: string | null;
       deliveryAddress: string | null;
       alternatePhone: string | null;
+      dcsname: string | null;
+      categories: string | null;
     }>,
   ) {
     await this.assertExists(id);
@@ -634,6 +638,8 @@ export class CustomersService {
         homeAddress: true,
         deliveryAddress: true,
         alternatePhone: true,
+        dcsname: true,
+        categories: true,
       },
     });
   }
