@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -125,5 +126,35 @@ export class CustomersController {
     @Param('noteId', ParseIntPipe) noteId: number,
   ) {
     return this.customersService.deleteNote(noteId);
+  }
+
+  // ── Persona ───────────────────────────────────────────────────────────────────
+
+  @Get(':id/persona')
+  getPersona(@Param('id', ParseUUIDPipe) id: string) {
+    return this.customersService.getPersona(id);
+  }
+
+  @Patch(':id/persona')
+  updatePersona(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Partial<{
+      segment: string;
+      engagementScore: number;
+      occupation: string | null;
+      gender: string | null;
+      maritalStatus: string | null;
+      preferredChannel: string | null;
+      legalName: string | null;
+      preferredName: string | null;
+      nationality: string | null;
+      city: string | null;
+      area: string | null;
+      homeAddress: string | null;
+      deliveryAddress: string | null;
+      alternatePhone: string | null;
+    }>,
+  ) {
+    return this.customersService.updatePersona(id, body);
   }
 }

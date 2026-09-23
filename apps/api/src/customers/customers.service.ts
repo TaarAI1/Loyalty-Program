@@ -468,6 +468,76 @@ export class CustomersService {
     });
   }
 
+  // ── Persona ───────────────────────────────────────────────────────────────────
+
+  async getPersona(id: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        segment: true,
+        engagementScore: true,
+        occupation: true,
+        gender: true,
+        maritalStatus: true,
+        preferredChannel: true,
+        legalName: true,
+        preferredName: true,
+        nationality: true,
+        city: true,
+        area: true,
+        homeAddress: true,
+        deliveryAddress: true,
+        alternatePhone: true,
+      },
+    });
+    if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+    return customer;
+  }
+
+  async updatePersona(
+    id: string,
+    data: Partial<{
+      segment: string;
+      engagementScore: number;
+      occupation: string | null;
+      gender: string | null;
+      maritalStatus: string | null;
+      preferredChannel: string | null;
+      legalName: string | null;
+      preferredName: string | null;
+      nationality: string | null;
+      city: string | null;
+      area: string | null;
+      homeAddress: string | null;
+      deliveryAddress: string | null;
+      alternatePhone: string | null;
+    }>,
+  ) {
+    await this.assertExists(id);
+    return this.prisma.customer.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        segment: true,
+        engagementScore: true,
+        occupation: true,
+        gender: true,
+        maritalStatus: true,
+        preferredChannel: true,
+        legalName: true,
+        preferredName: true,
+        nationality: true,
+        city: true,
+        area: true,
+        homeAddress: true,
+        deliveryAddress: true,
+        alternatePhone: true,
+      },
+    });
+  }
+
   async sendManualWhatsApp(customerId: string, templateName: string, message?: string) {
     const customer = await this.findOne(customerId);
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
