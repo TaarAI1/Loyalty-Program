@@ -137,7 +137,7 @@ export class CustomersController {
   // ── Persona ───────────────────────────────────────────────────────────────────
 
   @Get(':id/persona')
-  getPersona(@Param('id', ParseUUIDPipe) id: string) {
+  getPersona(@Param('id') id: string) {
     return this.customersService.getPersona(id);
   }
 

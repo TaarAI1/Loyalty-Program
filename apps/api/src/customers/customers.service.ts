@@ -534,8 +534,10 @@ export class CustomersService {
   // ── Persona ───────────────────────────────────────────────────────────────────
 
   async getPersona(id: string) {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const where = UUID_RE.test(id) ? { id } : { retailproId: id };
     const customer = await this.prisma.customer.findUnique({
-      where: { id },
+      where,
       select: {
         id: true,
         totalPoints: true,
@@ -569,22 +571,25 @@ export class CustomersService {
     });
     if (!customer) throw new NotFoundException(`Customer ${id} not found`);
 
+    // Use the resolved UUID for all subsequent queries
+    const customerId = customer.id;
+
     // Aggregate loyalty stats (same logic as findOne)
     const [txAgg, redemptionAgg, txCount] = await this.prisma.$transaction([
       this.prisma.transaction.aggregate({
-        where: { customerId: id },
+        where: { customerId },
         _sum: { saleAmount: true, pointsEarned: true },
         _avg: { saleAmount: true },
       }),
       this.prisma.transaction.aggregate({
-        where: { customerId: id },
+        where: { customerId },
         _sum: { pointsRedeemed: true },
       }),
-      this.prisma.transaction.count({ where: { customerId: id } }),
+      this.prisma.transaction.count({ where: { customerId } }),
     ]);
 
     const nextExpiry = await this.prisma.pointsExpiry.findFirst({
-      where: { customerId: id, isExpired: false, pointsRemaining: { gt: 0 } },
+      where: { customerId, isExpired: false, pointsRemaining: { gt: 0 } },
       orderBy: { expiryDate: 'asc' },
       select: { expiryDate: true, pointsRemaining: true },
     });
@@ -620,7 +625,7 @@ export class CustomersService {
     // Preferred store — most frequent store across transactions
     const storeGroups = await this.prisma.transaction.groupBy({
       by: ['store'],
-      where: { customerId: id, store: { not: null } },
+      where: { customerId, store: { not: null } },
       _count: { store: true },
       orderBy: { _count: { store: 'desc' } },
       take: 1,
@@ -631,7 +636,7 @@ export class CustomersService {
     const dayRaw = await this.prisma.$queryRaw<{ day_name: string; cnt: number }[]>`
       SELECT TRIM(TO_CHAR(transaction_date, 'Day')) AS day_name, COUNT(*)::int AS cnt
       FROM transactions
-      WHERE customer_id = ${id}::uuid
+      WHERE customer_id = ${customerId}::uuid
       GROUP BY day_name
       ORDER BY cnt DESC
       LIMIT 1
@@ -645,7 +650,7 @@ export class CustomersService {
         COUNT(*)::int AS cnt,
         ARRAY_AGG(TO_CHAR(transaction_date, 'DD-Mon-YYYY') ORDER BY transaction_date DESC) AS visit_dates
       FROM transactions
-      WHERE customer_id = ${id}::uuid
+      WHERE customer_id = ${customerId}::uuid
       GROUP BY day_name
     `;
     const dayOrder = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -662,7 +667,7 @@ export class CustomersService {
       FROM transaction_items ti
       JOIN transactions t ON t.id = ti.transaction_id
       CROSS JOIN jsonb_array_elements(ti.dcs) AS dcs_item
-      WHERE t.customer_id = ${id}::uuid
+      WHERE t.customer_id = ${customerId}::uuid
         AND ti.dcs IS NOT NULL
         AND dcs_item->>'dscname' IS NOT NULL
         AND dcs_item->>'dscname' != ''
