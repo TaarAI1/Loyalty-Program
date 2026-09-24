@@ -9,7 +9,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
-  Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
+  Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil, Eye,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
   AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy, QrCode,
   GripVertical,
@@ -1272,13 +1272,16 @@ function FormAssignTab() {
 // ── Web Form Tab ──────────────────────────────────────────────────────────────
 
 function WebFormTab() {
-  const [forms, setForms]           = useState<Form[]>([]);
-  const [questions, setQuestions]   = useState<Question[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [saving, setSaving]         = useState(false);
-  const [activating, setActivating] = useState<number | null>(null);
-  const [showModal, setShowModal]   = useState(false);
-  const [formName, setFormName]     = useState('');
+  const [forms, setForms]             = useState<Form[]>([]);
+  const [questions, setQuestions]     = useState<Question[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [activating, setActivating]   = useState<number | null>(null);
+  const [deletingId, setDeletingId]   = useState<number | null>(null);
+  const [showModal, setShowModal]     = useState(false);
+  const [editingForm, setEditingForm] = useState<Form | null>(null);
+  const [previewForm, setPreviewForm] = useState<Form | null>(null);
+  const [formName, setFormName]       = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const load = useCallback(async () => {
@@ -1297,10 +1300,23 @@ function WebFormTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  function openModal() {
+  function openCreateModal() {
+    setEditingForm(null);
     setFormName('');
     setSelectedIds([]);
     setShowModal(true);
+  }
+
+  function openEditModal(form: Form) {
+    setEditingForm(form);
+    setFormName(form.name);
+    setSelectedIds(form.formQuestions.map((fq) => fq.question.id));
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+    setEditingForm(null);
   }
 
   function toggleQ(id: number) {
@@ -1311,10 +1327,14 @@ function WebFormTab() {
     if (!formName.trim() || selectedIds.length === 0) return;
     setSaving(true);
     try {
-      await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
-      // deactivate all others — backend activateWebForm handles it; but createForm already sets this active
-      // re-fetch to sync
-      setShowModal(false);
+      if (editingForm) {
+        await formsApi.updateForm(editingForm.id, { name: formName.trim(), questionIds: selectedIds });
+      } else {
+        const created = await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
+        // ensure only this new form is active — deactivates all other web forms
+        await formsApi.activateWebForm(created.id);
+      }
+      closeModal();
       await load();
     } finally {
       setSaving(false);
@@ -1328,6 +1348,17 @@ function WebFormTab() {
       await load();
     } finally {
       setActivating(null);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('Delete this web form? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      await formsApi.deleteForm(id);
+      await load();
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -1345,7 +1376,7 @@ function WebFormTab() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Web forms that customers can fill in via a browser link. Only one form can be active at a time.</p>
         <button
-          onClick={openModal}
+          onClick={openCreateModal}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Create Web Form
@@ -1404,30 +1435,64 @@ function WebFormTab() {
                 {/* Q count */}
                 <span className="text-xs font-semibold text-muted-foreground shrink-0">{activeQs.length} Q</span>
 
-                {/* Set Active button (only for inactive) */}
-                {!isActive && (
+                {/* Actions — always full opacity so they're clickable on inactive cards */}
+                <div className="flex items-center gap-1 shrink-0 opacity-100" style={{ filter: 'none' }}>
+                  {/* Preview */}
                   <button
-                    onClick={() => handleActivate(form.id)}
-                    disabled={activating === form.id}
-                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    title="Preview form"
+                    onClick={() => setPreviewForm(form)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                   >
-                    {activating === form.id ? 'Activating…' : 'Set Active'}
+                    <Eye className="h-4 w-4" />
                   </button>
-                )}
+
+                  {/* Edit */}
+                  <button
+                    title="Edit form"
+                    onClick={() => openEditModal(form)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    title="Delete form"
+                    onClick={() => handleDelete(form.id)}
+                    disabled={deletingId === form.id}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === form.id
+                      ? <CheckCircle2 className="h-4 w-4 animate-spin" />
+                      : <Trash2 className="h-4 w-4" />
+                    }
+                  </button>
+
+                  {/* Set Active — only for inactive */}
+                  {!isActive && (
+                    <button
+                      onClick={() => handleActivate(form.id)}
+                      disabled={activating === form.id}
+                      className="ml-1 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    >
+                      {activating === form.id ? 'Activating…' : 'Set Active'}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
             {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <h2 className="font-bold text-base">Create Web Form</h2>
-              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <h2 className="font-bold text-base">{editingForm ? 'Edit Web Form' : 'Create Web Form'}</h2>
+              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground transition-colors">
                 <Plus className="h-5 w-5 rotate-45" />
               </button>
             </div>
@@ -1478,7 +1543,7 @@ function WebFormTab() {
             <div className="flex items-center justify-between px-5 py-4 border-t border-border gap-3">
               <span className="text-xs text-muted-foreground">{selectedIds.length} question{selectedIds.length !== 1 ? 's' : ''} selected</span>
               <div className="flex gap-2">
-                <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors">
+                <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors">
                   Cancel
                 </button>
                 <button
@@ -1486,9 +1551,76 @@ function WebFormTab() {
                   disabled={saving || !formName.trim() || selectedIds.length === 0}
                   className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Saving…' : 'Save Form'}
+                  {saving ? 'Saving…' : editingForm ? 'Update Form' : 'Save Form'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-base">{previewForm.name}</h2>
+                {previewForm.status === 'active' ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">active</span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">inactive</span>
+                )}
+              </div>
+              <button onClick={() => setPreviewForm(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
+            </div>
+
+            {/* Questions list */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {previewForm.formQuestions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No questions in this form.</p>
+              ) : (
+                previewForm.formQuestions.map((fq, idx) => {
+                  const q = fq.question;
+                  const meta = TYPE_META[q.questionType];
+                  return (
+                    <div key={fq.id} className="flex items-start gap-3 rounded-xl border border-border p-3">
+                      <span className="shrink-0 text-xs font-bold text-muted-foreground w-5 mt-0.5">{idx + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-snug">{q.text}</p>
+                        <span className={`inline-flex items-center gap-1 mt-1.5 text-[11px] px-2 py-0.5 rounded-full border font-medium ${dotColors[q.questionType] ?? 'bg-muted text-muted-foreground border-border'}`}>
+                          {meta?.icon}
+                          {TYPE_LABEL[q.questionType] ?? q.questionType}
+                        </span>
+                        {q.options && q.options.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {q.options.map((opt: string, i: number) => (
+                              <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                                {opt}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-border flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">{previewForm.formQuestions.length} question{previewForm.formQuestions.length !== 1 ? 's' : ''}</span>
+              <button
+                onClick={() => setPreviewForm(null)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
