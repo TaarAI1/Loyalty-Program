@@ -214,9 +214,11 @@ export class CustomersService {
         today.getMonth() > dob.getMonth() ||
         (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
       if (!hadBirthdayThisYear) age -= 1;
-      if (age < 28) generation = 'Gen Z';
-      else if (age < 44) generation = 'Millennial';
-      else if (age < 60) generation = 'Gen X';
+      const birthYear = dob.getFullYear();
+      if (birthYear >= 2013) generation = 'Gen Alpha';
+      else if (birthYear >= 1997) generation = 'Gen Z';
+      else if (birthYear >= 1981) generation = 'Millennial';
+      else if (birthYear >= 1965) generation = 'Gen X';
       else generation = 'Boomer';
       const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
       if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
