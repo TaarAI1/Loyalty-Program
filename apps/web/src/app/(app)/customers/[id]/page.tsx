@@ -1055,6 +1055,8 @@ export default function CustomerDetailPage() {
                         { label: 'Occupation', value: (customer as any).occupation ?? '—' },
                         { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
                         { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
+                        { label: 'Redeem Rate',  value: `${p.redemptionRate}%` },
+                        { label: 'Pts Redeemed', value: formatNumber((customer as any).persona?.loyaltyStats?.pointsRedeemed ?? 0) },
                       ].map(({ label, value }) => (
                         <div key={label}>
                           <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
