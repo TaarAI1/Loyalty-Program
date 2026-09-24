@@ -1021,6 +1021,25 @@ export default function CustomerDetailPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Departments inside ICP card */}
+                    {((customer as any).dcsBreakdown ?? []).length > 0 && (
+                      <div className="pt-3 border-t border-border/50 space-y-1.5">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
+                        {(() => {
+                          const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
+                          return ((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d, i) => (
+                            <div key={d.dscname} className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColors[i % dotColors.length]}`} />
+                                <p className="text-xs font-semibold truncate">{d.dscname}</p>
+                              </div>
+                              <p className="text-xs font-semibold shrink-0">{d.percentage}%</p>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
                   </div>
 
                   {/* Demographics grid */}
@@ -1079,26 +1098,6 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
 
-                  {/* Departments */}
-                  {((customer as any).dcsBreakdown ?? []).length > 0 && (
-                    <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
-                      <div className="space-y-1.5">
-                        {(() => {
-                          const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
-                          return ((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d, i) => (
-                            <div key={d.dscname} className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColors[i % dotColors.length]}`} />
-                                <p className="text-xs font-semibold truncate">{d.dscname}</p>
-                              </div>
-                              <p className="text-xs font-semibold shrink-0">{d.percentage}%</p>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })()}
