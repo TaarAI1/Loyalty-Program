@@ -67,9 +67,6 @@ function AndroidFeedbackTab() {
   const [storeFilter, setStore]       = useState('');
   const [applied, setApplied]         = useState(emptyAndroidFilters);
 
-  // ── Applied filter state (used for actual filtering, updated on Apply click) ─
-  const [applied, setApplied] = useState(emptyFilters);
-
   const fetchRows = useCallback(() => {
     setLoading(true);
     setError(null);
