@@ -1278,6 +1278,10 @@ function WebFormTab() {
   const [saving, setSaving]           = useState(false);
   const [activating, setActivating]   = useState<number | null>(null);
   const [deletingId, setDeletingId]   = useState<number | null>(null);
+  const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
+  function closeConfirm() { setConfirmState((s) => ({ ...s, open: false })); }
   const [showModal, setShowModal]     = useState(false);
   const [editingForm, setEditingForm] = useState<Form | null>(null);
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
@@ -1359,14 +1363,16 @@ function WebFormTab() {
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('Delete this web form? This cannot be undone.')) return;
-    setDeletingId(id);
-    try {
-      await formsApi.deleteForm(id);
-      await load();
-    } finally {
-      setDeletingId(null);
-    }
+    setConfirmState({
+      open: true,
+      message: 'Delete this web form? This cannot be undone.',
+      onConfirm: async () => {
+        closeConfirm();
+        setDeletingId(id);
+        try { await formsApi.deleteForm(id); await load(); }
+        finally { setDeletingId(null); }
+      },
+    });
   }
 
   const dotColors: Record<string, string> = {
@@ -1666,6 +1672,13 @@ function WebFormTab() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onConfirm={() => { confirmState.onConfirm(); }}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }
