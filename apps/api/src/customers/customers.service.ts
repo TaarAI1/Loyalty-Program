@@ -434,7 +434,27 @@ export class CustomersService {
       nextExpiryPoints: nextExpiry?.pointsRemaining ?? null,
     };
 
-    return { ...customer, tierProgress, nextTier, stats, persona };
+    // DCS department breakdown
+    const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
+      SELECT dcs_item->>'dscname' AS dscname, COUNT(*)::int AS count
+      FROM transaction_items ti
+      JOIN transactions t ON t.id = ti.transaction_id
+      CROSS JOIN jsonb_array_elements(ti.dcs) AS dcs_item
+      WHERE t.customer_id = ${id}::uuid
+        AND ti.dcs IS NOT NULL
+        AND dcs_item->>'dscname' IS NOT NULL
+        AND dcs_item->>'dscname' != ''
+      GROUP BY dcs_item->>'dscname'
+      ORDER BY count DESC
+    `;
+    const totalDcsCount = dcsRaw.reduce((s, r) => s + r.count, 0);
+    const dcsBreakdown = dcsRaw.map((r, i, arr) => {
+      const soFar = arr.slice(0, i).reduce((s, x) => s + Math.round((x.count / totalDcsCount) * 100), 0);
+      const pct = i < arr.length - 1 ? Math.round((r.count / totalDcsCount) * 100) : 100 - soFar;
+      return { dscname: r.dscname, count: r.count, percentage: pct };
+    });
+
+    return { ...customer, tierProgress, nextTier, stats, persona, dcsBreakdown };
   }
 
   async getTransactionHistory(
