@@ -284,7 +284,8 @@ export class FormsService {
   }
 
   async kioskGetResponses(phone?: string, tierId?: string) {
-    let where: Record<string, unknown> = phone ? { customerPhone: { contains: phone } } : {};
+    let where: Record<string, unknown> = { deviceId: { not: null } };
+    if (phone) where.customerPhone = { contains: phone };
 
     if (tierId) {
       const customers = await this.prisma.customer.findMany({
@@ -377,9 +378,9 @@ export class FormsService {
 
   // ── Web form responses ───────────────────────────────────────────────────────
 
-  async webGetResponses() {
+  async webGetResponses(phone?: string) {
     const rows = await this.prisma.formResponse.findMany({
-      where: { deviceId: null },
+      where: { deviceId: null, ...(phone ? { customerPhone: { contains: phone } } : {}) },
       orderBy: { submittedAt: 'desc' },
       include: { form: { select: { id: true, name: true } } },
     });
@@ -438,8 +439,19 @@ export class FormsService {
     });
   }
 
+  async getWebCustomer(retailproId: string) {
+    const c = await this.prisma.customer.findFirst({
+      where: { retailproId },
+      select: { name: true },
+    });
+    return { name: c?.name ?? null };
+  }
+
   async webSubmit(data: {
     formId: number;
+    retailproId?: string;
+    transactionId?: string;
+    // legacy fields still accepted for backward-compat
     customerName?: string;
     customerPhone?: string;
     answers: { questionId: number; value: string }[];
@@ -447,12 +459,27 @@ export class FormsService {
     const form = await this.prisma.surveyForm.findUnique({ where: { id: data.formId } });
     if (!form) throw new NotFoundException('Form not found.');
 
+    let customerName  = data.customerName  ?? null;
+    let customerPhone = data.customerPhone ?? null;
+
+    // Resolve from retailpro_id when provided (new URL scheme)
+    if (data.retailproId) {
+      const c = await this.prisma.customer.findFirst({
+        where: { retailproId: data.retailproId },
+        select: { name: true, mobileNumber: true },
+      });
+      if (c) {
+        customerName  = c.name;
+        customerPhone = c.mobileNumber;
+      }
+    }
+
     const response = await this.prisma.formResponse.create({
       data: {
         deviceId: null,
         formId: data.formId,
-        customerName: data.customerName ?? null,
-        customerPhone: data.customerPhone ?? null,
+        customerName,
+        customerPhone,
         answers: data.answers,
       },
     });

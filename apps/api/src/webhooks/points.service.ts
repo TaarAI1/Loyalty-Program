@@ -337,7 +337,8 @@ export class PointsService {
       if (waConfig?.apiUrl && waConfig.templateTierUpgrade) {
         const phone = formatPhoneNumber(result.customer.mobileNumber, result.customer.countryCode);
         const webBaseUrl = process.env.WEB_BASE_URL ?? 'https://loyaltyplus.myomniconnect.net';
-        const surveyUrl  = `${webBaseUrl}/survey?name=${encodeURIComponent(result.customer.name ?? '')}&phone=${encodeURIComponent(phone)}`;
+        const txId = result.transaction.retailproTransactionId ?? result.transaction.receiptNo ?? '';
+        const surveyUrl  = `${webBaseUrl}/survey?retailpro_id=${encodeURIComponent(result.customer.retailproId ?? '')}&transaction_id=${encodeURIComponent(txId)}`;
         await this.queue.enqueueWhatsApp({
           to: phone,
           templateName: waConfig.templateTierUpgrade,

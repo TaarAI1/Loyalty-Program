@@ -170,4 +170,5 @@ export const formsApi = {
   getWebForms: () => api.get('/forms?type=web').then((r) => r.data),
   activateWebForm: (id: number) => api.put(`/forms/${id}/activate-web`).then((r) => r.data),
   getActiveWebForm: () => api.get('/forms/web/active').then((r) => r.data),
+  getWebCustomer: (retailproId: string) => api.get(`/forms/web/customer?retailpro_id=${encodeURIComponent(retailproId)}`).then((r) => r.data),
 };

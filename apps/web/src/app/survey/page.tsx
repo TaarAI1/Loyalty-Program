@@ -28,7 +28,7 @@ interface ActiveForm {
   formQuestions: FormQuestion[];
 }
 
-// ── Emoji options (same as kiosk) ─────────────────────────────────────────────
+// ── Emoji options ─────────────────────────────────────────────────────────────
 
 const EMOJIS = [
   { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f621.svg', label: 'Very Bad' },
@@ -150,34 +150,46 @@ function QuestionInput({
 // ── Main survey component ─────────────────────────────────────────────────────
 
 function SurveyContent() {
-  const searchParams = useSearchParams();
-  const customerName  = searchParams.get('name')  ?? '';
-  const customerPhone = searchParams.get('phone') ?? '';
+  const searchParams  = useSearchParams();
+  const retailproId   = searchParams.get('retailpro_id')  ?? '';
+  const transactionId = searchParams.get('transaction_id') ?? '';
 
-  const [form, setForm]       = useState<ActiveForm | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [form, setForm]           = useState<ActiveForm | null>(null);
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [answers, setAnswers]     = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted]   = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [noForm, setNoForm]         = useState(false);
 
-  const loadForm = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/forms/web/active`);
-      if (res.data) {
-        setForm(res.data);
+      // Fetch active form and customer name in parallel
+      const [formRes, nameRes] = await Promise.allSettled([
+        axios.get(`${API_URL}/forms/web/active`),
+        retailproId
+          ? axios.get(`${API_URL}/forms/web/customer?retailpro_id=${encodeURIComponent(retailproId)}`)
+          : Promise.resolve({ data: { name: null } }),
+      ]);
+
+      if (formRes.status === 'fulfilled' && formRes.value.data) {
+        setForm(formRes.value.data);
       } else {
         setNoForm(true);
+      }
+
+      if (nameRes.status === 'fulfilled') {
+        setCustomerName(nameRes.value.data?.name ?? null);
       }
     } catch {
       setNoForm(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [retailproId]);
 
-  useEffect(() => { loadForm(); }, [loadForm]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   function setAnswer(questionId: number, value: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -194,9 +206,9 @@ function SurveyContent() {
     setError(null);
     try {
       await axios.post(`${API_URL}/forms/web/submit`, {
-        formId: form.id,
-        customerName:  customerName  || undefined,
-        customerPhone: customerPhone || undefined,
+        formId:        form.id,
+        retailproId:   retailproId   || undefined,
+        transactionId: transactionId || undefined,
         answers: form.formQuestions.map((fq) => ({
           questionId: fq.question.id,
           value: answers[fq.question.id] ?? '',
@@ -209,6 +221,8 @@ function SurveyContent() {
       setSubmitting(false);
     }
   }
+
+  const firstName = customerName ? customerName.split(' ')[0] : null;
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
@@ -240,7 +254,9 @@ function SurveyContent() {
           <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-5">
             <span className="text-4xl">✅</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Thank You{customerName ? `, ${customerName.split(' ')[0]}` : ''}!</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Thank You{firstName ? `, ${firstName}` : ''}!
+          </h2>
           <p className="text-gray-500 text-sm">Your feedback has been submitted. We appreciate your time!</p>
         </div>
       </div>
@@ -257,8 +273,8 @@ function SurveyContent() {
             <span className="text-2xl">📝</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-800">{form.name}</h1>
-          {customerName && (
-            <p className="text-sm text-gray-500 mt-1">Hi {customerName.split(' ')[0]}, we'd love your feedback!</p>
+          {firstName && (
+            <p className="text-sm text-gray-500 mt-1">Hi {firstName}, we&apos;d love your feedback!</p>
           )}
         </div>
 
