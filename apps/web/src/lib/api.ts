@@ -163,4 +163,7 @@ export const formsApi = {
   assignForm: (data: { formId: number; deviceIds: number[] }) =>
     api.post('/forms/assignments', data).then((r) => r.data),
   deleteAssignment: (id: number) => api.delete(`/forms/assignments/${id}`).then((r) => r.data),
+  // Web feedback
+  getWebFeedback: () => api.get('/forms/web/responses').then((r) => r.data),
+  getWebFeedbackResponse: (id: number) => api.get(`/forms/web/responses/${id}`).then((r) => r.data),
 };

@@ -2,15 +2,15 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Eye, Loader2, Search, Filter, Download, Phone, Tablet } from 'lucide-react';
+import { MessageSquare, Eye, Loader2, Search, Filter, Download, Phone, Tablet, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
+import { formsApi } from '@/lib/api';
 
 interface FeedbackRow {
   id: number;
@@ -19,6 +19,14 @@ interface FeedbackRow {
   formName: string;
   deviceName: string;
   store: string | null;
+  submittedAt: string;
+}
+
+interface WebFeedbackRow {
+  id: number;
+  customerName: string | null;
+  customerPhone: string | null;
+  formName: string;
   submittedAt: string;
 }
 
@@ -43,22 +51,21 @@ function Avatar({ name }: { name: string | null }) {
   );
 }
 
-const emptyFilters = { customerSearch: '', dateFrom: '', dateTo: '', deviceFilter: '', storeFilter: '' };
+// ── Android Feedback Tab (original page content, unchanged) ──────────────────
 
-export default function FeedbackPage() {
+const emptyAndroidFilters = { customerSearch: '', dateFrom: '', dateTo: '', deviceFilter: '', storeFilter: '' };
+
+function AndroidFeedbackTab() {
   const [rows, setRows]       = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
-  // ── Live filter state (what the inputs show) ──────────────────────────────
   const [customerSearch, setCustomer] = useState('');
   const [dateFrom, setDateFrom]       = useState('');
   const [dateTo, setDateTo]           = useState('');
   const [deviceFilter, setDevice]     = useState('');
   const [storeFilter, setStore]       = useState('');
-
-  // ── Applied filter state (used for actual filtering, updated on Apply click)
-  const [applied, setApplied] = useState(emptyFilters);
+  const [applied, setApplied]         = useState(emptyAndroidFilters);
 
   const fetchRows = useCallback(() => {
     setLoading(true);
@@ -72,11 +79,9 @@ export default function FeedbackPage() {
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  // ── Derived options ─────────────────────────────────────────────────────────
   const deviceOptions = Array.from(new Set(rows.map((r) => r.deviceName))).filter(Boolean);
   const storeOptions  = Array.from(new Set(rows.map((r) => r.store ?? ''))).filter(Boolean);
 
-  // ── Filtering uses applied state ────────────────────────────────────────────
   const filteredRows = rows.filter((r) => {
     if (applied.dateFrom && new Date(r.submittedAt) < new Date(applied.dateFrom)) return false;
     if (applied.dateTo   && new Date(r.submittedAt) > new Date(applied.dateTo + 'T23:59:59')) return false;
@@ -94,15 +99,10 @@ export default function FeedbackPage() {
   }
 
   function resetFilters() {
-    setCustomer('');
-    setDateFrom('');
-    setDateTo('');
-    setDevice('');
-    setStore('');
-    setApplied(emptyFilters);
+    setCustomer(''); setDateFrom(''); setDateTo(''); setDevice(''); setStore('');
+    setApplied(emptyAndroidFilters);
   }
 
-  // ── Export CSV ──────────────────────────────────────────────────────────────
   function exportCsv() {
     const headers = ['ID', 'Customer', 'Phone', 'Form', 'Device', 'Store', 'Submitted'];
     const csvRows = [
@@ -117,9 +117,360 @@ export default function FeedbackPage() {
     const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = 'feedback.csv'; a.click();
+    a.href = url; a.download = 'android-feedback.csv'; a.click();
     URL.revokeObjectURL(url);
   }
+
+  return (
+    <div className="flex gap-4 h-full">
+      {/* Filter Sidebar */}
+      <aside className="w-64 flex-shrink-0">
+        <Card className="sticky top-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Filter className="w-4 h-4" /> Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0 text-sm">
+            <div className="space-y-1">
+              <Label>Customer</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input type="text" placeholder="Name or phone…" value={customerSearch}
+                  onChange={(e) => setCustomer(e.target.value)} className="pl-8" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>From Date</Label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>To Date</Label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Device</Label>
+              <Select options={[{ value: '', label: 'All Devices' }, ...deviceOptions.map((d) => ({ value: d, label: d }))]}
+                value={deviceFilter} onChange={(e) => setDevice(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Store</Label>
+              <Select options={[{ value: '', label: 'All Stores' }, ...storeOptions.map((s) => ({ value: s, label: s }))]}
+                value={storeFilter} onChange={(e) => setStore(e.target.value)} />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" size="sm" onClick={applyFilters}>Apply</Button>
+              <Button className="flex-1" size="sm" onClick={resetFilters} variant="outline">Reset</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </aside>
+
+      {/* Table */}
+      <div className="flex-1 min-w-0 space-y-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle>All Submissions</CardTitle>
+              <div className="flex items-center gap-3">
+                {!loading && !error && (
+                  <span className="text-sm text-muted-foreground">
+                    Showing <span className="font-semibold text-foreground">{filteredRows.length}</span> of{' '}
+                    <span className="font-semibold text-foreground">{rows.length}</span> submissions
+                  </span>
+                )}
+                {filteredRows.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={exportCsv}>
+                    <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading && <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
+            {!loading && error && <p className="py-8 text-center text-sm text-destructive">{error}</p>}
+            {!loading && !error && filteredRows.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {rows.length === 0
+                  ? 'No feedback submissions yet. Once customers fill in forms from the kiosk, they will appear here.'
+                  : 'No submissions match the current filters.'}
+              </p>
+            )}
+            {!loading && !error && filteredRows.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Form</TableHead>
+                    <TableHead>Device</TableHead>
+                    <TableHead>Store</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((row) => (
+                    <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={row.customerName} />
+                          <span className="font-medium">
+                            {row.customerName ?? <span className="text-muted-foreground italic text-xs">Unknown</span>}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {row.customerPhone
+                          ? <span className="inline-flex items-center gap-1.5 text-sm"><Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />{row.customerPhone}</span>
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                          {row.formName}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Tablet className="h-3.5 w-3.5 flex-shrink-0" />{row.deviceName}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {row.store ? <span className="text-sm">{row.store}</span> : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-sm font-medium">
+                            {new Date(row.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(row.submittedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/feedback/${row.id}`}>
+                          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7 px-2.5">
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── Web Feedback Tab ──────────────────────────────────────────────────────────
+
+const emptyWebFilters = { customerSearch: '', dateFrom: '', dateTo: '', formFilter: '' };
+
+function WebFeedbackTab() {
+  const [rows, setRows]       = useState<WebFeedbackRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  const [customerSearch, setCustomer] = useState('');
+  const [dateFrom, setDateFrom]       = useState('');
+  const [dateTo, setDateTo]           = useState('');
+  const [formFilter, setFormFilter]   = useState('');
+  const [applied, setApplied]         = useState(emptyWebFilters);
+
+  const fetchRows = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    formsApi.getWebFeedback()
+      .then((data) => setRows(data))
+      .catch((err) => setError(err?.message ?? 'Failed to load web feedback.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  const formOptions = Array.from(new Set(rows.map((r) => r.formName))).filter(Boolean);
+
+  const filteredRows = rows.filter((r) => {
+    if (applied.dateFrom && new Date(r.submittedAt) < new Date(applied.dateFrom)) return false;
+    if (applied.dateTo   && new Date(r.submittedAt) > new Date(applied.dateTo + 'T23:59:59')) return false;
+    if (applied.customerSearch) {
+      const q = applied.customerSearch.toLowerCase();
+      if (!(r.customerName?.toLowerCase().includes(q) || r.customerPhone?.includes(q))) return false;
+    }
+    if (applied.formFilter && r.formName !== applied.formFilter) return false;
+    return true;
+  });
+
+  function applyFilters() {
+    setApplied({ customerSearch, dateFrom, dateTo, formFilter });
+  }
+
+  function resetFilters() {
+    setCustomer(''); setDateFrom(''); setDateTo(''); setFormFilter('');
+    setApplied(emptyWebFilters);
+  }
+
+  function exportCsv() {
+    const headers = ['ID', 'Customer', 'Phone', 'Form', 'Submitted'];
+    const csvRows = [
+      headers.join(','),
+      ...filteredRows.map((r) =>
+        [r.id, r.customerName ?? '', r.customerPhone ?? '', r.formName, new Date(r.submittedAt).toLocaleString()]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(',')
+      ),
+    ];
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'web-feedback.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="flex gap-4 h-full">
+      {/* Filter Sidebar */}
+      <aside className="w-64 flex-shrink-0">
+        <Card className="sticky top-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Filter className="w-4 h-4" /> Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0 text-sm">
+            <div className="space-y-1">
+              <Label>Customer</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input type="text" placeholder="Name or phone…" value={customerSearch}
+                  onChange={(e) => setCustomer(e.target.value)} className="pl-8" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>From Date</Label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>To Date</Label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Form</Label>
+              <Select options={[{ value: '', label: 'All Forms' }, ...formOptions.map((f) => ({ value: f, label: f }))]}
+                value={formFilter} onChange={(e) => setFormFilter(e.target.value)} />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" size="sm" onClick={applyFilters}>Apply</Button>
+              <Button className="flex-1" size="sm" onClick={resetFilters} variant="outline">Reset</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </aside>
+
+      {/* Table */}
+      <div className="flex-1 min-w-0 space-y-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle>Web Submissions</CardTitle>
+              <div className="flex items-center gap-3">
+                {!loading && !error && (
+                  <span className="text-sm text-muted-foreground">
+                    Showing <span className="font-semibold text-foreground">{filteredRows.length}</span> of{' '}
+                    <span className="font-semibold text-foreground">{rows.length}</span> submissions
+                  </span>
+                )}
+                {filteredRows.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={exportCsv}>
+                    <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading && <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
+            {!loading && error && <p className="py-8 text-center text-sm text-destructive">{error}</p>}
+            {!loading && !error && filteredRows.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {rows.length === 0
+                  ? 'No web form submissions yet. Once customers submit a web form, they will appear here.'
+                  : 'No submissions match the current filters.'}
+              </p>
+            )}
+            {!loading && !error && filteredRows.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Form</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((row) => (
+                    <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={row.customerName} />
+                          <span className="font-medium">
+                            {row.customerName ?? <span className="text-muted-foreground italic text-xs">Unknown</span>}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {row.customerPhone
+                          ? <span className="inline-flex items-center gap-1.5 text-sm"><Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />{row.customerPhone}</span>
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                          {row.formName}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-sm font-medium">
+                            {new Date(row.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(row.submittedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/feedback/web/${row.id}`}>
+                          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7 px-2.5">
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+type TabId = 'android' | 'web';
+
+export default function FeedbackPage() {
+  const [activeTab, setActiveTab] = useState<TabId>('android');
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -129,217 +480,37 @@ export default function FeedbackPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Customer Feedback</h1>
           <p className="text-sm text-muted-foreground">
-            Form submissions received from kiosk devices
+            Form submissions received from kiosk devices and web forms
           </p>
         </div>
       </div>
 
-      {/* Sidebar + Table */}
-      <div className="flex gap-4 h-full">
-
-        {/* ── Filter Sidebar ── */}
-        <aside className="w-64 flex-shrink-0">
-          <Card className="sticky top-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Filter className="w-4 h-4" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-0 text-sm">
-
-              {/* Customer */}
-              <div className="space-y-1">
-                <Label>Customer</Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                  <Input
-                    type="text"
-                    placeholder="Name or phone…"
-                    value={customerSearch}
-                    onChange={(e) => setCustomer(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-
-              {/* Date From */}
-              <div className="space-y-1">
-                <Label>From Date</Label>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
-              </div>
-
-              {/* Date To */}
-              <div className="space-y-1">
-                <Label>To Date</Label>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
-              </div>
-
-              {/* Device */}
-              <div className="space-y-1">
-                <Label>Device</Label>
-                <Select
-                  options={[{ value: '', label: 'All Devices' }, ...deviceOptions.map((d) => ({ value: d, label: d }))]}
-                  value={deviceFilter}
-                  onChange={(e) => setDevice(e.target.value)}
-                />
-              </div>
-
-              {/* Store */}
-              <div className="space-y-1">
-                <Label>Store</Label>
-                <Select
-                  options={[{ value: '', label: 'All Stores' }, ...storeOptions.map((s) => ({ value: s, label: s }))]}
-                  value={storeFilter}
-                  onChange={(e) => setStore(e.target.value)}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-2">
-                <Button className="flex-1" size="sm" onClick={applyFilters}>
-                  Apply
-                </Button>
-                <Button className="flex-1" size="sm" onClick={resetFilters} variant="outline">
-                  Reset
-                </Button>
-              </div>
-
-            </CardContent>
-          </Card>
-        </aside>
-
-        {/* ── Table ── */}
-        <div className="flex-1 min-w-0 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle>All Submissions</CardTitle>
-                <div className="flex items-center gap-3">
-                  {!loading && !error && (
-                    <span className="text-sm text-muted-foreground">
-                      Showing <span className="font-semibold text-foreground">{filteredRows.length}</span> of{' '}
-                      <span className="font-semibold text-foreground">{rows.length}</span> submissions
-                    </span>
-                  )}
-                  {filteredRows.length > 0 && (
-                    <Button variant="outline" size="sm" onClick={exportCsv}>
-                      <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading && (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              )}
-
-              {!loading && error && (
-                <p className="py-8 text-center text-sm text-destructive">{error}</p>
-              )}
-
-              {!loading && !error && filteredRows.length === 0 && (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  {rows.length === 0
-                    ? 'No feedback submissions yet. Once customers fill in forms from the kiosk, they will appear here.'
-                    : 'No submissions match the current filters.'}
-                </p>
-              )}
-
-              {!loading && !error && filteredRows.length > 0 && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Form</TableHead>
-                      <TableHead>Device</TableHead>
-                      <TableHead>Store</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRows.map((row) => (
-                      <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
-                        {/* Customer with avatar */}
-                        <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <Avatar name={row.customerName} />
-                            <span className="font-medium">
-                              {row.customerName ?? <span className="text-muted-foreground italic text-xs">Unknown</span>}
-                            </span>
-                          </div>
-                        </TableCell>
-                        {/* Phone with icon */}
-                        <TableCell>
-                          {row.customerPhone
-                            ? <span className="inline-flex items-center gap-1.5 text-sm">
-                                <Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                {row.customerPhone}
-                              </span>
-                            : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        {/* Form badge — yellow tinted */}
-                        <TableCell>
-                          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                            {row.formName}
-                          </span>
-                        </TableCell>
-                        {/* Device with icon */}
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <Tablet className="h-3.5 w-3.5 flex-shrink-0" />
-                            {row.deviceName}
-                          </span>
-                        </TableCell>
-                        {/* Store */}
-                        <TableCell>
-                          {row.store
-                            ? <span className="text-sm">{row.store}</span>
-                            : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        {/* Submitted — date + time stacked */}
-                        <TableCell>
-                          <div className="flex flex-col leading-tight">
-                            <span className="text-sm font-medium">
-                              {new Date(row.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(row.submittedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        </TableCell>
-                        {/* View button */}
-                        <TableCell className="text-right">
-                          <Link href={`/feedback/${row.id}`}>
-                            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7 px-2.5">
-                              <Eye className="h-3.5 w-3.5" />
-                              View
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+      {/* Tabs */}
+      <div className="border-b">
+        <div className="flex gap-1">
+          {([
+            { id: 'android' as TabId, label: 'Android Feedback', icon: <Tablet className="h-4 w-4" /> },
+            { id: 'web'     as TabId, label: 'Web Feedback',     icon: <Globe  className="h-4 w-4" /> },
+          ]).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
+            >
+              {tab.icon}{tab.label}
+            </button>
+          ))}
         </div>
-
       </div>
+
+      {/* Tab content */}
+      {activeTab === 'android' && <AndroidFeedbackTab />}
+      {activeTab === 'web'     && <WebFeedbackTab />}
     </div>
   );
 }

@@ -363,4 +363,75 @@ export class FormsService {
       })),
     };
   }
+
+  // ── Web form responses ───────────────────────────────────────────────────────
+
+  async webGetResponses() {
+    const rows = await this.prisma.formResponse.findMany({
+      where: { deviceId: null },
+      orderBy: { submittedAt: 'desc' },
+      include: { form: { select: { id: true, name: true } } },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Deleted Form',
+      submittedAt: r.submittedAt,
+    }));
+  }
+
+  async webGetResponse(id: number) {
+    const r = await this.prisma.formResponse.findUnique({
+      where: { id },
+      include: {
+        form: {
+          include: {
+            formQuestions: {
+              include: { question: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
+    });
+    if (!r) throw new NotFoundException('Response not found.');
+
+    const answers = Array.isArray(r.answers) ? (r.answers as { questionId: number; value: string }[]) : [];
+    const questions = r.form?.formQuestions ?? [];
+
+    return {
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Deleted Form',
+      submittedAt: r.submittedAt,
+      answers: questions.map((fq) => ({
+        question: fq.question.text,
+        questionType: fq.question.questionType,
+        answer: answers.find((a) => Number(a.questionId) === fq.question.id)?.value ?? '',
+      })),
+    };
+  }
+
+  async webSubmit(data: {
+    formId: number;
+    customerName?: string;
+    customerPhone?: string;
+    answers: { questionId: number; value: string }[];
+  }) {
+    const form = await this.prisma.surveyForm.findUnique({ where: { id: data.formId } });
+    if (!form) throw new NotFoundException('Form not found.');
+
+    const response = await this.prisma.formResponse.create({
+      data: {
+        deviceId: null,
+        formId: data.formId,
+        customerName: data.customerName ?? null,
+        customerPhone: data.customerPhone ?? null,
+        answers: data.answers,
+      },
+    });
+    return { success: true, responseId: response.id };
+  }
 }

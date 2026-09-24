@@ -167,4 +167,22 @@ export class FormsController {
   kioskGetResponse(@Param('id', ParseIntPipe) id: number) {
     return this.formsService.kioskGetResponse(id);
   }
+
+  // ── Web form responses (JWT-protected — dashboard only) ──────────────────────
+
+  @Get('web/responses')
+  webGetResponses() {
+    return this.formsService.webGetResponses();
+  }
+
+  @Get('web/responses/:id')
+  webGetResponse(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.webGetResponse(id);
+  }
+
+  @Public()
+  @Post('web/submit')
+  webSubmit(@Body() body: { formId: number; customerName?: string; customerPhone?: string; answers: { questionId: number; value: string }[] }) {
+    return this.formsService.webSubmit(body);
+  }
 }
