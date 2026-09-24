@@ -983,9 +983,13 @@ export default function CustomerDetailPage() {
                 { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
               ];
               return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+
+                  {/* Left column: ICP + Demographics stacked */}
+                  <div className="flex flex-col gap-4 md:w-1/3">
+
                   {/* Persona ICP */}
-                  <div className={`rounded-xl border p-4 space-y-3 self-start ${bc.bg} ${bc.border}`}>
+                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
                     <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
                       {bc.icon} {p.label}
@@ -1043,7 +1047,7 @@ export default function CustomerDetailPage() {
                   </div>
 
                   {/* Demographics grid */}
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20 self-start">
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" /> Demographics
                     </p>
@@ -1064,7 +1068,10 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
 
-                  {/* Strategic Insights + Recommended Actions */}
+                  </div>{/* end left column */}
+
+                  {/* Right column: Strategic Insights + Recommended Actions */}
+                  <div className="flex-1">
                   <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
                     <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -1097,6 +1104,7 @@ export default function CustomerDetailPage() {
                       </ul>
                     </div>
                   </div>
+                  </div>{/* end right column */}
 
                 </div>
               );
