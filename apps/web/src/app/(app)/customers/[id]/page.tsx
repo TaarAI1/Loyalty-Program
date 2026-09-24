@@ -1110,7 +1110,6 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
-            </div>
 
             {/* ── Quick-facts strip ── */}
             {(() => {
