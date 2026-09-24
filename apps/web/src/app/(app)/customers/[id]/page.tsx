@@ -985,7 +985,7 @@ export default function CustomerDetailPage() {
               return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                   {/* Persona ICP */}
-                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
+                  <div className={`rounded-xl border p-4 space-y-3 self-start ${bc.bg} ${bc.border}`}>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
                     <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
                       {bc.icon} {p.label}
@@ -1024,7 +1024,7 @@ export default function CustomerDetailPage() {
                   </div>
 
                   {/* Demographics grid */}
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20 self-start">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" /> Demographics
                     </p>
@@ -1085,9 +1085,12 @@ export default function CustomerDetailPage() {
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
                       <div className="space-y-1.5">
                         {((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d) => (
-                          <div key={d.dscname} className="flex items-center justify-between">
+                          <div key={d.dscname} className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold truncate">{d.dscname}</p>
-                            <p className="text-xs text-muted-foreground shrink-0 ml-2">{d.count}x</p>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <p className="text-xs text-muted-foreground">{d.count}</p>
+                              <p className="text-xs font-semibold">{d.percentage}%</p>
+                            </div>
                           </div>
                         ))}
                       </div>
