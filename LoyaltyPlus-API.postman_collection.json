@@ -189,7 +189,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["customers","{{customerId}}","persona"]
             },
-            "description": "Returns persona fields for a customer: segment, engagementScore, occupation, gender, maritalStatus, preferredChannel, and all demographic fields."
+            "description": "Returns persona fields, tier, loyalty stats, and dcsBreakdown for a customer. dcsBreakdown shows each unique dscname from the customer's transaction items with count and percentage (sums to 100)."
           }
         },
         {

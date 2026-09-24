@@ -578,6 +578,32 @@ export class CustomersService {
 
     const { totalPoints, createdAt, lastVisitDate: _lvd, ...personaFields } = customer;
 
+    // DCS purchase breakdown — extract dscname from each item's dcs JSONB array
+    const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
+      SELECT
+        dcs_item->>'dscname'  AS dscname,
+        COUNT(*)::int          AS count
+      FROM transaction_items ti
+      JOIN transactions t ON t.id = ti.transaction_id
+      CROSS JOIN jsonb_array_elements(ti.dcs) AS dcs_item
+      WHERE t.customer_id = ${id}::uuid
+        AND ti.dcs IS NOT NULL
+        AND dcs_item->>'dscname' IS NOT NULL
+        AND dcs_item->>'dscname' != ''
+      GROUP BY dcs_item->>'dscname'
+      ORDER BY count DESC
+    `;
+
+    const totalDcsCount = dcsRaw.reduce((sum, r) => sum + r.count, 0);
+    const dcsBreakdown = dcsRaw.map((r, i, arr) => {
+      // Last item gets remainder so all percentages sum to exactly 100
+      const assignedSoFar = arr.slice(0, i).reduce((s, x) => s + Math.round((x.count / totalDcsCount) * 100), 0);
+      const pct = i < arr.length - 1
+        ? Math.round((r.count / totalDcsCount) * 100)
+        : 100 - assignedSoFar;
+      return { dscname: r.dscname, count: r.count, percentage: pct };
+    });
+
     return {
       ...personaFields,
       loyaltyStats: {
@@ -594,6 +620,7 @@ export class CustomersService {
           ? { points: nextExpiry.pointsRemaining, expiryDate: nextExpiry.expiryDate }
           : null,
       },
+      dcsBreakdown,
     };
   }
 
