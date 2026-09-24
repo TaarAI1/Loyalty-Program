@@ -517,6 +517,7 @@ export class CustomersService {
       select: {
         id: true,
         totalPoints: true,
+        lifetimeSale: true,
         createdAt: true,
         lastVisitDate: true,
         dateOfBirth: true,
@@ -640,7 +641,29 @@ export class CustomersService {
       return { dscname: r.dscname, count: r.count, percentage: pct };
     });
 
-    const { totalPoints, createdAt, lastVisitDate: _lvd, dateOfBirth: _dob, ...personaFields } = customer;
+    const { totalPoints, createdAt, lastVisitDate: _lvd, dateOfBirth: _dob, lifetimeSale, ...personaFields } = customer;
+
+    // ICP Persona — label + description based on RFM segment
+    const seg = customer.segment ?? 'new';
+    const labelMap: Record<string, string> = {
+      champion: 'Champion', loyal: 'Loyal', potential: 'Potential Loyalist',
+      new: 'New Customer', at_risk: 'At Risk', dormant: 'Dormant',
+    };
+    const icpLabel = labelMap[seg] ?? seg;
+    const lifetimeSaleNum = Number(lifetimeSale ?? 0);
+    const icpDescription = seg === 'champion'
+      ? `Champion customer, shopping regularly at ${preferredStore ?? 'the store'} with a ${redemptionRate}% redemption rate and Rs ${lifetimeSaleNum.toLocaleString()} lifetime spend.`
+      : seg === 'loyal'
+      ? `Loyal customer with ${txCount} transactions and consistent shopping behaviour.`
+      : seg === 'potential'
+      ? `Potential loyalist with ${txCount} transactions and growing engagement.`
+      : seg === 'at_risk'
+      ? `At-risk customer — no visit in ${daysSinceLastVisit ?? '?'} days. Re-engagement recommended.`
+      : seg === 'dormant'
+      ? `Dormant customer with no activity in over ${daysSinceLastVisit ?? '?'} days.`
+      : `New customer who recently joined the loyalty program.`;
+
+    const icpPersona = { segment: seg, label: icpLabel, description: icpDescription };
 
     return {
       ...personaFields,
@@ -651,6 +674,7 @@ export class CustomersService {
       preferredDay,
       loyaltyStats: {
         totalSpend: Number(txAgg._sum.saleAmount ?? 0),
+        lifetimeSale: lifetimeSaleNum,
         totalTransactions: txCount,
         avgOrderValue: Math.round(Number(txAgg._avg.saleAmount ?? 0)),
         pointsEarned: totalPointsEarned,
@@ -663,6 +687,7 @@ export class CustomersService {
           ? { points: nextExpiry.pointsRemaining, expiryDate: nextExpiry.expiryDate }
           : null,
       },
+      icpPersona,
       dcsBreakdown,
     };
   }
