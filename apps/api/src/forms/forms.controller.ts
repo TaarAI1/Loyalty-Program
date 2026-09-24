@@ -44,13 +44,18 @@ export class FormsController {
   // ── Forms ─────────────────────────────────────────────────────────────────────
 
   @Get()
-  getForms() {
-    return this.formsService.getForms();
+  getForms(@Query('type') type?: string) {
+    return this.formsService.getForms(type);
   }
 
   @Post()
-  createForm(@Body() body: { name: string; questionIds: number[]; status?: string }) {
+  createForm(@Body() body: { name: string; questionIds: number[]; status?: string; type?: string }) {
     return this.formsService.createForm(body);
+  }
+
+  @Put(':id/activate-web')
+  activateWebForm(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.activateWebForm(id);
   }
 
   @Put(':id')

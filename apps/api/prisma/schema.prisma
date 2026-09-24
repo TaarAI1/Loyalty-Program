@@ -356,6 +356,7 @@ model SurveyForm {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(255)
   status    String   @default("active") @db.VarChar(20)
+  type      String   @default("pos") @db.VarChar(20)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

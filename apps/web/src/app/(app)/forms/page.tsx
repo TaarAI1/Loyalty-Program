@@ -1269,14 +1269,243 @@ function FormAssignTab() {
   );
 }
 
+// ── Web Form Tab ──────────────────────────────────────────────────────────────
+
+function WebFormTab() {
+  const [forms, setForms]           = useState<Form[]>([]);
+  const [questions, setQuestions]   = useState<Question[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+  const [activating, setActivating] = useState<number | null>(null);
+  const [showModal, setShowModal]   = useState(false);
+  const [formName, setFormName]     = useState('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [f, q] = await Promise.all([
+        formsApi.getWebForms(),
+        formsApi.getQuestions(),
+      ]);
+      setForms(f);
+      setQuestions(q.filter((x: Question) => x.status === 'active'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  function openModal() {
+    setFormName('');
+    setSelectedIds([]);
+    setShowModal(true);
+  }
+
+  function toggleQ(id: number) {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  }
+
+  async function handleSave() {
+    if (!formName.trim() || selectedIds.length === 0) return;
+    setSaving(true);
+    try {
+      await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
+      // deactivate all others — backend activateWebForm handles it; but createForm already sets this active
+      // re-fetch to sync
+      setShowModal(false);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleActivate(id: number) {
+    setActivating(id);
+    try {
+      await formsApi.activateWebForm(id);
+      await load();
+    } finally {
+      setActivating(null);
+    }
+  }
+
+  const dotColors: Record<string, string> = {
+    text:     'bg-blue-100 text-blue-700 border-blue-200',
+    textarea: 'bg-orange-100 text-orange-700 border-orange-200',
+    rating:   'bg-yellow-100 text-yellow-700 border-yellow-200',
+    boolean:  'bg-green-100 text-green-700 border-green-200',
+    select:   'bg-purple-100 text-purple-700 border-purple-200',
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Web forms that customers can fill in via a browser link. Only one form can be active at a time.</p>
+        <button
+          onClick={openModal}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Create Web Form
+        </button>
+      </div>
+
+      {/* List */}
+      {loading && <div className="flex justify-center py-16"><CheckCircle2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
+
+      {!loading && forms.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border p-12 text-center">
+          <Monitor className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium">No web forms yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Click "Create Web Form" to build your first one.</p>
+        </div>
+      )}
+
+      {!loading && forms.length > 0 && (
+        <div className="space-y-3">
+          {forms.map((form) => {
+            const isActive = form.status === 'active';
+            const activeQs = form.formQuestions.filter((fq) => fq.question.status === 'active');
+            const typeSet  = Array.from(new Set(activeQs.map((fq) => fq.question.questionType))).slice(0, 4);
+            return (
+              <div
+                key={form.id}
+                className={`rounded-xl border p-4 flex items-center gap-4 transition-all ${
+                  isActive
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-background opacity-60 grayscale'
+                }`}
+              >
+                {/* Info */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{form.name}</span>
+                    {isActive ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">active</span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">inactive</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {typeSet.map((t) => (
+                      <span key={t} className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${dotColors[t] ?? 'bg-muted text-muted-foreground border-border'}`}>
+                        {TYPE_META[t]?.icon}
+                        {TYPE_LABEL[t] ?? t}
+                      </span>
+                    ))}
+                    {activeQs.length > 4 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">+{activeQs.length - 4} more</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Q count */}
+                <span className="text-xs font-semibold text-muted-foreground shrink-0">{activeQs.length} Q</span>
+
+                {/* Set Active button (only for inactive) */}
+                {!isActive && (
+                  <button
+                    onClick={() => handleActivate(form.id)}
+                    disabled={activating === form.id}
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  >
+                    {activating === form.id ? 'Activating…' : 'Set Active'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h2 className="font-bold text-base">Create Web Form</h2>
+              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+              {/* Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Form Name</label>
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Customer Satisfaction Survey"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+
+              {/* Questions */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Questions</label>
+                {questions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No active questions found. Add questions in the Questions tab first.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                    {questions.map((q) => (
+                      <label key={q.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+                        selectedIds.includes(q.id) ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(q.id)}
+                          onChange={() => toggleQ(q.id)}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-snug">{q.text}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{TYPE_LABEL[q.questionType] ?? q.questionType}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex items-center justify-between px-5 py-4 border-t border-border gap-3">
+              <span className="text-xs text-muted-foreground">{selectedIds.length} question{selectedIds.length !== 1 ? 's' : ''} selected</span>
+              <div className="flex gap-2">
+                <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !formName.trim() || selectedIds.length === 0}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Form'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-type TabId = 'questions' | 'form-build' | 'form-assign';
+type TabId = 'questions' | 'form-build' | 'form-assign' | 'web-form';
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'questions',   label: 'Questions',   icon: <HelpCircle     className="h-4 w-4" /> },
   { id: 'form-build',  label: 'Form Build',  icon: <LayoutTemplate className="h-4 w-4" /> },
   { id: 'form-assign', label: 'Form Assign', icon: <Tablet         className="h-4 w-4" /> },
+  { id: 'web-form',    label: 'Web Form',    icon: <Monitor        className="h-4 w-4" /> },
 ];
 
 export default function FormsPage() {
@@ -1318,6 +1547,7 @@ export default function FormsPage() {
         {activeTab === 'questions'   && <QuestionsTab />}
         {activeTab === 'form-build'  && <FormBuildTab />}
         {activeTab === 'form-assign' && <FormAssignTab />}
+        {activeTab === 'web-form'    && <WebFormTab />}
       </div>
     </div>
   );

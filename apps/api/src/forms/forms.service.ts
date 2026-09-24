@@ -60,9 +60,10 @@ export class FormsService {
 
   // ── Forms ─────────────────────────────────────────────────────────────────────
 
-  async getForms() {
+  async getForms(type?: string) {
     return this.prisma.surveyForm.findMany({
       orderBy: { createdAt: 'desc' },
+      where: type ? { type } : undefined,
       include: {
         formQuestions: {
           include: { question: true },
@@ -72,11 +73,12 @@ export class FormsService {
     });
   }
 
-  async createForm(data: { name: string; questionIds: number[]; status?: string }) {
+  async createForm(data: { name: string; questionIds: number[]; status?: string; type?: string }) {
     return this.prisma.surveyForm.create({
       data: {
         name: data.name,
         status: data.status ?? 'active',
+        type: data.type ?? 'pos',
         formQuestions: {
           create: data.questionIds.map((qid, i) => ({
             questionId: qid,
@@ -86,6 +88,15 @@ export class FormsService {
       },
       include: { formQuestions: { include: { question: true } } },
     });
+  }
+
+  async activateWebForm(id: number) {
+    await this.prisma.surveyForm.findFirstOrThrow({ where: { id, type: 'web' } });
+    await this.prisma.$transaction([
+      this.prisma.surveyForm.updateMany({ where: { type: 'web' }, data: { status: 'inactive' } }),
+      this.prisma.surveyForm.update({ where: { id }, data: { status: 'active' } }),
+    ]);
+    return { success: true };
   }
 
   async updateForm(id: number, data: { name?: string; status?: string; questionIds?: number[] }) {
