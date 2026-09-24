@@ -638,6 +638,22 @@ export class CustomersService {
     `;
     const preferredDay = dayRaw[0]?.day_name ?? null;
 
+    // Weekday visit breakdown
+    const weekdayRaw = await this.prisma.$queryRaw<{ day_name: string; cnt: number; visit_dates: string[] }[]>`
+      SELECT
+        TRIM(TO_CHAR(transaction_date, 'Day')) AS day_name,
+        COUNT(*)::int AS cnt,
+        ARRAY_AGG(TO_CHAR(transaction_date, 'DD-Mon-YYYY') ORDER BY transaction_date DESC) AS visit_dates
+      FROM transactions
+      WHERE customer_id = ${id}::uuid
+      GROUP BY day_name
+    `;
+    const dayOrder = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const weekdayBreakdown = dayOrder.map(day => {
+      const match = weekdayRaw.find(r => r.day_name === day);
+      return { day, count: match?.cnt ?? 0, dates: match?.visit_dates ?? [] };
+    });
+
     // DCS purchase breakdown — extract dscname from each item's dcs JSONB array
     const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
       SELECT
@@ -711,6 +727,7 @@ export class CustomersService {
       },
       icpPersona,
       dcsBreakdown,
+      weekdayBreakdown,
     };
   }
 
