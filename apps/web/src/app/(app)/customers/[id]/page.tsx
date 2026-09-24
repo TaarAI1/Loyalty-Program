@@ -72,6 +72,7 @@ export default function CustomerDetailPage() {
     deviceName: string;
     store: string | null;
     submittedAt: string;
+    source: 'kiosk' | 'web';
   };
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
   const [feedbacksLoading, setFeedbacksLoading] = useState(false);
@@ -79,9 +80,15 @@ export default function CustomerDetailPage() {
   useEffect(() => {
     if (!customer?.mobileNumber) return;
     setFeedbacksLoading(true);
-    api
-      .get('/forms/kiosk/responses', { params: { phone: customer.mobileNumber } })
-      .then((r) => setFeedbacks(r.data))
+    Promise.all([
+      api.get('/forms/kiosk/responses', { params: { phone: customer.mobileNumber } }),
+      api.get('/forms/web/responses',   { params: { phone: customer.mobileNumber } }),
+    ])
+      .then(([kioskRes, webRes]) => {
+        const kiosk: FeedbackRow[] = (kioskRes.data as FeedbackRow[]).map((r) => ({ ...r, source: 'kiosk' as const }));
+        const web: FeedbackRow[]   = (webRes.data as FeedbackRow[]).map((r) => ({ ...r, deviceName: 'Web', store: null, source: 'web' as const }));
+        setFeedbacks([...kiosk, ...web].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+      })
       .catch(() => setFeedbacks([]))
       .finally(() => setFeedbacksLoading(false));
   }, [customer?.mobileNumber]);
@@ -809,13 +816,13 @@ export default function CustomerDetailPage() {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-2" />
                   <p className="text-sm font-medium">No feedback yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Submissions from the kiosk will appear here.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Submissions from kiosk or web will appear here.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   {feedbacks.map((fb) => (
                     <button
-                      key={fb.id}
+                      key={`${fb.source}-${fb.id}`}
                       type="button"
                       onClick={() => router.push(`/feedback/${fb.id}`)}
                       className="text-left rounded-xl border bg-background hover:shadow-md hover:border-primary/40 transition-all p-4 flex flex-col gap-2"
@@ -824,9 +831,18 @@ export default function CustomerDetailPage() {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                           {fb.formName}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(fb.submittedAt).toLocaleDateString()}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            fb.source === 'web'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {fb.source === 'web' ? 'Web' : 'Kiosk'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(fb.submittedAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <MessageSquare className="h-3 w-3" />

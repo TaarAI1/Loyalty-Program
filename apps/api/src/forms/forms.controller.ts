@@ -181,9 +181,15 @@ export class FormsController {
     return this.formsService.getActiveWebForm();
   }
 
+  @Public()
+  @Get('web/customer')
+  getWebCustomer(@Query('retailpro_id') retailproId: string) {
+    return this.formsService.getWebCustomer(retailproId);
+  }
+
   @Get('web/responses')
-  webGetResponses() {
-    return this.formsService.webGetResponses();
+  webGetResponses(@Query('phone') phone?: string) {
+    return this.formsService.webGetResponses(phone);
   }
 
   @Get('web/responses/:id')
@@ -193,7 +199,14 @@ export class FormsController {
 
   @Public()
   @Post('web/submit')
-  webSubmit(@Body() body: { formId: number; customerName?: string; customerPhone?: string; answers: { questionId: number; value: string }[] }) {
+  webSubmit(@Body() body: {
+    formId: number;
+    retailproId?: string;
+    transactionId?: string;
+    customerName?: string;
+    customerPhone?: string;
+    answers: { questionId: number; value: string }[];
+  }) {
     return this.formsService.webSubmit(body);
   }
 }
