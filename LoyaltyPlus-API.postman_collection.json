@@ -207,7 +207,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"segment\": \"loyal\",\n  \"engagementScore\": 80,\n  \"occupation\": \"Engineer\",\n  \"gender\": \"Male\",\n  \"maritalStatus\": \"Single\",\n  \"preferredChannel\": \"WhatsApp\",\n  \"legalName\": null,\n  \"preferredName\": \"Ali\",\n  \"nationality\": \"Pakistani\",\n  \"city\": \"Lahore\",\n  \"area\": \"DHA\",\n  \"homeAddress\": null,\n  \"deliveryAddress\": null,\n  \"alternatePhone\": null,\n  \"dcsname\": null,\n  \"categories\": null\n}"
+              "raw": "{\n  \"segment\": \"loyal\",\n  \"engagementScore\": 80,\n  \"occupation\": \"Engineer\",\n  \"gender\": \"Male\",\n  \"maritalStatus\": \"Single\",\n  \"preferredChannel\": \"WhatsApp\",\n  \"legalName\": null,\n  \"preferredName\": \"Ali\",\n  \"nationality\": \"Pakistani\",\n  \"city\": \"Lahore\",\n  \"area\": \"DHA\",\n  \"homeAddress\": null,\n  \"deliveryAddress\": null,\n  \"alternatePhone\": null\n}"
             },
             "description": "Updates persona fields. All fields are optional. Segment values: new, loyal, at_risk, vip, dormant. engagementScore is an integer (0-100). Gender: Male, Female, Other. MaritalStatus: Single, Married, Divorced, Widowed. PreferredChannel: WhatsApp, SMS, Email."
           }

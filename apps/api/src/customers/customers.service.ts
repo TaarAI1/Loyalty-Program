@@ -519,6 +519,7 @@ export class CustomersService {
         totalPoints: true,
         createdAt: true,
         lastVisitDate: true,
+        dateOfBirth: true,
         segment: true,
         engagementScore: true,
         occupation: true,
@@ -533,8 +534,6 @@ export class CustomersService {
         homeAddress: true,
         deliveryAddress: true,
         alternatePhone: true,
-        dcsname: true,
-        categories: true,
         tier: {
           select: {
             id: true,
@@ -576,7 +575,45 @@ export class CustomersService {
       ? Math.round((totalPointsRedeemed / totalPointsEarned) * 100)
       : 0;
 
-    const { totalPoints, createdAt, lastVisitDate: _lvd, ...personaFields } = customer;
+    // Age + generation from dateOfBirth
+    const birthYear = customer.dateOfBirth ? new Date(customer.dateOfBirth).getFullYear() : null;
+    const age = customer.dateOfBirth
+      ? Math.floor((now - customer.dateOfBirth.getTime()) / 31557600000)
+      : null;
+    const generation = !birthYear ? null
+      : birthYear >= 2013 ? 'Gen Alpha'
+      : birthYear >= 1997 ? 'Gen Z'
+      : birthYear >= 1981 ? 'Millennial'
+      : birthYear >= 1965 ? 'Gen X'
+      : birthYear >= 1946 ? 'Baby Boomer'
+      : 'Silent Generation';
+
+    // Redeem type derived from redemption rate
+    const redeemType = redemptionRate === 0 ? 'Non-Redeemer'
+      : redemptionRate <= 25 ? 'Low Redeemer'
+      : redemptionRate <= 60 ? 'Moderate Redeemer'
+      : 'High Redeemer';
+
+    // Preferred store — most frequent store across transactions
+    const storeGroups = await this.prisma.transaction.groupBy({
+      by: ['store'],
+      where: { customerId: id, store: { not: null } },
+      _count: { store: true },
+      orderBy: { _count: { store: 'desc' } },
+      take: 1,
+    });
+    const preferredStore = storeGroups[0]?.store ?? null;
+
+    // Preferred day — most frequent transaction day of week
+    const dayRaw = await this.prisma.$queryRaw<{ day_name: string; cnt: number }[]>`
+      SELECT TRIM(TO_CHAR(transaction_date, 'Day')) AS day_name, COUNT(*)::int AS cnt
+      FROM transactions
+      WHERE customer_id = ${id}::uuid
+      GROUP BY day_name
+      ORDER BY cnt DESC
+      LIMIT 1
+    `;
+    const preferredDay = dayRaw[0]?.day_name ?? null;
 
     // DCS purchase breakdown — extract dscname from each item's dcs JSONB array
     const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
@@ -596,7 +633,6 @@ export class CustomersService {
 
     const totalDcsCount = dcsRaw.reduce((sum, r) => sum + r.count, 0);
     const dcsBreakdown = dcsRaw.map((r, i, arr) => {
-      // Last item gets remainder so all percentages sum to exactly 100
       const assignedSoFar = arr.slice(0, i).reduce((s, x) => s + Math.round((x.count / totalDcsCount) * 100), 0);
       const pct = i < arr.length - 1
         ? Math.round((r.count / totalDcsCount) * 100)
@@ -604,8 +640,15 @@ export class CustomersService {
       return { dscname: r.dscname, count: r.count, percentage: pct };
     });
 
+    const { totalPoints, createdAt, lastVisitDate: _lvd, dateOfBirth: _dob, ...personaFields } = customer;
+
     return {
       ...personaFields,
+      age,
+      generation,
+      redeemType,
+      preferredStore,
+      preferredDay,
       loyaltyStats: {
         totalSpend: Number(txAgg._sum.saleAmount ?? 0),
         totalTransactions: txCount,
@@ -641,8 +684,6 @@ export class CustomersService {
       homeAddress: string | null;
       deliveryAddress: string | null;
       alternatePhone: string | null;
-      dcsname: string | null;
-      categories: string | null;
     }>,
   ) {
     await this.assertExists(id);
@@ -665,8 +706,6 @@ export class CustomersService {
         homeAddress: true,
         deliveryAddress: true,
         alternatePhone: true,
-        dcsname: true,
-        categories: true,
       },
     });
   }

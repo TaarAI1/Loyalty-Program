@@ -159,8 +159,6 @@ export class CustomersController {
       homeAddress: string | null;
       deliveryAddress: string | null;
       alternatePhone: string | null;
-      dcsname: string | null;
-      categories: string | null;
     }>,
   ) {
     return this.customersService.updatePersona(id, body);
