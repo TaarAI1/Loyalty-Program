@@ -13,20 +13,28 @@ else
   echo ">>> Migration failed — performing full database reset..."
 
   cat > /tmp/reset_db.sql << ENDSQL
-DROP TABLE IF EXISTS "transaction_items"  CASCADE;
-DROP TABLE IF EXISTS "points_expiry"      CASCADE;
-DROP TABLE IF EXISTS "points_ledger"      CASCADE;
-DROP TABLE IF EXISTS "notification_logs"  CASCADE;
-DROP TABLE IF EXISTS "transactions"       CASCADE;
-DROP TABLE IF EXISTS "customers"          CASCADE;
-DROP TABLE IF EXISTS "campaigns"          CASCADE;
-DROP TABLE IF EXISTS "points_rules"       CASCADE;
-DROP TABLE IF EXISTS "loyalty_tiers"      CASCADE;
-DROP TABLE IF EXISTS "whatsapp_config"    CASCADE;
-DROP TABLE IF EXISTS "sms_config"         CASCADE;
-DROP TABLE IF EXISTS "email_config"       CASCADE;
-DROP TABLE IF EXISTS "audit_logs"         CASCADE;
-DROP TABLE IF EXISTS "users"              CASCADE;
+DROP TABLE IF EXISTS "pending_surveys"       CASCADE;
+DROP TABLE IF EXISTS "form_responses"        CASCADE;
+DROP TABLE IF EXISTS "form_assignments"      CASCADE;
+DROP TABLE IF EXISTS "survey_form_questions" CASCADE;
+DROP TABLE IF EXISTS "survey_questions"      CASCADE;
+DROP TABLE IF EXISTS "survey_forms"          CASCADE;
+DROP TABLE IF EXISTS "devices"               CASCADE;
+DROP TABLE IF EXISTS "oracle_config"         CASCADE;
+DROP TABLE IF EXISTS "transaction_items"     CASCADE;
+DROP TABLE IF EXISTS "points_expiry"         CASCADE;
+DROP TABLE IF EXISTS "points_ledger"         CASCADE;
+DROP TABLE IF EXISTS "notification_logs"     CASCADE;
+DROP TABLE IF EXISTS "transactions"          CASCADE;
+DROP TABLE IF EXISTS "customers"             CASCADE;
+DROP TABLE IF EXISTS "campaigns"             CASCADE;
+DROP TABLE IF EXISTS "points_rules"          CASCADE;
+DROP TABLE IF EXISTS "loyalty_tiers"         CASCADE;
+DROP TABLE IF EXISTS "whatsapp_config"       CASCADE;
+DROP TABLE IF EXISTS "sms_config"            CASCADE;
+DROP TABLE IF EXISTS "email_config"          CASCADE;
+DROP TABLE IF EXISTS "audit_logs"            CASCADE;
+DROP TABLE IF EXISTS "users"                 CASCADE;
 DELETE FROM "_prisma_migrations";
 ENDSQL
 

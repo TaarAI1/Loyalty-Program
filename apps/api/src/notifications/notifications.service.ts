@@ -47,6 +47,12 @@ export class NotificationsService {
     const log = await this.prisma.notificationLog.findUnique({ where: { id } });
     if (!log) throw new NotFoundException(`Notification log ${id} not found`);
 
+    // Mark as pending immediately so the UI reflects the intent
+    await this.prisma.notificationLog.update({
+      where: { id },
+      data: { status: 'pending' },
+    });
+
     if (log.channel === 'whatsapp' && log.recipient && log.type) {
       const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
       if (!config) return { success: false, message: 'WhatsApp not configured' };
@@ -62,6 +68,7 @@ export class NotificationsService {
         vars: {},
         customerId: log.customerId ?? undefined,
         notificationType: 'resend',
+        existingLogId: String(id),
       });
     } else if (log.channel === 'sms' && log.recipient && log.content) {
       await this.queue.enqueueSMS({
@@ -69,6 +76,7 @@ export class NotificationsService {
         message: log.content,
         customerId: log.customerId ?? undefined,
         notificationType: 'resend',
+        existingLogId: String(id),
       });
     } else if (log.channel === 'email' && log.recipient && log.content) {
       await this.queue.enqueueEmail({
@@ -77,13 +85,9 @@ export class NotificationsService {
         html: log.content,
         customerId: log.customerId ?? undefined,
         notificationType: 'resend',
+        existingLogId: String(id),
       });
     }
-
-    await this.prisma.notificationLog.update({
-      where: { id },
-      data: { status: 'pending' },
-    });
 
     this.logger.log({ notificationLogId: String(id), channel: log.channel }, 'Notification resend queued');
     return { success: true };

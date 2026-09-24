@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { formsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,10 @@ import { Dialog } from '@/components/ui/dialog';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
-  Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil,
+  Trash2, Plus, CheckCircle2, Star, ArrowLeft, Pencil, Eye,
   HelpCircle, LayoutTemplate, Tablet, Monitor, Smartphone,
-  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy,
+  AlignLeft, Smile, ToggleLeft, List, MonitorSmartphone, ChevronDown, Copy, QrCode,
+  GripVertical,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -88,6 +89,16 @@ const TYPE_META: Record<string, { icon: React.ReactNode; bg: string; text: strin
   rating:   { icon: <Star        className="h-4 w-4" />, bg: 'bg-amber-100',  text: 'text-amber-600' },
   boolean:  { icon: <ToggleLeft  className="h-4 w-4" />, bg: 'bg-green-100',  text: 'text-green-600' },
   select:   { icon: <List        className="h-4 w-4" />, bg: 'bg-purple-100', text: 'text-purple-600' },
+};
+
+// Default sort order when auto-inserting a newly-checked question
+// (Star Rating first → Emoji → others). Drag-and-drop overrides this.
+const TYPE_PRIORITY: Record<string, number> = {
+  rating:   0,  // Star Rating
+  textarea: 1,  // Emoji Feedback
+  boolean:  2,
+  select:   3,
+  text:     4,
 };
 
 const DEVICE_ICON: Record<string, React.ReactNode> = {
@@ -234,10 +245,9 @@ function QuestionPreview({ question }: { question: Question }) {
 // ── Inline Form Preview Page ───────────────────────────────────────────────────
 
 function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => void; onEdit: () => void }) {
-  const TYPE_ORDER: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
-  const sortedQuestions = [...form.formQuestions].sort(
-    (a, b) => (TYPE_ORDER[a.question.questionType] ?? 99) - (TYPE_ORDER[b.question.questionType] ?? 99),
-  );
+  const sortedQuestions = [...form.formQuestions]
+    .filter((fq) => fq.question.status === 'active')
+    .sort((a, b) => a.sortOrder - b.sortOrder);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -255,7 +265,7 @@ function FormPreviewPage({ form, onBack, onEdit }: { form: Form; onBack: () => v
           <p className="text-sm text-primary-foreground/70 mt-1">Please take a moment to fill out this survey.</p>
         </div>
         <div className="rounded-b-2xl border border-t-0 bg-background divide-y">
-          {form.formQuestions.length === 0 ? (
+          {sortedQuestions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-10 text-center">No questions added yet.</p>
           ) : sortedQuestions.map((fq, idx) => (
             <div key={fq.id} className="px-8 py-6">
@@ -490,11 +500,13 @@ function FormBuildTab() {
   const [editing, setEditing]       = useState<Form | null>(null);
   const [name, setName]             = useState('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [hiddenIds, setHiddenIds]     = useState<number[]>([]);
   const [status, setStatus]         = useState('active');
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
   const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
     open: false, message: '', onConfirm: () => {},
   });
+  const dragIdx = useRef<number | null>(null);
 
   function askConfirm(message: string, action: () => void) {
     setConfirmState({ open: true, message, onConfirm: action });
@@ -512,8 +524,15 @@ function FormBuildTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setStatus('active'); setShowDialog(true); }
-  function openEdit(f: Form) { setEditing(f); setName(f.name); setSelectedIds(f.formQuestions.map((fq) => fq.question.id)); setStatus(f.status); setShowDialog(true); }
+  function openAdd() { setEditing(null); setName(''); setSelectedIds([]); setHiddenIds([]); setStatus('active'); setShowDialog(true); }
+  function openEdit(f: Form) {
+    setEditing(f); setName(f.name); setStatus(f.status);
+    // Active question IDs → shown in the order list and picker
+    setSelectedIds(f.formQuestions.filter((fq) => fq.question.status === 'active').map((fq) => fq.question.id));
+    // Inactive question IDs → preserved silently, never shown in UI, restored when re-activated
+    setHiddenIds(f.formQuestions.filter((fq) => fq.question.status !== 'active').map((fq) => fq.question.id));
+    setShowDialog(true);
+  }
 
   async function handleDeleteForm(f: Form) {
     askConfirm(`Delete form "${f.name}"? This cannot be undone.`, async () => {
@@ -525,25 +544,27 @@ function FormBuildTab() {
 
   async function save() {
     if (!name.trim()) return;
+    // Merge active (visible) + inactive (hidden) IDs so inactive links are preserved in the DB
+    const questionIds = [...selectedIds, ...hiddenIds];
     editing
-      ? await formsApi.updateForm(editing.id, { name, status, questionIds: selectedIds })
+      ? await formsApi.updateForm(editing.id, { name, status, questionIds })
       : await formsApi.createForm({ name, status, questionIds: selectedIds });
     setShowDialog(false); load();
   }
 
   function toggleQuestion(id: number) {
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  }
-
-  function moveUp(idx: number) {
-    if (idx === 0) return;
-    setSelectedIds(prev => { const a = [...prev]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a; });
-  }
-
-  function moveDown(idx: number) {
-    setSelectedIds(prev => {
-      if (idx >= prev.length - 1) return prev;
-      const a = [...prev]; [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a;
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      // Auto-insert at the correct default-priority position
+      const q = questions.find((x) => x.id === id);
+      const priority = TYPE_PRIORITY[q?.questionType ?? 'text'] ?? 99;
+      const insertAt = prev.findIndex((existingId) => {
+        const eq = questions.find((x) => x.id === existingId);
+        return (TYPE_PRIORITY[eq?.questionType ?? 'text'] ?? 99) > priority;
+      });
+      const arr = [...prev];
+      insertAt === -1 ? arr.push(id) : arr.splice(insertAt, 0, id);
+      return arr;
     });
   }
 
@@ -572,7 +593,8 @@ function FormBuildTab() {
       ) : (
         <div className="space-y-3">
           {forms.map((f) => {
-            const typeIcons = Array.from(new Set(f.formQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
+            const activeQuestions = f.formQuestions.filter((fq) => fq.question.status === 'active');
+            const typeIcons = Array.from(new Set(activeQuestions.map((fq) => fq.question.questionType))).slice(0, 4);
             return (
               <div key={f.id} className="rounded-xl border bg-background overflow-hidden hover:shadow-md transition-shadow group flex">
                 <div className="w-1.5 bg-primary shrink-0" />
@@ -594,9 +616,9 @@ function FormBuildTab() {
                           </span>
                         );
                       })}
-                      {f.formQuestions.length > 4 && (
+                      {activeQuestions.length > 4 && (
                         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                          +{f.formQuestions.length - 4} more
+                          +{activeQuestions.length - 4} more
                         </span>
                       )}
                     </div>
@@ -604,7 +626,7 @@ function FormBuildTab() {
                   {/* right: question count + actions */}
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-xs text-muted-foreground">
-                      {f.formQuestions.length} Q
+                      {activeQuestions.length} Q
                     </span>
                     <button type="button" onClick={() => setPreviewForm(f)}
                       className="rounded-lg border border-primary text-primary text-xs font-semibold px-3 py-1.5 hover:bg-primary/5 transition-colors">
@@ -678,24 +700,32 @@ function FormBuildTab() {
                 {selectedIds.map((id, idx) => {
                   const q = questions.find((x) => x.id === id);
                   if (!q) return null;
+                  const meta = TYPE_META[q.questionType] ?? TYPE_META['text'];
                   return (
-                    <div key={id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                    <div
+                      key={id}
+                      draggable
+                      onDragStart={() => { dragIdx.current = idx; }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        const from = dragIdx.current;
+                        if (from === null || from === idx) return;
+                        setSelectedIds((prev) => {
+                          const arr = [...prev];
+                          const [item] = arr.splice(from, 1);
+                          arr.splice(idx, 0, item);
+                          return arr;
+                        });
+                        dragIdx.current = null;
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 text-sm cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-colors select-none"
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                       <span className="w-5 text-center text-xs text-muted-foreground font-medium">{idx + 1}</span>
+                      <div className={`h-5 w-5 rounded flex items-center justify-center shrink-0 ${meta.bg} ${meta.text}`}>
+                        {meta.icon}
+                      </div>
                       <span className="flex-1 truncate">{q.text}</span>
-                      <button
-                        type="button"
-                        onClick={() => moveUp(idx)}
-                        disabled={idx === 0}
-                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
-                        title="Move up"
-                      >↑</button>
-                      <button
-                        type="button"
-                        onClick={() => moveDown(idx)}
-                        disabled={idx === selectedIds.length - 1}
-                        className="rounded p-0.5 hover:bg-muted/60 disabled:opacity-25 transition-colors text-base leading-none"
-                        title="Move down"
-                      >↓</button>
                     </div>
                   );
                 })}
@@ -709,6 +739,32 @@ function FormBuildTab() {
         </div>
       </Dialog>
     </div>
+  );
+}
+
+// ── QR Code Modal ─────────────────────────────────────────────────────────────
+
+function QrModal({ open, onClose, deviceName, qrValue }: {
+  open: boolean;
+  onClose: () => void;
+  deviceName: string;
+  qrValue: string;
+}) {
+  if (!open) return null;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrValue)}&size=220x220&margin=10`;
+  return (
+    <Dialog open={open} onClose={onClose} title={`QR Code — ${deviceName}`} className="max-w-xs">
+      <div className="flex flex-col items-center gap-4 py-2">
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrUrl} alt="QR Code" width={220} height={220} className="block" />
+        </div>
+        <p className="text-xs text-muted-foreground text-center leading-relaxed">
+          Scan this code with the Android kiosk app to automatically connect this device.
+        </p>
+        <Button variant="outline" className="w-full" onClick={onClose}>Close</Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -726,6 +782,15 @@ function FormAssignTab() {
   const [devices, setDevices]         = useState<Device[]>([]);
   const [loading, setLoading]         = useState(true);
   const [assigning, setAssigning]     = useState(false);
+
+  // For each device, the assignment with the latest assignedAt is "active"
+  const activeIds = useMemo(() => {
+    const map = new Map<number, number>(); // deviceId → assignment id
+    [...assignments]
+      .sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
+      .forEach((a) => { if (!map.has(a.deviceId)) map.set(a.deviceId, a.id); });
+    return new Set(map.values());
+  }, [assignments]);
 
   // Filter / selection state
   const [filterStore, setFilterStore]           = useState('');
@@ -747,6 +812,11 @@ function FormAssignTab() {
   });
   const [deviceDropdownOpen, setDeviceDropdownOpen] = useState(false);
   const deviceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // QR modal state
+  const [qrModal, setQrModal] = useState<{ open: boolean; deviceName: string; qrValue: string }>({
+    open: false, deviceName: '', qrValue: '',
+  });
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -870,6 +940,14 @@ function FormAssignTab() {
     load();
   }
 
+  function openQrModal(assignment: Assignment) {
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+    // Strip trailing /api so the Android app can use normalizeBaseUrl on it
+    const baseUrl = rawApiUrl.replace(/\/api\/?$/, '');
+    const qrValue = JSON.stringify({ url: baseUrl, code: assignment.device.pairingCode });
+    setQrModal({ open: true, deviceName: assignment.device.name, qrValue });
+  }
+
   const formOptions = [
     { value: '', label: 'Select a form…' },
     ...forms.map((f) => ({ value: f.id, label: f.name })),
@@ -946,28 +1024,45 @@ function FormAssignTab() {
                       {filteredDevices.map((d) => {
                         const checked = selectedDeviceIds.includes(d.id);
                         return (
-                          <button
+                          <div
                             key={d.id}
-                            type="button"
-                            onClick={() => toggleDevice(d.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
+                            className={`flex items-center gap-1 pr-2 transition-colors divide-x ${checked ? 'bg-primary/5' : 'hover:bg-muted/40'}`}
                           >
-                            <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
-                              {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
-                            </span>
-                            <span className="flex-1 min-w-0">
-                              <span className="truncate block">
-                                {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
-                                <span className="text-muted-foreground text-xs ml-1.5">
-                                  {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
-                                  {d.store ? ` · ${d.store}` : ''}
-                                </span>
+                            {/* Selection area */}
+                            <button
+                              type="button"
+                              onClick={() => toggleDevice(d.id)}
+                              className="flex-1 flex items-center gap-3 px-3 py-2.5 text-left text-sm"
+                            >
+                              <span className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                                {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
                               </span>
-                              {d.id > 0 && d.pairingCode && (
-                                <span className="text-[10px] font-mono text-muted-foreground/60">Code: {d.pairingCode}</span>
-                              )}
-                            </span>
-                          </button>
+                              <span className="flex-1 min-w-0">
+                                <span className="truncate block">
+                                  {d.name}{d.id < 0 ? <span className="text-muted-foreground text-xs ml-1">(demo)</span> : ''}
+                                  <span className="text-muted-foreground text-xs ml-1.5">
+                                    {DEVICE_TYPE_OPTIONS.find((t) => t.value === d.deviceType)?.label ?? d.deviceType}
+                                    {d.store ? ` · ${d.store}` : ''}
+                                  </span>
+                                </span>
+                                {d.id > 0 && d.pairingCode && (
+                                  <span className="text-[10px] font-mono text-muted-foreground/60">Code: {d.pairingCode}</span>
+                                )}
+                              </span>
+                            </button>
+
+                            {/* Delete button — real devices only */}
+                            {d.id > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeDevice(d.id); }}
+                                className="p-1.5 ml-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                                title="Delete device"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -1029,6 +1124,7 @@ function FormAssignTab() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Store</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Form Assigned</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assigned At</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                   </tr>
@@ -1063,14 +1159,37 @@ function FormAssignTab() {
                           {a.form.name}
                         </span>
                       </td>
+                      <td className="px-4 py-3">
+                        {activeIds.has(a.id) ? (
+                          <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 border border-green-200 px-2.5 py-0.5 text-xs font-medium">
+                            Active on Device
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground border px-2.5 py-0.5 text-xs font-medium">
+                            Inactive on Device
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                         {new Date(a.assignedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button type="button" onClick={() => removeAssignment(a.id)}
-                          className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          {a.device.pairingCode && (
+                            <button
+                              type="button"
+                              title="Show QR code"
+                              onClick={() => openQrModal(a)}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button type="button" onClick={() => removeAssignment(a.id)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1086,6 +1205,13 @@ function FormAssignTab() {
         message={confirmState.message}
         onConfirm={() => { confirmState.onConfirm(); }}
         onCancel={closeConfirm}
+      />
+
+      <QrModal
+        open={qrModal.open}
+        onClose={() => setQrModal((s) => ({ ...s, open: false }))}
+        deviceName={qrModal.deviceName}
+        qrValue={qrModal.qrValue}
       />
 
       {/* Add / Edit Device Dialog */}
@@ -1143,14 +1269,429 @@ function FormAssignTab() {
   );
 }
 
+// ── Web Form Tab ──────────────────────────────────────────────────────────────
+
+function WebFormTab() {
+  const [forms, setForms]             = useState<Form[]>([]);
+  const [questions, setQuestions]     = useState<Question[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [activating, setActivating]   = useState<number | null>(null);
+  const [deletingId, setDeletingId]   = useState<number | null>(null);
+  const [confirmState, setConfirmState] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
+  function closeConfirm() { setConfirmState((s) => ({ ...s, open: false })); }
+  const [showModal, setShowModal]     = useState(false);
+  const [editingForm, setEditingForm] = useState<Form | null>(null);
+  const [previewForm, setPreviewForm] = useState<Form | null>(null);
+  const [formName, setFormName]       = useState('');
+  const [formStatus, setFormStatus]   = useState<'active' | 'inactive'>('active');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [f, q] = await Promise.all([
+        formsApi.getWebForms(),
+        formsApi.getQuestions(),
+      ]);
+      setForms(f);
+      setQuestions(q.filter((x: Question) => x.status === 'active'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  function openCreateModal() {
+    setEditingForm(null);
+    setFormName('');
+    setFormStatus('active');
+    setSelectedIds([]);
+    setShowModal(true);
+  }
+
+  function openEditModal(form: Form) {
+    setEditingForm(form);
+    setFormName(form.name);
+    setFormStatus(form.status as 'active' | 'inactive');
+    setSelectedIds(form.formQuestions.map((fq) => fq.question.id));
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+    setEditingForm(null);
+  }
+
+  function toggleQ(id: number) {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  }
+
+  async function handleSave() {
+    if (!formName.trim() || selectedIds.length === 0) return;
+    setSaving(true);
+    try {
+      if (editingForm) {
+        await formsApi.updateForm(editingForm.id, { name: formName.trim(), questionIds: selectedIds, status: formStatus });
+        if (formStatus === 'active') {
+          // deactivates all other web forms atomically
+          await formsApi.activateWebForm(editingForm.id);
+        }
+      } else {
+        const created = await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
+        // ensure only this new form is active — deactivates all other web forms
+        await formsApi.activateWebForm(created.id);
+      }
+      closeModal();
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleActivate(id: number) {
+    setActivating(id);
+    try {
+      await formsApi.activateWebForm(id);
+      await load();
+    } finally {
+      setActivating(null);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    setConfirmState({
+      open: true,
+      message: 'Delete this web form? This cannot be undone.',
+      onConfirm: async () => {
+        closeConfirm();
+        setDeletingId(id);
+        try { await formsApi.deleteForm(id); await load(); }
+        finally { setDeletingId(null); }
+      },
+    });
+  }
+
+  const dotColors: Record<string, string> = {
+    text:     'bg-blue-100 text-blue-700 border-blue-200',
+    textarea: 'bg-orange-100 text-orange-700 border-orange-200',
+    rating:   'bg-yellow-100 text-yellow-700 border-yellow-200',
+    boolean:  'bg-green-100 text-green-700 border-green-200',
+    select:   'bg-purple-100 text-purple-700 border-purple-200',
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Web forms that customers can fill in via a browser link. Only one form can be active at a time.</p>
+        <button
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Create Web Form
+        </button>
+      </div>
+
+      {/* List */}
+      {loading && <div className="flex justify-center py-16"><CheckCircle2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
+
+      {!loading && forms.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border p-12 text-center">
+          <Monitor className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium">No web forms yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Click "Create Web Form" to build your first one.</p>
+        </div>
+      )}
+
+      {!loading && forms.length > 0 && (
+        <div className="space-y-3">
+          {forms.map((form) => {
+            const isActive = form.status === 'active';
+            const activeQs = form.formQuestions.filter((fq) => fq.question.status === 'active');
+            const typeSet  = Array.from(new Set(activeQs.map((fq) => fq.question.questionType))).slice(0, 4);
+            return (
+              <div
+                key={form.id}
+                className={`rounded-xl border p-4 flex items-center gap-4 transition-all ${
+                  isActive
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border bg-background opacity-60 grayscale'
+                }`}
+              >
+                {/* Info */}
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{form.name}</span>
+                    {isActive ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">active</span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">inactive</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {typeSet.map((t) => (
+                      <span key={t} className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${dotColors[t] ?? 'bg-muted text-muted-foreground border-border'}`}>
+                        {TYPE_META[t]?.icon}
+                        {TYPE_LABEL[t] ?? t}
+                      </span>
+                    ))}
+                    {activeQs.length > 4 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">+{activeQs.length - 4} more</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Q count */}
+                <span className="text-xs font-semibold text-muted-foreground shrink-0">{activeQs.length} Q</span>
+
+                {/* Actions — always full opacity so they're clickable on inactive cards */}
+                <div className="flex items-center gap-1 shrink-0 opacity-100" style={{ filter: 'none' }}>
+                  {/* Preview */}
+                  <button
+                    title="Preview form"
+                    onClick={() => setPreviewForm(form)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+
+                  {/* Edit */}
+                  <button
+                    title="Edit form"
+                    onClick={() => openEditModal(form)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    title="Delete form"
+                    onClick={() => handleDelete(form.id)}
+                    disabled={deletingId === form.id}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === form.id
+                      ? <CheckCircle2 className="h-4 w-4 animate-spin" />
+                      : <Trash2 className="h-4 w-4" />
+                    }
+                  </button>
+
+                  {/* Set Active — only for inactive */}
+                  {!isActive && (
+                    <button
+                      onClick={() => handleActivate(form.id)}
+                      disabled={activating === form.id}
+                      className="ml-1 text-xs font-semibold px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    >
+                      {activating === form.id ? 'Activating…' : 'Set Active'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create / Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h2 className="font-bold text-base">{editingForm ? 'Edit Web Form' : 'Create Web Form'}</h2>
+              <button onClick={closeModal} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+              {/* Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Form Name</label>
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Customer Satisfaction Survey"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+
+              {/* Status toggle — only in Edit mode */}
+              {editingForm && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormStatus('active')}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        formStatus === 'active'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                      }`}
+                    >
+                      Active
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormStatus('inactive')}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        formStatus === 'inactive'
+                          ? 'bg-muted text-foreground border-border'
+                          : 'bg-background text-muted-foreground border-border hover:border-border/80'
+                      }`}
+                    >
+                      Inactive
+                    </button>
+                  </div>
+                  {formStatus === 'active' && (
+                    <p className="text-[11px] text-muted-foreground">Saving as active will automatically deactivate all other web forms.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Questions */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Questions</label>
+                {questions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No active questions found. Add questions in the Questions tab first.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                    {questions.map((q) => (
+                      <label key={q.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+                        selectedIds.includes(q.id) ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(q.id)}
+                          onChange={() => toggleQ(q.id)}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-snug">{q.text}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{TYPE_LABEL[q.questionType] ?? q.questionType}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex items-center justify-between px-5 py-4 border-t border-border gap-3">
+              <span className="text-xs text-muted-foreground">{selectedIds.length} question{selectedIds.length !== 1 ? 's' : ''} selected</span>
+              <div className="flex gap-2">
+                <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !formName.trim() || selectedIds.length === 0}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : editingForm ? 'Update Form' : 'Save Form'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-background rounded-2xl border border-border shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-base">{previewForm.name}</h2>
+                {previewForm.status === 'active' ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">active</span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">inactive</span>
+                )}
+              </div>
+              <button onClick={() => setPreviewForm(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Plus className="h-5 w-5 rotate-45" />
+              </button>
+            </div>
+
+            {/* Questions list */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {previewForm.formQuestions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No questions in this form.</p>
+              ) : (
+                previewForm.formQuestions.map((fq, idx) => {
+                  const q = fq.question;
+                  const meta = TYPE_META[q.questionType];
+                  return (
+                    <div key={fq.id} className="flex items-start gap-3 rounded-xl border border-border p-3">
+                      <span className="shrink-0 text-xs font-bold text-muted-foreground w-5 mt-0.5">{idx + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-snug">{q.text}</p>
+                        <span className={`inline-flex items-center gap-1 mt-1.5 text-[11px] px-2 py-0.5 rounded-full border font-medium ${dotColors[q.questionType] ?? 'bg-muted text-muted-foreground border-border'}`}>
+                          {meta?.icon}
+                          {TYPE_LABEL[q.questionType] ?? q.questionType}
+                        </span>
+                        {q.options && q.options.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {q.options.map((opt: string, i: number) => (
+                              <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                                {opt}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-border flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">{previewForm.formQuestions.length} question{previewForm.formQuestions.length !== 1 ? 's' : ''}</span>
+              <button
+                onClick={() => setPreviewForm(null)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        message={confirmState.message}
+        onConfirm={() => { confirmState.onConfirm(); }}
+        onCancel={closeConfirm}
+      />
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-type TabId = 'questions' | 'form-build' | 'form-assign';
+type TabId = 'questions' | 'form-build' | 'form-assign' | 'web-form';
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'questions',   label: 'Questions',   icon: <HelpCircle     className="h-4 w-4" /> },
   { id: 'form-build',  label: 'Form Build',  icon: <LayoutTemplate className="h-4 w-4" /> },
   { id: 'form-assign', label: 'Form Assign', icon: <Tablet         className="h-4 w-4" /> },
+  { id: 'web-form',    label: 'Web Form',    icon: <Monitor        className="h-4 w-4" /> },
 ];
 
 export default function FormsPage() {
@@ -1192,6 +1733,7 @@ export default function FormsPage() {
         {activeTab === 'questions'   && <QuestionsTab />}
         {activeTab === 'form-build'  && <FormBuildTab />}
         {activeTab === 'form-assign' && <FormAssignTab />}
+        {activeTab === 'web-form'    && <WebFormTab />}
       </div>
     </div>
   );

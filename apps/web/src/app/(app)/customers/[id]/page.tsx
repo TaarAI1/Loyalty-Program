@@ -385,16 +385,6 @@ export default function CustomerDetailPage() {
                   return `+${cc} ${d}`;
                 })()}</p>
                 {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
-                {/* Auto persona tags */}
-                {(customer as any).persona?.personaTags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {((customer as any).persona.personaTags as string[]).map((tag: string) => (
-                      <span key={tag} className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Milestone tier progress bar */}
@@ -993,15 +983,16 @@ export default function CustomerDetailPage() {
                 { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
               ];
               return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Persona ICP */}
-                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+
+                  {/* ICP Persona */}
+                  <div className={`rounded-xl border p-3 space-y-2 self-start ${bc.bg} ${bc.border}`}>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
                     <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
                       {bc.icon} {p.label}
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {p.daysSinceVisit !== null && (
                         <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
                           <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
@@ -1031,14 +1022,32 @@ export default function CustomerDetailPage() {
                         </span>
                       )}
                     </div>
+                    {/* Departments */}
+                    {((customer as any).dcsBreakdown ?? []).length > 0 && (
+                      <div className="pt-2 border-t border-border/50 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
+                        {(() => {
+                          const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
+                          return ((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d, i) => (
+                            <div key={d.dscname} className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColors[i % dotColors.length]}`} />
+                                <p className="text-xs font-semibold truncate">{d.dscname}</p>
+                              </div>
+                              <p className="text-xs font-semibold shrink-0">{d.percentage}%</p>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Demographics grid */}
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                  {/* Demographics */}
+                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" /> Demographics
                     </p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                       {[
                         { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
                         { label: 'Generation', value: p.generation ?? '—' },
@@ -1046,6 +1055,8 @@ export default function CustomerDetailPage() {
                         { label: 'Occupation', value: (customer as any).occupation ?? '—' },
                         { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
                         { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
+                        { label: 'Redeem Rate',  value: `${p.redemptionRate}%` },
+                        { label: 'Pts Redeemed', value: formatNumber((customer as any).persona?.loyaltyStats?.pointsRedeemed ?? 0) },
                       ].map(({ label, value }) => (
                         <div key={label}>
                           <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
@@ -1056,38 +1067,34 @@ export default function CustomerDetailPage() {
                   </div>
 
                   {/* Strategic Insights + Recommended Actions */}
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
-                    <div className="space-y-2">
+                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
+                    <div className="space-y-1.5">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                         <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
                       </p>
-                      <ul className="space-y-3">
+                      <ul className="space-y-1.5">
                         {p.insights.map((insight, i) => (
-                          <li key={i} className="space-y-0.5">
-                            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                              {insight.issue}
-                            </p>
-                            <p className="text-xs font-semibold pl-3 text-foreground leading-snug">
-                              {insight.strategy}
-                            </p>
+                          <li key={i} className="flex items-start gap-1.5 text-xs">
+                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                            <span className="font-semibold leading-snug">{insight.strategy}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <div className="space-y-2 pt-1 border-t border-border">
+                    <div className="space-y-1.5 pt-1.5 border-t border-border">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
                       </p>
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-1">
                         {p.actionItems.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
+                          <li key={i} className="flex items-start gap-1.5 text-xs">
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> {item}
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
+
                 </div>
               );
             })()}
@@ -1255,6 +1262,29 @@ export default function CustomerDetailPage() {
                       <RadarChart data={rfmData2} margin={{ top: 4, right: 20, left: 20, bottom: 4 }}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload as { axis: string; value: number };
+                            const labels: Record<number, { label: string; color: string }> = {
+                              1: { label: 'Cold', color: 'text-red-500'    },
+                              2: { label: 'Weak', color: 'text-orange-400' },
+                              3: { label: 'Fair', color: 'text-yellow-500' },
+                              4: { label: 'Good', color: 'text-lime-600'   },
+                              5: { label: 'Best', color: 'text-green-600'  },
+                            };
+                            const meta = labels[d.value] ?? { label: '', color: '' };
+                            return (
+                              <div className="rounded-lg border border-border bg-background shadow-md px-3 py-2 space-y-0.5">
+                                <p className="text-xs font-bold">{d.axis}</p>
+                                <p className="text-sm font-black tabular-nums">
+                                  {d.value}<span className="text-muted-foreground font-normal text-xs">/5</span>
+                                  {meta.label && <span className={`ml-2 text-xs font-semibold ${meta.color}`}>{meta.label}</span>}
+                                </p>
+                              </div>
+                            );
+                          }}
+                        />
                         <Radar name="RFM" dataKey="value" stroke="#FFD000" fill="#FFD000" fillOpacity={0.35} dot />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -1424,9 +1454,18 @@ export default function CustomerDetailPage() {
                   toast.error('Enter a valid email address');
                   return;
                 }
+                // Only send fields shown in the modal; convert empty strings to
+                // undefined so Zod enum validators (gender, maritalStatus, etc.)
+                // do not throw on empty-string values for removed fields.
                 updateMutation.mutate({
-                  ...editForm,
-                  isActive: editForm.status === 'active',
+                  name:        editForm.name        || undefined,
+                  email:       editForm.email       || undefined,
+                  region:      editForm.region      || undefined,
+                  store:       editForm.store       || undefined,
+                  dateOfBirth: editForm.dateOfBirth || undefined,
+                  gender:      (editForm.gender as 'Male' | 'Female' | 'Other') || undefined,
+                  status:      editForm.status      as 'active' | 'inactive' | 'blocked',
+                  isActive:    editForm.status === 'active',
                 } as typeof editForm);
               }}
             >

@@ -94,6 +94,7 @@ export interface WhatsAppJobPayload {
   vars?: Record<string, string>;
   customerId?: string;
   notificationType?: string;
+  existingLogId?: string; // BigInt serialized as string — update existing log on resend
 }
 
 export interface SMSJobPayload {
@@ -101,6 +102,7 @@ export interface SMSJobPayload {
   message: string;
   customerId?: string;
   notificationType?: string;
+  existingLogId?: string;
 }
 
 export interface EmailJobPayload {
@@ -109,5 +111,6 @@ export interface EmailJobPayload {
   html: string;
   customerId?: string;
   notificationType?: string;
+  existingLogId?: string;
 }
 

@@ -38,6 +38,47 @@ export class CustomersService {
     private readonly queue: QueueService,
   ) {}
 
+  async findByPhone(phone: string) {
+    // Normalize the input: strip spaces, dashes, parentheses
+    const raw = phone.replace(/[\s\-().]/g, '');
+
+    // Build candidate variants so we can find the number regardless of how it was stored
+    const candidates: string[] = [raw]; // e.g. +923451837170
+    if (raw.startsWith('+92')) {
+      candidates.push('0' + raw.slice(3));  // → 03451837170
+      candidates.push(raw.slice(3));         // → 3451837170
+    } else if (raw.startsWith('92')) {
+      candidates.push('0' + raw.slice(2));  // → 03451837170
+      candidates.push(raw.slice(2));         // → 3451837170
+      candidates.push('+' + raw);           // → +923451837170
+    } else if (raw.startsWith('0')) {
+      candidates.push(raw.slice(1));         // → 3451837170
+      candidates.push('+92' + raw.slice(1)); // → +923451837170
+      candidates.push('92' + raw.slice(1));  // → 923451837170
+    }
+
+    // Try each candidate with an exact match first, then fall back to contains
+    for (const candidate of candidates) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { mobileNumber: candidate },
+        select: { id: true, name: true, mobileNumber: true, totalPoints: true },
+      });
+      if (customer) return customer;
+    }
+
+    // Fall back to a contains search on the last 9 digits (handles any prefix format)
+    const suffix = raw.replace(/^\+?0*92|^0/, '').slice(-9);
+    if (suffix.length >= 7) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { mobileNumber: { contains: suffix } },
+        select: { id: true, name: true, mobileNumber: true, totalPoints: true },
+      });
+      if (customer) return customer;
+    }
+
+    throw new NotFoundException(`No customer found with phone number ${phone}`);
+  }
+
   async findAll(params: {
     search?: string;
     qryenc?: string;
@@ -45,30 +86,11 @@ export class CustomersService {
     region?: string;
     store?: string;
     isActive?: boolean;
+    status?: string;
     page: number;
     pageSize: number;
   }) {
-    const { search, qryenc, tierId, region, store, isActive, page, pageSize } = params;
-
-    // If qryenc is provided, decode the Retail Pro zlib+base64 query and find by mobile/retailproId
-    if (qryenc) {
-      const qrySearch = decodeQryenc(qryenc);
-      if (qrySearch) {
-        const customer = await this.prisma.customer.findFirst({
-          where: {
-            OR: [
-              { mobileNumber: qrySearch },  // "search=PHONE" format (primary)
-              { retailproId: qrySearch },    // legacy SID format fallback
-            ],
-          },
-          include: { tier: true },
-        });
-        return {
-          data: customer ? [customer] : [],
-          meta: { total: customer ? 1 : 0, page: 1, pageSize: 1, totalPages: customer ? 1 : 0 },
-        };
-      }
-    }
+    const { search, tierId, region, store, isActive, status, page, pageSize } = params;
     const skip = (page - 1) * pageSize;
 
     const where = {
@@ -83,6 +105,7 @@ export class CustomersService {
       ...(region && { region }),
       ...(store && { store: { contains: store, mode: 'insensitive' as const } }),
       ...(isActive !== undefined && { isActive }),
+      ...(status && { status }),
     };
 
     const [total, customers] = await this.prisma.$transaction([
@@ -218,9 +241,11 @@ export class CustomersService {
         today.getMonth() > dob.getMonth() ||
         (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
       if (!hadBirthdayThisYear) age -= 1;
-      if (age < 28) generation = 'Gen Z';
-      else if (age < 44) generation = 'Millennial';
-      else if (age < 60) generation = 'Gen X';
+      const birthYear = dob.getFullYear();
+      if (birthYear >= 2013) generation = 'Gen Alpha';
+      else if (birthYear >= 1997) generation = 'Gen Z';
+      else if (birthYear >= 1981) generation = 'Millennial';
+      else if (birthYear >= 1965) generation = 'Gen X';
       else generation = 'Boomer';
       const nextBirthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
       if (nextBirthday < today) nextBirthday.setFullYear(today.getFullYear() + 1);
@@ -438,7 +463,27 @@ export class CustomersService {
       nextExpiryPoints: nextExpiry?.pointsRemaining ?? null,
     };
 
-    return { ...customer, tierProgress, nextTier, stats, persona };
+    // DCS department breakdown
+    const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
+      SELECT dcs_item->>'dscname' AS dscname, COUNT(*)::int AS count
+      FROM transaction_items ti
+      JOIN transactions t ON t.id = ti.transaction_id
+      CROSS JOIN jsonb_array_elements(ti.dcs) AS dcs_item
+      WHERE t.customer_id = ${id}::uuid
+        AND ti.dcs IS NOT NULL
+        AND dcs_item->>'dscname' IS NOT NULL
+        AND dcs_item->>'dscname' != ''
+      GROUP BY dcs_item->>'dscname'
+      ORDER BY count DESC
+    `;
+    const totalDcsCount = dcsRaw.reduce((s, r) => s + r.count, 0);
+    const dcsBreakdown = dcsRaw.map((r, i, arr) => {
+      const soFar = arr.slice(0, i).reduce((s, x) => s + Math.round((x.count / totalDcsCount) * 100), 0);
+      const pct = i < arr.length - 1 ? Math.round((r.count / totalDcsCount) * 100) : 100 - soFar;
+      return { dscname: r.dscname, count: r.count, percentage: pct };
+    });
+
+    return { ...customer, tierProgress, nextTier, stats, persona, dcsBreakdown };
   }
 
   async getTransactionHistory(
@@ -510,6 +555,255 @@ export class CustomersService {
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
       },
       include: { tier: true },
+    });
+  }
+
+  // ── Persona ───────────────────────────────────────────────────────────────────
+
+  async getPersona(id: string) {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const where = UUID_RE.test(id) ? { id } : { retailproId: id };
+    const customer = await this.prisma.customer.findUnique({
+      where,
+      select: {
+        id: true,
+        name: true,
+        totalPoints: true,
+        lifetimeSale: true,
+        createdAt: true,
+        lastVisitDate: true,
+        dateOfBirth: true,
+        segment: true,
+        engagementScore: true,
+        occupation: true,
+        gender: true,
+        maritalStatus: true,
+        preferredChannel: true,
+        legalName: true,
+        preferredName: true,
+        nationality: true,
+        city: true,
+        area: true,
+        homeAddress: true,
+        deliveryAddress: true,
+        alternatePhone: true,
+        tier: {
+          select: {
+            id: true,
+            name: true,
+            rewardPercentage: true,
+            benefits: true,
+          },
+        },
+      },
+    });
+    if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+
+    // Use the resolved UUID for all subsequent queries
+    const customerId = customer.id;
+
+    // Aggregate loyalty stats (same logic as findOne)
+    const [txAgg, redemptionAgg, txCount] = await this.prisma.$transaction([
+      this.prisma.transaction.aggregate({
+        where: { customerId },
+        _sum: { saleAmount: true, pointsEarned: true },
+        _avg: { saleAmount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { customerId },
+        _sum: { pointsRedeemed: true },
+      }),
+      this.prisma.transaction.count({ where: { customerId } }),
+    ]);
+
+    const nextExpiry = await this.prisma.pointsExpiry.findFirst({
+      where: { customerId, isExpired: false, pointsRemaining: { gt: 0 } },
+      orderBy: { expiryDate: 'asc' },
+      select: { expiryDate: true, pointsRemaining: true },
+    });
+
+    const now = Date.now();
+    const lastVisitMs = customer.lastVisitDate ? customer.lastVisitDate.getTime() : 0;
+    const daysSinceLastVisit = lastVisitMs ? Math.floor((now - lastVisitMs) / 86400000) : null;
+    const totalPointsEarned = txAgg._sum.pointsEarned ?? 0;
+    const totalPointsRedeemed = redemptionAgg._sum.pointsRedeemed ?? 0;
+    const redemptionRate = totalPointsEarned > 0
+      ? Math.round((totalPointsRedeemed / totalPointsEarned) * 100)
+      : 0;
+
+    // Age + generation from dateOfBirth
+    const birthYear = customer.dateOfBirth ? new Date(customer.dateOfBirth).getFullYear() : null;
+    const age = customer.dateOfBirth
+      ? Math.floor((now - customer.dateOfBirth.getTime()) / 31557600000)
+      : null;
+    const generation = !birthYear ? null
+      : birthYear >= 2013 ? 'Gen Alpha'
+      : birthYear >= 1997 ? 'Gen Z'
+      : birthYear >= 1981 ? 'Millennial'
+      : birthYear >= 1965 ? 'Gen X'
+      : birthYear >= 1946 ? 'Baby Boomer'
+      : 'Silent Generation';
+
+    // Redeem type derived from redemption rate
+    const redeemType = redemptionRate === 0 ? 'Non-Redeemer'
+      : redemptionRate <= 25 ? 'Low Redeemer'
+      : redemptionRate <= 60 ? 'Moderate Redeemer'
+      : 'High Redeemer';
+
+    // Preferred store — most frequent store across transactions
+    const storeGroups = await this.prisma.transaction.groupBy({
+      by: ['store'],
+      where: { customerId, store: { not: null } },
+      _count: { store: true },
+      orderBy: { _count: { store: 'desc' } },
+      take: 1,
+    });
+    const preferredStore = storeGroups[0]?.store ?? null;
+
+    // Preferred day — most frequent transaction day of week
+    const dayRaw = await this.prisma.$queryRaw<{ day_name: string; cnt: number }[]>`
+      SELECT TRIM(TO_CHAR(transaction_date, 'Day')) AS day_name, COUNT(*)::int AS cnt
+      FROM transactions
+      WHERE customer_id = ${customerId}::uuid
+      GROUP BY day_name
+      ORDER BY cnt DESC
+      LIMIT 1
+    `;
+    const preferredDay = dayRaw[0]?.day_name ?? null;
+
+    // Weekday visit breakdown
+    const weekdayRaw = await this.prisma.$queryRaw<{ day_name: string; cnt: number; visit_dates: string[] }[]>`
+      SELECT
+        TRIM(TO_CHAR(transaction_date, 'Day')) AS day_name,
+        COUNT(*)::int AS cnt,
+        ARRAY_AGG(TO_CHAR(transaction_date, 'DD-Mon-YYYY') ORDER BY transaction_date DESC) AS visit_dates
+      FROM transactions
+      WHERE customer_id = ${customerId}::uuid
+      GROUP BY day_name
+    `;
+    const dayOrder = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const weekdayBreakdown = dayOrder.map(day => {
+      const match = weekdayRaw.find(r => r.day_name === day);
+      return { day, count: match?.cnt ?? 0, dates: match?.visit_dates ?? [] };
+    });
+
+    // DCS purchase breakdown — extract dscname from each item's dcs JSONB array
+    const dcsRaw = await this.prisma.$queryRaw<{ dscname: string; count: number }[]>`
+      SELECT
+        dcs_item->>'dscname'  AS dscname,
+        COUNT(*)::int          AS count
+      FROM transaction_items ti
+      JOIN transactions t ON t.id = ti.transaction_id
+      CROSS JOIN jsonb_array_elements(ti.dcs) AS dcs_item
+      WHERE t.customer_id = ${customerId}::uuid
+        AND ti.dcs IS NOT NULL
+        AND dcs_item->>'dscname' IS NOT NULL
+        AND dcs_item->>'dscname' != ''
+      GROUP BY dcs_item->>'dscname'
+      ORDER BY count DESC
+    `;
+
+    const totalDcsCount = dcsRaw.reduce((sum, r) => sum + r.count, 0);
+    const dcsBreakdown = dcsRaw.map((r, i, arr) => {
+      const assignedSoFar = arr.slice(0, i).reduce((s, x) => s + Math.round((x.count / totalDcsCount) * 100), 0);
+      const pct = i < arr.length - 1
+        ? Math.round((r.count / totalDcsCount) * 100)
+        : 100 - assignedSoFar;
+      return { dscname: r.dscname, count: r.count, percentage: pct };
+    });
+
+    const { totalPoints, createdAt, lastVisitDate: _lvd, dateOfBirth: _dob, lifetimeSale, ...personaFields } = customer;
+
+    // ICP Persona — label + description based on RFM segment
+    const seg = customer.segment ?? 'new';
+    const labelMap: Record<string, string> = {
+      champion: 'Champion', loyal: 'Loyal', potential: 'Potential Loyalist',
+      new: 'New Customer', at_risk: 'At Risk', dormant: 'Dormant',
+    };
+    const icpLabel = labelMap[seg] ?? seg;
+    const lifetimeSaleNum = Number(lifetimeSale ?? 0);
+    const icpDescription = seg === 'champion'
+      ? `Champion customer, shopping regularly at ${preferredStore ?? 'the store'} with a ${redemptionRate}% redemption rate and Rs ${lifetimeSaleNum.toLocaleString()} lifetime spend.`
+      : seg === 'loyal'
+      ? `Loyal customer with ${txCount} transactions and consistent shopping behaviour.`
+      : seg === 'potential'
+      ? `Potential loyalist with ${txCount} transactions and growing engagement.`
+      : seg === 'at_risk'
+      ? `At-risk customer — no visit in ${daysSinceLastVisit ?? '?'} days. Re-engagement recommended.`
+      : seg === 'dormant'
+      ? `Dormant customer with no activity in over ${daysSinceLastVisit ?? '?'} days.`
+      : `New customer who recently joined the loyalty program.`;
+
+    const icpPersona = { segment: seg, label: icpLabel, description: icpDescription };
+
+    return {
+      ...personaFields,
+      age,
+      generation,
+      redeemType,
+      preferredStore,
+      preferredDay,
+      loyaltyStats: {
+        totalSpend: Number(txAgg._sum.saleAmount ?? 0),
+        lifetimeSale: lifetimeSaleNum,
+        totalTransactions: txCount,
+        avgOrderValue: Math.round(Number(txAgg._avg.saleAmount ?? 0)),
+        pointsEarned: totalPointsEarned,
+        pointsRedeemed: totalPointsRedeemed,
+        currentBalance: totalPoints,
+        redemptionRate,
+        enrolled: createdAt,
+        daysSinceLastVisit,
+        pointsExpiringNext: nextExpiry
+          ? { points: nextExpiry.pointsRemaining, expiryDate: nextExpiry.expiryDate }
+          : null,
+      },
+      icpPersona,
+      dcsBreakdown,
+      weekdayBreakdown,
+    };
+  }
+
+  async updatePersona(
+    id: string,
+    data: Partial<{
+      segment: string;
+      engagementScore: number;
+      occupation: string | null;
+      gender: string | null;
+      maritalStatus: string | null;
+      preferredChannel: string | null;
+      legalName: string | null;
+      preferredName: string | null;
+      nationality: string | null;
+      city: string | null;
+      area: string | null;
+      homeAddress: string | null;
+      deliveryAddress: string | null;
+      alternatePhone: string | null;
+    }>,
+  ) {
+    await this.assertExists(id);
+    return this.prisma.customer.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        segment: true,
+        engagementScore: true,
+        occupation: true,
+        gender: true,
+        maritalStatus: true,
+        preferredChannel: true,
+        legalName: true,
+        preferredName: true,
+        nationality: true,
+        city: true,
+        area: true,
+        homeAddress: true,
+        deliveryAddress: true,
+        alternatePhone: true,
+      },
     });
   }
 

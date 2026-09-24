@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -27,6 +28,7 @@ export class CustomersController {
     @Query('tierId', new DefaultValuePipe(0), ParseIntPipe) tierId?: number,
     @Query('region') region?: string,
     @Query('store') store?: string,
+    @Query('status') status?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize = 50,
   ) {
@@ -36,9 +38,16 @@ export class CustomersController {
       tierId: tierId || undefined,
       region,
       store,
+      status,
       page,
       pageSize,
     });
+  }
+
+  @Get('lookup/by-phone')
+  findByPhone(@Query('phone') phone: string) {
+    if (!phone) throw new BadRequestException('phone query param is required');
+    return this.customersService.findByPhone(phone);
   }
 
   @Get(':id')
@@ -125,5 +134,35 @@ export class CustomersController {
     @Param('noteId', ParseIntPipe) noteId: number,
   ) {
     return this.customersService.deleteNote(noteId);
+  }
+
+  // ── Persona ───────────────────────────────────────────────────────────────────
+
+  @Get(':id/persona')
+  getPersona(@Param('id') id: string) {
+    return this.customersService.getPersona(id);
+  }
+
+  @Patch(':id/persona')
+  updatePersona(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Partial<{
+      segment: string;
+      engagementScore: number;
+      occupation: string | null;
+      gender: string | null;
+      maritalStatus: string | null;
+      preferredChannel: string | null;
+      legalName: string | null;
+      preferredName: string | null;
+      nationality: string | null;
+      city: string | null;
+      area: string | null;
+      homeAddress: string | null;
+      deliveryAddress: string | null;
+      alternatePhone: string | null;
+    }>,
+  ) {
+    return this.customersService.updatePersona(id, body);
   }
 }

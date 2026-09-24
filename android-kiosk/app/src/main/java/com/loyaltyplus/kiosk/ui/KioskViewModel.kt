@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Screen { SPLASH, SETUP, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
+enum class Screen { SPLASH, SETUP, SCAN_QR, HOME, SETTINGS_PANEL, CUSTOMER_LOOKUP, FORM, THANKS }
 
 data class KioskUiState(
     val screen: Screen = Screen.SETUP,
@@ -72,7 +72,7 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(screen = Screen.HOME, isAutoConnecting = true) }
             autoConnect()
         } else {
-            _state.update { it.copy(screen = Screen.SETUP) }
+            _state.update { it.copy(screen = Screen.SCAN_QR) }
         }
     }
 
@@ -88,15 +88,33 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         connectionToast = null,
                     )
                 }
-            } catch (_: Exception) {
-                _state.update {
-                    it.copy(
-                        isAutoConnecting = false,
-                        connectionToast = ToastMessage(
-                            "Could not load form data. Tap the gear icon to reconnect.",
-                            isError = true,
-                        ),
-                    )
+            } catch (e: Exception) {
+                val isGone = e.message?.contains("not found", ignoreCase = true) == true ||
+                             e.message?.contains("404") == true ||
+                             e.message?.contains("no form assigned", ignoreCase = true) == true
+                if (isGone) {
+                    // Device or assignment was removed — reset and ask to re-pair
+                    prefs.setupComplete = false
+                    _state.update {
+                        it.copy(
+                            isAutoConnecting = false,
+                            screen = Screen.SCAN_QR,
+                            connectionToast = ToastMessage(
+                                "Device was removed. Please scan the QR code to reconnect.",
+                                isError = true,
+                            ),
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            isAutoConnecting = false,
+                            connectionToast = ToastMessage(
+                                "Could not load form data. Tap the gear icon to reconnect.",
+                                isError = true,
+                            ),
+                        )
+                    }
                 }
             } finally {
                 startPolling()
@@ -107,11 +125,33 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     private fun startPolling() {
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch {
+            var statusCheckCounter = 0
             while (true) {
                 delay(5_000L)
                 val s = _state.value
                 // Only poll when sitting on the Home screen and not busy
                 if (s.screen != Screen.HOME) continue
+
+                // ── Status check every 30 s (every 6th cycle) ─────────────────
+                statusCheckCounter++
+                if (statusCheckCounter % 6 == 0) {
+                    val connected = KioskApi.checkStatus(prefs.apiUrl, prefs.pairingCode)
+                    if (!connected) {
+                        prefs.setupComplete = false
+                        _state.update {
+                            it.copy(
+                                screen = Screen.SCAN_QR,
+                                connectionToast = ToastMessage(
+                                    "Device was removed. Please scan the QR code to reconnect.",
+                                    isError = true,
+                                ),
+                            )
+                        }
+                        break // stop this polling loop; a new one starts on next connect()
+                    }
+                }
+
+                // ── Pending-survey poll ────────────────────────────────────────
                 try {
                     val pending = KioskApi.pollPendingSurvey(prefs.apiUrl, prefs.pairingCode)
                     if (pending != null) {
@@ -179,6 +219,29 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearToast() = _state.update { it.copy(connectionToast = null) }
+
+    // ── QR scan helpers ───────────────────────────────────────────────────────
+
+    /** Called when the QR scanner successfully reads a code. Expected JSON: {"url":"…","code":"…"} */
+    fun onQrScanned(rawValue: String) {
+        try {
+            val json = org.json.JSONObject(rawValue)
+            val url  = json.optString("url").trim()
+            val code = json.optString("code").trim().uppercase()
+            if (url.isBlank() || code.isBlank()) {
+                _state.update { it.copy(connectionToast = ToastMessage("QR code is invalid. Try manual entry.", isError = true)) }
+                return
+            }
+            _state.update { it.copy(apiUrl = url, pairingCode = code, screen = Screen.SETUP) }
+            // Auto-connect immediately
+            connect()
+        } catch (_: Exception) {
+            _state.update { it.copy(connectionToast = ToastMessage("Could not read QR code. Try manual entry.", isError = true)) }
+        }
+    }
+
+    /** Switch from Scan QR screen to manual Setup screen */
+    fun navigateToManualSetup() = _state.update { it.copy(screen = Screen.SETUP) }
 
     // ── Sidebar navigation ────────────────────────────────────────────────────
 

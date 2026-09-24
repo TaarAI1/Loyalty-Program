@@ -39,6 +39,8 @@ export class FormsService {
 
   async updateQuestion(id: number, data: { text?: string; questionType?: string; options?: string[]; status?: string }) {
     await this.prisma.surveyQuestion.findFirstOrThrow({ where: { id } });
+    // DB link (SurveyFormQuestion) is intentionally kept intact so that
+    // re-activating a question restores it to all its forms automatically.
     return this.prisma.surveyQuestion.update({
       where: { id },
       data: {
@@ -58,9 +60,10 @@ export class FormsService {
 
   // ── Forms ─────────────────────────────────────────────────────────────────────
 
-  async getForms() {
+  async getForms(type?: string) {
     return this.prisma.surveyForm.findMany({
       orderBy: { createdAt: 'desc' },
+      where: type ? { type } : undefined,
       include: {
         formQuestions: {
           include: { question: true },
@@ -70,11 +73,12 @@ export class FormsService {
     });
   }
 
-  async createForm(data: { name: string; questionIds: number[]; status?: string }) {
+  async createForm(data: { name: string; questionIds: number[]; status?: string; type?: string }) {
     return this.prisma.surveyForm.create({
       data: {
         name: data.name,
         status: data.status ?? 'active',
+        type: data.type ?? 'pos',
         formQuestions: {
           create: data.questionIds.map((qid, i) => ({
             questionId: qid,
@@ -84,6 +88,15 @@ export class FormsService {
       },
       include: { formQuestions: { include: { question: true } } },
     });
+  }
+
+  async activateWebForm(id: number) {
+    await this.prisma.surveyForm.findFirstOrThrow({ where: { id, type: 'web' } });
+    await this.prisma.$transaction([
+      this.prisma.surveyForm.updateMany({ where: { type: 'web' }, data: { status: 'inactive' } }),
+      this.prisma.surveyForm.update({ where: { id }, data: { status: 'active' } }),
+    ]);
+    return { success: true };
   }
 
   async updateForm(id: number, data: { name?: string; status?: string; questionIds?: number[] }) {
@@ -259,6 +272,17 @@ export class FormsService {
     return { success: true, responseId: response.id };
   }
 
+  async kioskStatus(code: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { pairingCode: code.toUpperCase() },
+    });
+    if (!device) return { connected: false };
+    const assignment = await this.prisma.formAssignment.findFirst({
+      where: { deviceId: device.id },
+    });
+    return { connected: assignment != null };
+  }
+
   async kioskGetResponses(phone?: string, tierId?: string) {
     let where: Record<string, unknown> = phone ? { customerPhone: { contains: phone } } : {};
 
@@ -279,15 +303,17 @@ export class FormsService {
         device: { select: { id: true, name: true, store: true } },
       },
     });
-    return rows.map((r) => ({
-      id: r.id,
-      customerName: r.customerName,
-      customerPhone: r.customerPhone,
-      formName: r.form?.name ?? 'Unknown',
-      deviceName: r.device?.name ?? 'Unknown',
-      store: r.device?.store ?? null,
-      submittedAt: r.submittedAt,
-    }));
+    return rows
+      // Responses are kept even when form/device is deleted (FK set to null) — show with fallback labels
+      .map((r) => ({
+        id: r.id,
+        customerName: r.customerName,
+        customerPhone: r.customerPhone,
+        formName:   r.form?.name   ?? 'Deleted Form',
+        deviceName: r.device?.name ?? 'Deleted Device',
+        store:      r.device?.store ?? null,
+        submittedAt: r.submittedAt,
+      }));
   }
 
   // ── Kiosk pending survey (push from POS, poll from tablet) ──────────────────
@@ -337,8 +363,8 @@ export class FormsService {
       id: r.id,
       customerName: r.customerName,
       customerPhone: r.customerPhone,
-      formName: r.form?.name ?? 'Unknown',
-      deviceName: r.device?.name ?? 'Unknown',
+      formName: r.form?.name ?? 'Deleted Form',
+      deviceName: r.device?.name ?? 'Deleted Device',
       store: r.device?.store ?? null,
       submittedAt: r.submittedAt,
       answers: questions.map((fq) => ({
@@ -347,5 +373,76 @@ export class FormsService {
         answer: answers.find((a) => Number(a.questionId) === fq.question.id)?.value ?? '',
       })),
     };
+  }
+
+  // ── Web form responses ───────────────────────────────────────────────────────
+
+  async webGetResponses() {
+    const rows = await this.prisma.formResponse.findMany({
+      where: { deviceId: null },
+      orderBy: { submittedAt: 'desc' },
+      include: { form: { select: { id: true, name: true } } },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Deleted Form',
+      submittedAt: r.submittedAt,
+    }));
+  }
+
+  async webGetResponse(id: number) {
+    const r = await this.prisma.formResponse.findUnique({
+      where: { id },
+      include: {
+        form: {
+          include: {
+            formQuestions: {
+              include: { question: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
+    });
+    if (!r) throw new NotFoundException('Response not found.');
+
+    const answers = Array.isArray(r.answers) ? (r.answers as { questionId: number; value: string }[]) : [];
+    const questions = r.form?.formQuestions ?? [];
+
+    return {
+      id: r.id,
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
+      formName: r.form?.name ?? 'Deleted Form',
+      submittedAt: r.submittedAt,
+      answers: questions.map((fq) => ({
+        question: fq.question.text,
+        questionType: fq.question.questionType,
+        answer: answers.find((a) => Number(a.questionId) === fq.question.id)?.value ?? '',
+      })),
+    };
+  }
+
+  async webSubmit(data: {
+    formId: number;
+    customerName?: string;
+    customerPhone?: string;
+    answers: { questionId: number; value: string }[];
+  }) {
+    const form = await this.prisma.surveyForm.findUnique({ where: { id: data.formId } });
+    if (!form) throw new NotFoundException('Form not found.');
+
+    const response = await this.prisma.formResponse.create({
+      data: {
+        deviceId: null,
+        formId: data.formId,
+        customerName: data.customerName ?? null,
+        customerPhone: data.customerPhone ?? null,
+        answers: data.answers,
+      },
+    });
+    return { success: true, responseId: response.id };
   }
 }

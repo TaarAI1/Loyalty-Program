@@ -1,6 +1,17 @@
 import { z } from 'zod';
 import { optionalEmailSchema, phoneNumberSchema } from './validation';
 
+// ── Webhook: DCS Item ─────────────────────────────────────────────────────────
+export const DcsItemSchema = z.object({
+  dname:      z.string().optional(),
+  cname:      z.string().optional(),
+  sname:      z.string().optional(),
+  dscname:    z.string().optional(),
+  categories: z.string().optional(),
+  typo:       z.string().optional(),
+});
+export type DcsItemDto = z.infer<typeof DcsItemSchema>;
+
 // ── Webhook: Transaction Item ──────────────────────────────────────────────────
 export const TransactionItemSchema = z.object({
   sku:          z.string().max(100).optional(),
@@ -11,6 +22,7 @@ export const TransactionItemSchema = z.object({
   tax_amount:   z.number().nonnegative().optional(),
   gross_amount: z.number().nonnegative().optional(),
   net_amount:   z.number().nonnegative().optional(),
+  dcs:          z.array(DcsItemSchema).optional(),
 });
 export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 
@@ -33,6 +45,7 @@ export const WebhookTransactionSchema = z.object({
   redeem_points:        z.number().int().nonnegative().default(0),
   items:                z.array(TransactionItemSchema).optional(),
   test_expiry_minutes:  z.number().int().positive().optional(),
+  text:                 z.string().optional(),
 });
 export type WebhookTransactionDto = z.infer<typeof WebhookTransactionSchema>;
 

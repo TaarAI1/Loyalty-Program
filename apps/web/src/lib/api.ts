@@ -144,7 +144,7 @@ export const formsApi = {
   deleteQuestion: (id: number) => api.delete(`/forms/questions/${id}`).then((r) => r.data),
   // Forms
   getForms: () => api.get('/forms').then((r) => r.data),
-  createForm: (data: { name: string; questionIds: number[]; status?: string }) =>
+  createForm: (data: { name: string; questionIds: number[]; status?: string; type?: string }) =>
     api.post('/forms', data).then((r) => r.data),
   updateForm: (id: number, data: { name?: string; status?: string; questionIds?: number[] }) =>
     api.put(`/forms/${id}`, data).then((r) => r.data),
@@ -163,4 +163,10 @@ export const formsApi = {
   assignForm: (data: { formId: number; deviceIds: number[] }) =>
     api.post('/forms/assignments', data).then((r) => r.data),
   deleteAssignment: (id: number) => api.delete(`/forms/assignments/${id}`).then((r) => r.data),
+  // Web feedback
+  getWebFeedback: () => api.get('/forms/web/responses').then((r) => r.data),
+  getWebFeedbackResponse: (id: number) => api.get(`/forms/web/responses/${id}`).then((r) => r.data),
+  // Web forms
+  getWebForms: () => api.get('/forms?type=web').then((r) => r.data),
+  activateWebForm: (id: number) => api.put(`/forms/${id}/activate-web`).then((r) => r.data),
 };

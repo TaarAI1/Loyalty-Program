@@ -44,13 +44,18 @@ export class FormsController {
   // ── Forms ─────────────────────────────────────────────────────────────────────
 
   @Get()
-  getForms() {
-    return this.formsService.getForms();
+  getForms(@Query('type') type?: string) {
+    return this.formsService.getForms(type);
   }
 
   @Post()
-  createForm(@Body() body: { name: string; questionIds: number[]; status?: string }) {
+  createForm(@Body() body: { name: string; questionIds: number[]; status?: string; type?: string }) {
     return this.formsService.createForm(body);
+  }
+
+  @Put(':id/activate-web')
+  activateWebForm(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.activateWebForm(id);
   }
 
   @Put(':id')
@@ -152,6 +157,12 @@ export class FormsController {
     return this.formsService.kioskPollSurvey(code);
   }
 
+  @Public()
+  @Get('kiosk/status')
+  kioskStatus(@Query('code') code: string) {
+    return this.formsService.kioskStatus(code);
+  }
+
   @Get('kiosk/responses')
   kioskGetResponses(@Query('phone') phone?: string, @Query('tierId') tierId?: string) {
     return this.formsService.kioskGetResponses(phone, tierId);
@@ -160,5 +171,23 @@ export class FormsController {
   @Get('kiosk/responses/:id')
   kioskGetResponse(@Param('id', ParseIntPipe) id: number) {
     return this.formsService.kioskGetResponse(id);
+  }
+
+  // ── Web form responses (JWT-protected — dashboard only) ──────────────────────
+
+  @Get('web/responses')
+  webGetResponses() {
+    return this.formsService.webGetResponses();
+  }
+
+  @Get('web/responses/:id')
+  webGetResponse(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.webGetResponse(id);
+  }
+
+  @Public()
+  @Post('web/submit')
+  webSubmit(@Body() body: { formId: number; customerName?: string; customerPhone?: string; answers: { questionId: number; value: string }[] }) {
+    return this.formsService.webSubmit(body);
   }
 }

@@ -1,0 +1,971 @@
+{
+  "info": {
+    "name": "LoyaltyPlus API",
+    "_postman_id": "loyaltyplus-api-collection",
+    "description": "Complete Postman collection for the LoyaltyPlus backend API.\n\nSet the `baseUrl` variable to your API root (e.g. https://your-api.railway.app/api).\nSet the `token` variable after calling POST /auth/login.\n\nAll endpoints except those marked PUBLIC require the Authorization header:\n  Authorization: Bearer {{token}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://backend-dev-ccff.up.railway.app/api", "type": "string" },
+    { "key": "token",   "value": "",                                  "type": "string" },
+    { "key": "customerId", "value": "00000000-0000-0000-0000-000000000000", "type": "string" },
+    { "key": "txId",    "value": "00000000-0000-0000-0000-000000000000", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('token', json.access_token);",
+                  "        console.log('Token saved:', json.access_token.substring(0, 20) + '...');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customers?search=&tierId=&region=&store=&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["customers"],
+              "query": [
+                { "key": "search",   "value": "",   "description": "Search by name / phone / email" },
+                { "key": "tierId",   "value": "",   "description": "Filter by tier ID" },
+                { "key": "region",   "value": "",   "description": "Filter by region" },
+                { "key": "store",    "value": "",   "description": "Filter by store" },
+                { "key": "page",     "value": "1"  },
+                { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}"] }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"region\": \"North\",\n  \"store\": \"HeadOffice\",\n  \"dateOfBirth\": \"1990-05-15\",\n  \"gender\": \"Female\",\n  \"status\": \"active\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/history?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","history"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction Items",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/transactions/{{txId}}/items", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","transactions","{{txId}}","items"] }
+          }
+        },
+        {
+          "name": "Get Points Ledger",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/points-ledger?page=1&pageSize=20",
+              "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","points-ledger"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Award Points",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/award-points", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","award-points"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"points\": 500,\n  \"reason\": \"Birthday gift\",\n  \"awardedBy\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send WhatsApp Notification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/notify", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","notify"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template_name\": \"points_earned_confirmation\",\n  \"message\": \"Optional override body\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Customer Activity",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/activity", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","activity"] }
+          }
+        },
+        {
+          "name": "Get Notes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/notes", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","notes"] }
+          }
+        },
+        {
+          "name": "Add Note",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/notes", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","notes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Customer called about missing points\",\n  \"addedBy\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Note",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/customers/{{customerId}}/notes/1", "host": ["{{baseUrl}}"], "path": ["customers","{{customerId}}","notes","1"] }
+          }
+        },
+        {
+          "name": "Get Customer Persona",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/persona",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers","{{customerId}}","persona"]
+            },
+            "description": "Returns persona fields, tier, loyalty stats, and dcsBreakdown for a customer. dcsBreakdown shows each unique dscname from the customer's transaction items with count and percentage (sums to 100)."
+          }
+        },
+        {
+          "name": "Update Customer Persona",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}/persona",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers","{{customerId}}","persona"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"segment\": \"loyal\",\n  \"engagementScore\": 80,\n  \"occupation\": \"Engineer\",\n  \"gender\": \"Male\",\n  \"maritalStatus\": \"Single\",\n  \"preferredChannel\": \"WhatsApp\",\n  \"legalName\": null,\n  \"preferredName\": \"Ali\",\n  \"nationality\": \"Pakistani\",\n  \"city\": \"Lahore\",\n  \"area\": \"DHA\",\n  \"homeAddress\": null,\n  \"deliveryAddress\": null,\n  \"alternatePhone\": null\n}"
+            },
+            "description": "Updates persona fields. All fields are optional. Segment values: new, loyal, at_risk, vip, dormant. engagementScore is an integer (0-100). Gender: Male, Female, Other. MaritalStatus: Single, Married, Divorced, Widowed. PreferredChannel: WhatsApp, SMS, Email."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms — Questions",
+      "item": [
+        {
+          "name": "List Questions",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/forms/questions", "host": ["{{baseUrl}}"], "path": ["forms","questions"] } }
+        },
+        {
+          "name": "Create Question",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/questions", "host": ["{{baseUrl}}"], "path": ["forms","questions"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"How was your experience?\",\n  \"questionType\": \"rating\",\n  \"options\": [],\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/questions/1", "host": ["{{baseUrl}}"], "path": ["forms","questions","1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Updated question text\",\n  \"status\": \"inactive\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/forms/questions/1", "host": ["{{baseUrl}}"], "path": ["forms","questions","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms — Forms",
+      "item": [
+        {
+          "name": "List Forms",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/forms", "host": ["{{baseUrl}}"], "path": ["forms"] } }
+        },
+        {
+          "name": "Create Form",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms", "host": ["{{baseUrl}}"], "path": ["forms"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer Satisfaction Survey\",\n  \"questionIds\": [1, 2, 3],\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Form",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/1", "host": ["{{baseUrl}}"], "path": ["forms","1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Survey Name\",\n  \"status\": \"active\",\n  \"questionIds\": [1, 2, 3, 4]\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Form",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/forms/1", "host": ["{{baseUrl}}"], "path": ["forms","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms — Devices",
+      "item": [
+        {
+          "name": "List Devices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/devices?store=&deviceType=",
+              "host": ["{{baseUrl}}"], "path": ["forms","devices"],
+              "query": [{ "key": "store", "value": "" }, { "key": "deviceType", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create Device",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/devices", "host": ["{{baseUrl}}"], "path": ["forms","devices"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kiosk-01\",\n  \"deviceType\": \"kiosk\",\n  \"store\": \"HeadOffice\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Device",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/devices/1", "host": ["{{baseUrl}}"], "path": ["forms","devices","1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kiosk-01-Updated\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Device",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/forms/devices/1", "host": ["{{baseUrl}}"], "path": ["forms","devices","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms — Assignments",
+      "item": [
+        {
+          "name": "List Assignments",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/forms/assignments", "host": ["{{baseUrl}}"], "path": ["forms","assignments"] } }
+        },
+        {
+          "name": "Assign Form to Devices",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/assignments", "host": ["{{baseUrl}}"], "path": ["forms","assignments"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"formId\": 1,\n  \"deviceIds\": [1, 2]\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Assignment",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/forms/assignments/1", "host": ["{{baseUrl}}"], "path": ["forms","assignments","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Forms — Kiosk (PUBLIC)",
+      "item": [
+        {
+          "name": "Kiosk Connect",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/kiosk/connect?code=ESPU383K",
+              "host": ["{{baseUrl}}"], "path": ["forms","kiosk","connect"],
+              "query": [{ "key": "code", "value": "ESPU383K", "description": "Device pairing code" }]
+            }
+          }
+        },
+        {
+          "name": "Kiosk Lookup Customer",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/kiosk/lookup-customer?phone=03001234567",
+              "host": ["{{baseUrl}}"], "path": ["forms","kiosk","lookup-customer"],
+              "query": [{ "key": "phone", "value": "03001234567" }]
+            }
+          }
+        },
+        {
+          "name": "Kiosk Submit Feedback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/kiosk/submit", "host": ["{{baseUrl}}"], "path": ["forms","kiosk","submit"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pairingCode\": \"ESPU383K\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+923001234567\",\n  \"answers\": [\n    { \"questionId\": 1, \"value\": \"5\" },\n    { \"questionId\": 2, \"value\": \"Great experience!\" }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Kiosk Push Survey (POS)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/forms/kiosk/push-survey", "host": ["{{baseUrl}}"], "path": ["forms","kiosk","push-survey"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceCode\": \"ESPU383K\",\n  \"customerName\": \"John Doe\",\n  \"customerPhone\": \"+923001234567\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Kiosk Poll Pending Survey",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/kiosk/pending-survey?code=ESPU383K",
+              "host": ["{{baseUrl}}"], "path": ["forms","kiosk","pending-survey"],
+              "query": [{ "key": "code", "value": "ESPU383K" }]
+            }
+          }
+        },
+        {
+          "name": "Kiosk Status Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/kiosk/status?code=ESPU383K",
+              "host": ["{{baseUrl}}"], "path": ["forms","kiosk","status"],
+              "query": [{ "key": "code", "value": "ESPU383K" }]
+            }
+          }
+        },
+        {
+          "name": "Get Feedback Responses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/forms/kiosk/responses?phone=&tierId=",
+              "host": ["{{baseUrl}}"], "path": ["forms","kiosk","responses"],
+              "query": [{ "key": "phone", "value": "" }, { "key": "tierId", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Get Single Feedback Response",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/forms/kiosk/responses/1", "host": ["{{baseUrl}}"], "path": ["forms","kiosk","responses","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Metrics",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/dashboard/metrics", "host": ["{{baseUrl}}"], "path": ["dashboard","metrics"] } }
+        },
+        {
+          "name": "Get Points Trend",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/points-trend?days=30",
+              "host": ["{{baseUrl}}"], "path": ["dashboard","points-trend"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          }
+        },
+        {
+          "name": "Get Tier Distribution",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/dashboard/tier-distribution", "host": ["{{baseUrl}}"], "path": ["dashboard","tier-distribution"] } }
+        },
+        {
+          "name": "Get Recent Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/recent-transactions?limit=10",
+              "host": ["{{baseUrl}}"], "path": ["dashboard","recent-transactions"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Segments",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/dashboard/customer-segments", "host": ["{{baseUrl}}"], "path": ["dashboard","customer-segments"] } }
+        },
+        {
+          "name": "Get Top Customers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/top-customers?limit=10",
+              "host": ["{{baseUrl}}"], "path": ["dashboard","top-customers"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Filter Options",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/filters", "host": ["{{baseUrl}}"], "path": ["reports","filters"] } }
+        },
+        {
+          "name": "Customer Tier-Wise Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/customer-tier?region=&store=&tierId=&gender=&dateFrom=&dateTo=&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["reports","customer-tier"],
+              "query": [
+                { "key": "region", "value": "" }, { "key": "store", "value": "" },
+                { "key": "tierId", "value": "" }, { "key": "gender", "value": "" },
+                { "key": "ageFrom", "value": "" }, { "key": "ageTo", "value": "" },
+                { "key": "dateFrom", "value": "" }, { "key": "dateTo", "value": "" },
+                { "key": "month", "value": "" }, { "key": "year", "value": "" },
+                { "key": "page", "value": "1" }, { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Birthday Response Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/birthday-response?month=&year=&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["reports","birthday-response"],
+              "query": [
+                { "key": "region", "value": "" }, { "key": "store", "value": "" },
+                { "key": "month", "value": "" }, { "key": "year", "value": "" },
+                { "key": "page", "value": "1" }, { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top Customers Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/top-customers?limit=100",
+              "host": ["{{baseUrl}}"], "path": ["reports","top-customers"],
+              "query": [
+                { "key": "region", "value": "" }, { "key": "store", "value": "" },
+                { "key": "tierId", "value": "" }, { "key": "gender", "value": "" },
+                { "key": "dateFrom", "value": "" }, { "key": "dateTo", "value": "" },
+                { "key": "limit", "value": "100" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Loyalty Sales Detail Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/loyalty-sales?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["reports","loyalty-sales"],
+              "query": [
+                { "key": "region", "value": "" }, { "key": "store", "value": "" },
+                { "key": "dateFrom", "value": "" }, { "key": "dateTo", "value": "" },
+                { "key": "page", "value": "1" }, { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forensic Report",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reports/forensic?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["reports","forensic"],
+              "query": [
+                { "key": "region", "value": "" }, { "key": "store", "value": "" },
+                { "key": "dateFrom", "value": "" }, { "key": "dateTo", "value": "" },
+                { "key": "page", "value": "1" }, { "key": "pageSize", "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Segments",
+      "item": [
+        {
+          "name": "Get Segmented Customers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/segments/customers?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["segments","customers"],
+              "query": [
+                { "key": "minSpend",       "value": "" }, { "key": "maxSpend",       "value": "" },
+                { "key": "tierId",         "value": "" }, { "key": "recency",         "value": "", "description": "30d / 60d / 90d / 180d / 365d" },
+                { "key": "minVisits",      "value": "" }, { "key": "maxVisits",      "value": "" },
+                { "key": "minPoints",      "value": "" }, { "key": "maxPoints",      "value": "" },
+                { "key": "store",          "value": "" }, { "key": "region",          "value": "" },
+                { "key": "enrolledAfter",  "value": "" }, { "key": "enrolledBefore",  "value": "" },
+                { "key": "isActive",       "value": "", "description": "true / false" },
+                { "key": "page",           "value": "1" }, { "key": "pageSize",       "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"], "path": ["notifications"],
+              "query": [
+                { "key": "channel",    "value": "" },
+                { "key": "status",     "value": "" },
+                { "key": "customerId", "value": "" },
+                { "key": "page",       "value": "1" },
+                { "key": "pageSize",   "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Notification Stats",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/notifications/stats", "host": ["{{baseUrl}}"], "path": ["notifications","stats"] } }
+        },
+        {
+          "name": "Resend Notification",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/notifications/1/resend", "host": ["{{baseUrl}}"], "path": ["notifications","1","resend"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Configuration",
+      "item": [
+        {
+          "name": "Loyalty Tiers",
+          "item": [
+            {
+              "name": "Get Tiers",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/loyalty-tiers", "host": ["{{baseUrl}}"], "path": ["configuration","loyalty-tiers"] } }
+            },
+            {
+              "name": "Upsert Tier",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/loyalty-tiers", "host": ["{{baseUrl}}"], "path": ["configuration","loyalty-tiers"] },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Gold\",\n  \"pointsFrom\": 1000,\n  \"pointsTo\": 4999,\n  \"spendFrom\": 50000,\n  \"spendTo\": 199999,\n  \"rewardPercentage\": 3,\n  \"redeemValue\": 100\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Tier",
+              "request": {
+                "method": "DELETE",
+                "url": { "raw": "{{baseUrl}}/configuration/loyalty-tiers/1", "host": ["{{baseUrl}}"], "path": ["configuration","loyalty-tiers","1"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "WhatsApp",
+          "item": [
+            {
+              "name": "Get WhatsApp Config",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/whatsapp", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp"] } }
+            },
+            {
+              "name": "Update WhatsApp Config",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/whatsapp", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp"] },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"access_token\": \"YOUR_TOKEN\",\n  \"phone_number_id\": \"123456\",\n  \"business_account_id\": \"789012\",\n  \"template_expiry\": \"points_expiry\",\n  \"template_birthday\": \"birthday_wish\",\n  \"template_points_earned\": \"points_earned\",\n  \"template_tier_upgrade\": \"tier_upgrade\",\n  \"is_active\": true\n}"
+                }
+              }
+            },
+            {
+              "name": "Test WhatsApp",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/whatsapp/test", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp","test"] },
+                "body": { "mode": "raw", "raw": "{\n  \"to\": \"+923001234567\",\n  \"template_name\": \"points_earned\"\n}" }
+              }
+            },
+            {
+              "name": "Send OTP",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/whatsapp/send-otp", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp","send-otp"] },
+                "body": { "mode": "raw", "raw": "{\n  \"to\": \"+923001234567\",\n  \"code\": \"123456\",\n  \"customer_name\": \"John\"\n}" }
+              }
+            },
+            {
+              "name": "Send Redemption OTP",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/whatsapp/send-redemption-otp", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp","send-redemption-otp"] },
+                "body": { "mode": "raw", "raw": "{\n  \"to\": \"+923001234567\",\n  \"code\": \"654321\",\n  \"customer_name\": \"John\"\n}" }
+              }
+            },
+            {
+              "name": "Send Receipt PDF",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/whatsapp/send-receipt", "host": ["{{baseUrl}}"], "path": ["configuration","whatsapp","send-receipt"] },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"to\": \"+923001234567\",\n  \"customerName\": \"John Doe\",\n  \"storeName\": \"HeadOffice\",\n  \"transactionNo\": \"TXN-001\",\n  \"date\": \"2026-09-22\",\n  \"items\": [\n    { \"name\": \"Product A\", \"qty\": 2, \"unitPrice\": 500, \"total\": 1000 }\n  ],\n  \"subtotal\": 1000,\n  \"discount\": 0,\n  \"tax\": 170,\n  \"gross\": 1170\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email",
+          "item": [
+            {
+              "name": "Get Email Config",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/email", "host": ["{{baseUrl}}"], "path": ["configuration","email"] } }
+            },
+            {
+              "name": "Update Email Config",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/email", "host": ["{{baseUrl}}"], "path": ["configuration","email"] },
+                "body": { "mode": "raw", "raw": "{\n  \"host\": \"smtp.example.com\",\n  \"port\": 587,\n  \"user\": \"noreply@example.com\",\n  \"pass\": \"password\"\n}" }
+              }
+            },
+            {
+              "name": "Test Email",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/test-email", "host": ["{{baseUrl}}"], "path": ["configuration","test-email"] },
+                "body": { "mode": "raw", "raw": "{\n  \"to\": \"test@example.com\"\n}" }
+              }
+            },
+            {
+              "name": "Verify SMTP",
+              "request": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/configuration/verify-smtp", "host": ["{{baseUrl}}"], "path": ["configuration","verify-smtp"] }
+              }
+            },
+            {
+              "name": "Get Email Logs",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/email-logs", "host": ["{{baseUrl}}"], "path": ["configuration","email-logs"] } }
+            }
+          ]
+        },
+        {
+          "name": "SMS",
+          "item": [
+            {
+              "name": "Get SMS Config",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/sms", "host": ["{{baseUrl}}"], "path": ["configuration","sms"] } }
+            },
+            {
+              "name": "Update SMS Config",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/sms", "host": ["{{baseUrl}}"], "path": ["configuration","sms"] },
+                "body": { "mode": "raw", "raw": "{\n  \"apiKey\": \"YOUR_SMS_KEY\",\n  \"sender\": \"LoyaltyPlus\"\n}" }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Oracle / Stores",
+          "item": [
+            {
+              "name": "Get Oracle Config",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/oracle", "host": ["{{baseUrl}}"], "path": ["configuration","oracle"] } }
+            },
+            {
+              "name": "Save Oracle Config",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/oracle", "host": ["{{baseUrl}}"], "path": ["configuration","oracle"] },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"host\": \"192.168.1.100\",\n  \"port\": 1521,\n  \"dbUser\": \"retail\",\n  \"password\": \"secret\",\n  \"service\": \"ORCL\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Test Oracle Connection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/oracle/test", "host": ["{{baseUrl}}"], "path": ["configuration","oracle","test"] },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"host\": \"192.168.1.100\",\n  \"port\": 1521,\n  \"dbUser\": \"retail\",\n  \"password\": \"secret\",\n  \"service\": \"ORCL\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Get Oracle Status",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/oracle-status", "host": ["{{baseUrl}}"], "path": ["configuration","oracle-status"] } }
+            },
+            {
+              "name": "Get Stores (Oracle)",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/stores", "host": ["{{baseUrl}}"], "path": ["configuration","stores"] } }
+            },
+            {
+              "name": "Get RetailPro Stores",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/configuration/retailpro/stores", "host": ["{{baseUrl}}"], "path": ["configuration","retailpro","stores"] } }
+            }
+          ]
+        },
+        {
+          "name": "Jobs",
+          "item": [
+            {
+              "name": "Trigger Forensic Alert",
+              "request": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/configuration/trigger-forensic-alert", "host": ["{{baseUrl}}"], "path": ["configuration","trigger-forensic-alert"] }
+              }
+            },
+            {
+              "name": "Trigger Expiry Job",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/configuration/trigger-expiry-job", "host": ["{{baseUrl}}"], "path": ["configuration","trigger-expiry-job"] },
+                "body": { "mode": "raw", "raw": "{\n  \"asOf\": \"2026-09-22\"\n}" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "Webhooks (POS / RetailPro)",
+      "item": [
+        {
+          "name": "Process Transaction",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/webhooks/transaction", "host": ["{{baseUrl}}"], "path": ["webhooks","transaction"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"TXN-001\",\n  \"customer_id\": \"CUST-001\",\n  \"mobile\": \"+923001234567\",\n  \"store\": \"HeadOffice\",\n  \"sale_amount\": 5000,\n  \"tax_amount\": 750,\n  \"gross_amount\": 5750,\n  \"redeem_points\": 0,\n  \"transaction_date\": \"2026-09-22T10:00:00Z\",\n  \"items\": [\n    {\n      \"sku\": \"ABC-001\",\n      \"description\": \"Product A\",\n      \"qty\": 2,\n      \"unit_price\": 2500,\n      \"total_price\": 5000,\n      \"dcs\": [\n        {\n          \"dname\": \"\",\n          \"cname\": \"\",\n          \"sname\": \"\",\n          \"dscname\": \"\",\n          \"categories\": \"\",\n          \"typo\": \"\"\n        }\n      ]\n    }\n  ],\n  \"text\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upsert Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/webhooks/customer", "host": ["{{baseUrl}}"], "path": ["webhooks","customer"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"CUST-001\",\n  \"name\": \"John Doe\",\n  \"mobile\": \"+923001234567\",\n  \"email\": \"john@example.com\",\n  \"gender\": \"Male\",\n  \"store\": \"HeadOffice\",\n  \"country_code\": \"92\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users (Admin only)",
+      "item": [
+        {
+          "name": "List Users",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] },
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cashier1\",\n  \"password\": \"securepass\",\n  \"role\": \"user\"\n}" }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/1", "host": ["{{baseUrl}}"], "path": ["users","1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"password\": \"newpassword\",\n  \"role\": \"admin\",\n  \"isActive\": true\n}" }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/users/1", "host": ["{{baseUrl}}"], "path": ["users","1"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}

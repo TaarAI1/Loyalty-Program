@@ -260,6 +260,168 @@ export class ConfigurationService {
     return { success: true, sentTo: phone };
   }
 
+  // ── WhatsApp Transaction Receipt ───────────────────────────────────────────
+
+  async sendReceipt(data: {
+    to: string;
+    customerName?: string;
+    storeName?: string;
+    transactionNo?: string;
+    date?: string;
+    items: { name: string; qty: number; unitPrice: number; total: number }[];
+    subtotal: number;
+    discount?: number;
+    tax: number;
+    gross: number;
+  }) {
+    const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
+    if (!config?.apiUrl || !config.apiKey || !config.csrfToken) {
+      throw new BadRequestException('WhatsApp not configured. Set API URL, X-Api-Key and X-CSRFTOKEN in Configuration → WhatsApp.');
+    }
+
+    const { formatPhoneNumber } = await import('@loyalty/shared');
+    const phone = formatPhoneNumber(data.to);
+
+    // 1. Generate PDF
+    const pdfBuffer = await this.buildReceiptPdf(data);
+
+    // 2. Extract WATI tenant ID from the stored apiUrl
+    //    e.g. https://live-mt-server.wati.io/354209/api/v1/sendTemplateMessage → 354209
+    const tenantMatch = config.apiUrl.match(/wati\.io\/(\d+)\//);
+    if (!tenantMatch) {
+      throw new BadRequestException('Could not parse WATI tenant ID from the configured API URL.');
+    }
+    const tenantId = tenantMatch[1];
+    const apiKey   = this.encryption.decrypt(config.apiKey);
+    const csrf     = this.encryption.decrypt(config.csrfToken);
+
+    const form = new FormData();
+    form.append('file', pdfBuffer, { filename: 'receipt.pdf', contentType: 'application/pdf' });
+    form.append(
+      'caption',
+      `Hi ${data.customerName || 'Valued Customer'}, thank you for shopping at ${data.storeName || 'our store'}! ` +
+      `Your receipt for transaction ${data.transactionNo || ''} is attached. We appreciate your business! 🛍️`,
+    );
+
+    const sendUrl = `https://live-mt-server.wati.io/${tenantId}/api/v1/sendDocument/${phone}`;
+    try {
+      await axios.post(sendUrl, form, {
+        headers: { ...form.getHeaders(), 'X-Api-Key': apiKey, 'X-CSRFTOKEN': csrf },
+        timeout: 25000,
+      });
+    } catch (err) {
+      const msg = axios.isAxiosError(err)
+        ? `WATI sendDocument error ${err.response?.status}: ${JSON.stringify(err.response?.data)}`
+        : String(err);
+      throw new BadRequestException(msg);
+    }
+
+    this.logger.log({ to: phone, transactionNo: data.transactionNo }, 'Receipt WhatsApp sent');
+    return { success: true, sentTo: phone };
+  }
+
+  private buildReceiptPdf(data: {
+    customerName?: string;
+    storeName?: string;
+    transactionNo?: string;
+    date?: string;
+    items: { name: string; qty: number; unitPrice: number; total: number }[];
+    subtotal: number;
+    discount?: number;
+    tax: number;
+    gross: number;
+  }): Promise<Buffer> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const PDFDocument = require('pdfkit') as typeof import('pdfkit');
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      // A5 size (148 × 210 mm), comfortable for a receipt
+      const doc = new PDFDocument({ margin: 40, size: 'A5' });
+      doc.on('data', (c: Buffer) => chunks.push(c));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const usableW = doc.page.width - 80; // 40 left + 40 right margin
+      const left    = 40;
+      const right   = left + usableW;
+
+      // ── Store / header ─────────────────────────────────────────
+      doc.fontSize(16).font('Helvetica-Bold')
+        .text(data.storeName || 'Receipt', { align: 'center' });
+      doc.fontSize(9).font('Helvetica')
+        .text('Official Transaction Receipt', { align: 'center' });
+      doc.moveDown(0.4);
+      doc.moveTo(left, doc.y).lineTo(right, doc.y).lineWidth(1).stroke();
+      doc.moveDown(0.5);
+
+      // ── Meta info ──────────────────────────────────────────────
+      const dateStr = data.date ? new Date(data.date).toLocaleString('en-PK') : new Date().toLocaleString('en-PK');
+      doc.fontSize(9).font('Helvetica');
+      doc.text(`Receipt No : ${data.transactionNo || '—'}`);
+      doc.text(`Date       : ${dateStr}`);
+      doc.text(`Customer   : ${data.customerName || '—'}`);
+      doc.moveDown(0.5);
+
+      // ── Items table header ─────────────────────────────────────
+      doc.moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+      doc.moveDown(0.3);
+      const col = { item: left, qty: left + 195, price: left + 235, total: left + 305 };
+      doc.font('Helvetica-Bold').fontSize(8);
+      const hdrY = doc.y;
+      doc.text('Description', col.item,  hdrY, { continued: true, width: 185 });
+      doc.text('Qty',         col.qty,   hdrY, { continued: true, width: 35 });
+      doc.text('Unit',        col.price, hdrY, { continued: true, width: 65 });
+      doc.text('Total',       col.total, hdrY, { width: 55 });
+      doc.moveDown(0.3);
+      doc.moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+      doc.moveDown(0.3);
+
+      // ── Items rows ─────────────────────────────────────────────
+      doc.font('Helvetica').fontSize(8);
+      for (const item of data.items) {
+        const y = doc.y;
+        const name = (item.name || '—').substring(0, 32);
+        doc.text(name,                              col.item,  y, { continued: true, width: 185 });
+        doc.text(String(item.qty),                  col.qty,   y, { continued: true, width: 35 });
+        doc.text(Number(item.unitPrice).toFixed(2), col.price, y, { continued: true, width: 65 });
+        doc.text(Number(item.total).toFixed(2),     col.total, y, { width: 55 });
+        doc.moveDown(0.25);
+      }
+      doc.moveDown(0.3);
+      doc.moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+      doc.moveDown(0.5);
+
+      // ── Totals ─────────────────────────────────────────────────
+      const tLabelX = right - 150;
+      const tValueX = right - 55;
+      const tRow = (label: string, value: number, bold = false) => {
+        const y = doc.y;
+        doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(9);
+        doc.text(label,                       tLabelX, y, { continued: true, width: 90 });
+        doc.text(Number(value).toFixed(2),    tValueX, y, { width: 55, align: 'right' });
+        doc.moveDown(0.3);
+      };
+      tRow('Subtotal',            data.subtotal);
+      if (data.discount && data.discount > 0) tRow('Loyalty Discount', -data.discount);
+      tRow('Tax',                 data.tax);
+      doc.moveTo(tLabelX, doc.y).lineTo(right, doc.y).stroke();
+      doc.moveDown(0.3);
+      tRow('GRAND TOTAL',         data.gross, true);
+
+      // ── Footer ─────────────────────────────────────────────────
+      doc.moveDown(1);
+      doc.moveTo(left, doc.y).lineTo(right, doc.y).stroke();
+      doc.moveDown(0.5);
+      doc.font('Helvetica').fontSize(8)
+        .text('Thank you for your purchase! We look forward to seeing you again.', { align: 'center' });
+      doc.moveDown(0.2);
+      doc.fontSize(7).fillColor('#888888')
+        .text('This is a computer-generated receipt and requires no signature.', { align: 'center' });
+
+      doc.end();
+    });
+  }
+
   // ── SMS Config ─────────────────────────────────────────────────────────────
 
   async getSmsConfig() {

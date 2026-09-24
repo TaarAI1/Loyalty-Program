@@ -47,6 +47,7 @@ import com.loyaltyplus.kiosk.ui.screens.CustomerLookupScreen
 import com.loyaltyplus.kiosk.ui.screens.FormScreen
 import com.loyaltyplus.kiosk.ui.screens.HomeScreen
 import com.loyaltyplus.kiosk.ui.screens.PinDialog
+import com.loyaltyplus.kiosk.ui.screens.ScanQrScreen
 import com.loyaltyplus.kiosk.ui.screens.SettingsScreen
 import com.loyaltyplus.kiosk.ui.screens.ThankYouScreen
 import com.loyaltyplus.kiosk.ui.theme.Gold
@@ -59,14 +60,9 @@ fun KioskApp(viewModel: KioskViewModel) {
     val activity = context as? Activity
     val hasVideo = remember { hasRawVideo(context) }
 
-    // ── Lock orientation per screen ───────────────────────────────────────────
-    LaunchedEffect(state.screen) {
-        activity?.requestedOrientation = when (state.screen) {
-            Screen.SPLASH,
-            Screen.SETUP,
-            Screen.SETTINGS_PANEL -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        }
+    // ── Lock orientation to landscape for all screens ─────────────────────────
+    LaunchedEffect(Unit) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     }
 
     val showVideo = hasVideo && state.screen in setOf(
@@ -87,7 +83,16 @@ fun KioskApp(viewModel: KioskViewModel) {
                 }
             }
 
-            // ── Full-screen setup (first launch) ──────────────────────────────
+            // ── QR scan screen (first launch, step 1) ────────────────────────
+            Screen.SCAN_QR -> ScanQrScreen(
+                toast = state.connectionToast,
+                isConnecting = state.isConnecting,
+                onQrScanned = viewModel::onQrScanned,
+                onManualEntry = viewModel::navigateToManualSetup,
+                onToastDismissed = viewModel::clearToast,
+            )
+
+            // ── Full-screen setup (manual entry / first launch step 2) ────────
             Screen.SETUP -> SettingsScreen(
                 apiUrl = state.apiUrl,
                 pairingCode = state.pairingCode,

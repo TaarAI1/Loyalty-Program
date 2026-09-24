@@ -100,6 +100,7 @@ model Transaction {
   taxAmount               Decimal?  @map("tax_amount") @db.Decimal(10, 2)
   grossAmount             Decimal?  @map("gross_amount") @db.Decimal(10, 2)
   status                  String    @default("completed") @db.VarChar(20)
+  text                    String?   @map("text") @db.Text
   createdAt               DateTime  @default(now()) @map("created_at")
 
   customer      Customer         @relation(fields: [customerId], references: [id])
@@ -122,6 +123,7 @@ model TransactionItem {
   taxAmount     Decimal? @map("tax_amount") @db.Decimal(10, 2)
   grossAmount   Decimal? @map("gross_amount") @db.Decimal(10, 2)
   netAmount     Decimal? @map("net_amount") @db.Decimal(10, 2)
+  dcs           Json?    @map("dcs")
   createdAt     DateTime @default(now()) @map("created_at")
 
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
@@ -354,6 +356,7 @@ model SurveyForm {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(255)
   status    String   @default("active") @db.VarChar(20)
+  type      String   @default("pos") @db.VarChar(20)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -423,15 +426,16 @@ model FormAssignment {
 
 model FormResponse {
   id             Int      @id @default(autoincrement())
-  deviceId       Int      @map("device_id")
-  formId         Int      @map("form_id")
+  deviceId       Int?     @map("device_id")
+  formId         Int?     @map("form_id")
   customerName   String?  @map("customer_name") @db.VarChar(255)
   customerPhone  String?  @map("customer_phone") @db.VarChar(20)
   answers        Json
   submittedAt    DateTime @default(now()) @map("submitted_at")
 
-  device  Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  form    SurveyForm @relation(fields: [formId],   references: [id], onDelete: Cascade)
+  // SetNull so that deleting a form or device does NOT delete historical feedback
+  device  Device?     @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  form    SurveyForm? @relation(fields: [formId],   references: [id], onDelete: SetNull)
 
   @@index([deviceId])
   @@index([formId])
