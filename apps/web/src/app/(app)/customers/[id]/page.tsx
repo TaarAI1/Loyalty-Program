@@ -1078,6 +1078,21 @@ export default function CustomerDetailPage() {
                       </ul>
                     </div>
                   </div>
+
+                  {/* Departments */}
+                  {((customer as any).dcsBreakdown ?? []).length > 0 && (
+                    <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
+                      <div className="space-y-1.5">
+                        {((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d) => (
+                          <div key={d.dscname} className="flex items-center justify-between">
+                            <p className="text-xs font-semibold truncate">{d.dscname}</p>
+                            <p className="text-xs text-muted-foreground shrink-0 ml-2">{d.count}x</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1091,25 +1106,6 @@ export default function CustomerDetailPage() {
                 </span>
               ))}
             </div>
-
-            {/* Department Breakdown */}
-            {((customer as any).dcsBreakdown ?? []).length > 0 && (
-              <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
-                <div className="space-y-2.5">
-                  {((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d) => (
-                    <div key={d.dscname} className="flex items-center gap-3">
-                      <p className="text-xs font-semibold w-36 truncate shrink-0">{d.dscname}</p>
-                      <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
-                        <div className="h-full rounded-full bg-[#FFD000]" style={{ width: `${d.percentage}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground w-10 text-right shrink-0">{d.percentage}%</p>
-                      <p className="text-xs text-muted-foreground w-8 text-right shrink-0">{d.count}x</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* ── Quick-facts strip ── */}
             {(() => {
