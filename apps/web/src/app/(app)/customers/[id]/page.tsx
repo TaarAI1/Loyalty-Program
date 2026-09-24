@@ -983,19 +983,16 @@ export default function CustomerDetailPage() {
                 { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
               ];
               return (
-                <div className="flex flex-col md:flex-row gap-4 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
 
-                  {/* Left column: ICP + Demographics stacked */}
-                  <div className="flex flex-col gap-4 md:w-1/3">
-
-                  {/* Persona ICP */}
-                  <div className={`rounded-xl border p-4 space-y-3 ${bc.bg} ${bc.border}`}>
+                  {/* ICP Persona */}
+                  <div className={`rounded-xl border p-3 space-y-2 self-start ${bc.bg} ${bc.border}`}>
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
                     <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
                       {bc.icon} {p.label}
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {p.daysSinceVisit !== null && (
                         <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
                           <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
@@ -1025,10 +1022,9 @@ export default function CustomerDetailPage() {
                         </span>
                       )}
                     </div>
-
-                    {/* Departments inside ICP card */}
+                    {/* Departments */}
                     {((customer as any).dcsBreakdown ?? []).length > 0 && (
-                      <div className="pt-3 border-t border-border/50 space-y-1.5">
+                      <div className="pt-2 border-t border-border/50 space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
                         {(() => {
                           const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
@@ -1046,12 +1042,12 @@ export default function CustomerDetailPage() {
                     )}
                   </div>
 
-                  {/* Demographics grid */}
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
+                  {/* Demographics */}
+                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" /> Demographics
                     </p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                       {[
                         { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
                         { label: 'Generation', value: p.generation ?? '—' },
@@ -1068,43 +1064,34 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
 
-                  </div>{/* end left column */}
-
-                  {/* Right column: Strategic Insights + Recommended Actions */}
-                  <div className="flex-1">
-                  <div className="rounded-xl border border-border p-4 space-y-3 bg-muted/20">
-                    <div className="space-y-2">
+                  {/* Strategic Insights + Recommended Actions */}
+                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
+                    <div className="space-y-1.5">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                         <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
                       </p>
-                      <ul className="space-y-3">
+                      <ul className="space-y-1.5">
                         {p.insights.map((insight, i) => (
-                          <li key={i} className="space-y-0.5">
-                            <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                              {insight.issue}
-                            </p>
-                            <p className="text-xs font-semibold pl-3 text-foreground leading-snug">
-                              {insight.strategy}
-                            </p>
+                          <li key={i} className="flex items-start gap-1.5 text-xs">
+                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                            <span className="font-semibold leading-snug">{insight.strategy}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <div className="space-y-2 pt-1 border-t border-border">
+                    <div className="space-y-1.5 pt-1.5 border-t border-border">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
                       </p>
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-1">
                         {p.actionItems.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs">
+                          <li key={i} className="flex items-start gap-1.5 text-xs">
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> {item}
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
-                  </div>{/* end right column */}
 
                 </div>
               );
