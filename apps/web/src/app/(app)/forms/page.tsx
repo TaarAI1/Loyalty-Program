@@ -1282,6 +1282,7 @@ function WebFormTab() {
   const [editingForm, setEditingForm] = useState<Form | null>(null);
   const [previewForm, setPreviewForm] = useState<Form | null>(null);
   const [formName, setFormName]       = useState('');
+  const [formStatus, setFormStatus]   = useState<'active' | 'inactive'>('active');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const load = useCallback(async () => {
@@ -1303,6 +1304,7 @@ function WebFormTab() {
   function openCreateModal() {
     setEditingForm(null);
     setFormName('');
+    setFormStatus('active');
     setSelectedIds([]);
     setShowModal(true);
   }
@@ -1310,6 +1312,7 @@ function WebFormTab() {
   function openEditModal(form: Form) {
     setEditingForm(form);
     setFormName(form.name);
+    setFormStatus(form.status as 'active' | 'inactive');
     setSelectedIds(form.formQuestions.map((fq) => fq.question.id));
     setShowModal(true);
   }
@@ -1328,7 +1331,11 @@ function WebFormTab() {
     setSaving(true);
     try {
       if (editingForm) {
-        await formsApi.updateForm(editingForm.id, { name: formName.trim(), questionIds: selectedIds });
+        await formsApi.updateForm(editingForm.id, { name: formName.trim(), questionIds: selectedIds, status: formStatus });
+        if (formStatus === 'active') {
+          // deactivates all other web forms atomically
+          await formsApi.activateWebForm(editingForm.id);
+        }
       } else {
         const created = await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
         // ensure only this new form is active — deactivates all other web forms
@@ -1510,6 +1517,40 @@ function WebFormTab() {
                   className="w-full rounded-lg border border-border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+
+              {/* Status toggle — only in Edit mode */}
+              {editingForm && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormStatus('active')}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        formStatus === 'active'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                      }`}
+                    >
+                      Active
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormStatus('inactive')}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        formStatus === 'inactive'
+                          ? 'bg-muted text-foreground border-border'
+                          : 'bg-background text-muted-foreground border-border hover:border-border/80'
+                      }`}
+                    >
+                      Inactive
+                    </button>
+                  </div>
+                  {formStatus === 'active' && (
+                    <p className="text-[11px] text-muted-foreground">Saving as active will automatically deactivate all other web forms.</p>
+                  )}
+                </div>
+              )}
 
               {/* Questions */}
               <div className="space-y-1.5">
