@@ -540,6 +540,7 @@ export class CustomersService {
       where,
       select: {
         id: true,
+        name: true,
         totalPoints: true,
         lifetimeSale: true,
         createdAt: true,
