@@ -336,6 +336,8 @@ export class PointsService {
       const waConfig = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
       if (waConfig?.apiUrl && waConfig.templateTierUpgrade) {
         const phone = formatPhoneNumber(result.customer.mobileNumber, result.customer.countryCode);
+        const webBaseUrl = process.env.WEB_BASE_URL ?? 'https://loyaltyplus.myomniconnect.net';
+        const surveyUrl  = `${webBaseUrl}/survey?name=${encodeURIComponent(result.customer.name ?? '')}&phone=${encodeURIComponent(phone)}`;
         await this.queue.enqueueWhatsApp({
           to: phone,
           templateName: waConfig.templateTierUpgrade,
@@ -344,6 +346,7 @@ export class PointsService {
             sms_invoice:     String(result.transaction.saleAmount  || 0),
             sms_no:          result.transaction.receiptNo           || result.transaction.retailproTransactionId || 'N/A',
             remaing_balance: String(result.newTotalPoints          ?? 0),
+            survey_url:      surveyUrl,
           },
           customerId: result.customer.id,
           notificationType: 'transaction',

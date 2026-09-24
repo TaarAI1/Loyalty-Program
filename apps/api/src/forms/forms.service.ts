@@ -425,6 +425,19 @@ export class FormsService {
     };
   }
 
+  async getActiveWebForm() {
+    return this.prisma.surveyForm.findFirst({
+      where: { type: 'web', status: 'active' },
+      include: {
+        formQuestions: {
+          where: { question: { status: 'active' } },
+          include: { question: true },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+  }
+
   async webSubmit(data: {
     formId: number;
     customerName?: string;

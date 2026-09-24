@@ -169,4 +169,5 @@ export const formsApi = {
   // Web forms
   getWebForms: () => api.get('/forms?type=web').then((r) => r.data),
   activateWebForm: (id: number) => api.put(`/forms/${id}/activate-web`).then((r) => r.data),
+  getActiveWebForm: () => api.get('/forms/web/active').then((r) => r.data),
 };

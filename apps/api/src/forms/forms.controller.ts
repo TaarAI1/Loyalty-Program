@@ -175,6 +175,12 @@ export class FormsController {
 
   // ── Web form responses (JWT-protected — dashboard only) ──────────────────────
 
+  @Public()
+  @Get('web/active')
+  getActiveWebForm() {
+    return this.formsService.getActiveWebForm();
+  }
+
   @Get('web/responses')
   webGetResponses() {
     return this.formsService.webGetResponses();
