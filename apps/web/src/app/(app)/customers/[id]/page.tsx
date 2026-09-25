@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
@@ -1291,15 +1291,16 @@ export default function CustomerDetailPage() {
                 {(() => {
                   const p2 = customer.persona as { rfmScores: { recency: number; frequency: number; monetary: number } };
                   const rfmData2 = [
-                    { axis: 'Recency',   value: p2.rfmScores.recency   },
-                    { axis: 'Frequency', value: p2.rfmScores.frequency },
-                    { axis: 'Monetary',  value: p2.rfmScores.monetary  },
+                    { axis: 'Recency',   value: p2.rfmScores.recency,   fullMark: 5 },
+                    { axis: 'Frequency', value: p2.rfmScores.frequency, fullMark: 5 },
+                    { axis: 'Monetary',  value: p2.rfmScores.monetary,  fullMark: 5 },
                   ];
                   return (
                     <ResponsiveContainer width="100%" height={180}>
                       <RadarChart data={rfmData2} margin={{ top: 4, right: 20, left: 20, bottom: 4 }}>
                         <PolarGrid />
                         <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 5]} tick={false} axisLine={false} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (!active || !payload?.length) return null;
