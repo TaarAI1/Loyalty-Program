@@ -241,7 +241,13 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Switch from Scan QR screen to manual Setup screen */
-    fun navigateToManualSetup() = _state.update { it.copy(screen = Screen.SETUP) }
+    fun navigateToManualSetup() = _state.update {
+        it.copy(screen = if (prefs.setupComplete) Screen.SETTINGS_PANEL else Screen.SETUP)
+    }
+
+    fun navigateToScanQr() = _state.update {
+        it.copy(screen = Screen.SCAN_QR, connectionToast = null)
+    }
 
     // ── Sidebar navigation ────────────────────────────────────────────────────
 

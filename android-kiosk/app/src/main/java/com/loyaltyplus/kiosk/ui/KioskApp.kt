@@ -103,6 +103,7 @@ fun KioskApp(viewModel: KioskViewModel) {
                 onPairingCodeChange = viewModel::onPairingCodeChange,
                 onConnect = viewModel::connect,
                 onToastDismissed = viewModel::clearToast,
+                onScanQr = viewModel::navigateToScanQr,
             )
 
             // ── Main screens (no sidebar) ─────────────────────────────────────
@@ -144,6 +145,7 @@ fun KioskApp(viewModel: KioskViewModel) {
                         onPairingCodeChange = viewModel::onPairingCodeChange,
                         onConnect = viewModel::connect,
                         onToastDismissed = viewModel::clearToast,
+                        onScanQr = viewModel::navigateToScanQr,
                     )
 
                     Screen.CUSTOMER_LOOKUP -> CustomerLookupScreen(
