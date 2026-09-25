@@ -880,13 +880,11 @@ export class CustomersService {
     });
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayCounts = dayLabels.map((day, i) => {
-      const txOnDay = allTx.filter((t) => t.transactionDate.getDay() === i);
+      const txOnDay = allTx.filter((t) => t.transactionDate.getUTCDay() === i);
       return {
         day,
         visits: txOnDay.length,
-        dates: txOnDay
-          .map((t) => t.transactionDate.toISOString().slice(0, 10))
-          .sort(),
+        dates: [...new Set(txOnDay.map((t) => t.transactionDate.toISOString().slice(0, 10)))].sort(),
       };
     });
 
