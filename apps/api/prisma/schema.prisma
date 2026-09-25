@@ -430,6 +430,8 @@ model FormResponse {
   formId         Int?     @map("form_id")
   customerName   String?  @map("customer_name") @db.VarChar(255)
   customerPhone  String?  @map("customer_phone") @db.VarChar(20)
+  transactionId  String?  @map("transaction_id") @db.VarChar(100)
+  retailproId    String?  @map("retailpro_id")   @db.VarChar(100)
   answers        Json
   submittedAt    DateTime @default(now()) @map("submitted_at")
 

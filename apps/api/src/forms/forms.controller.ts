@@ -113,6 +113,11 @@ export class FormsController {
     return this.formsService.deleteAssignment(id);
   }
 
+  @Put('assignments/:id/activate')
+  activateAssignment(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.activateAssignment(id);
+  }
+
   // ── Kiosk (Public — no API key required) ─────────────────────────────────────
 
   @Public()
@@ -195,6 +200,15 @@ export class FormsController {
   @Get('web/responses/:id')
   webGetResponse(@Param('id', ParseIntPipe) id: number) {
     return this.formsService.webGetResponse(id);
+  }
+
+  @Public()
+  @Get('web/validate')
+  validateWebSurvey(
+    @Query('retailpro_id') retailproId: string,
+    @Query('transaction_id') transactionId: string,
+  ) {
+    return this.formsService.validateWebSurvey(retailproId, transactionId);
   }
 
   @Public()

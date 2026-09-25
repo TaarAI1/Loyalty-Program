@@ -905,6 +905,12 @@ function FormAssignTab() {
     });
   }
 
+  async function handleActivateAssignment(id: number) {
+    await formsApi.activateAssignment(id);
+    const a = await formsApi.getAssignments();
+    setAssignments(a);
+  }
+
   function openAddDevice() {
     setEditingDevice(null);
     setDeviceForm({ name: '', deviceType: 'workstation', store: '' });
@@ -1175,6 +1181,16 @@ function FormAssignTab() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1 justify-end">
+                          {!activeIds.has(a.id) && (
+                            <button
+                              type="button"
+                              title="Set as active form on this device"
+                              onClick={() => handleActivateAssignment(a.id)}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+                            >
+                              Set Active
+                            </button>
+                          )}
                           {a.device.pairingCode && (
                             <button
                               type="button"
@@ -1288,6 +1304,10 @@ function WebFormTab() {
   const [formName, setFormName]       = useState('');
   const [formStatus, setFormStatus]   = useState<'active' | 'inactive'>('active');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const dragIdx = useRef<number | null>(null);
+
+  // Auto-sort order for newly created forms
+  const WEB_TYPE_PRIORITY: Record<string, number> = { rating: 0, textarea: 1, boolean: 2, select: 3, text: 4 };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1341,7 +1361,13 @@ function WebFormTab() {
           await formsApi.activateWebForm(editingForm.id);
         }
       } else {
-        const created = await formsApi.createForm({ name: formName.trim(), questionIds: selectedIds, type: 'web', status: 'active' });
+        const sortedIds = [...selectedIds].sort((a, b) => {
+          const qa = questions.find((q) => q.id === a);
+          const qb = questions.find((q) => q.id === b);
+          return (WEB_TYPE_PRIORITY[qa?.questionType ?? ''] ?? 99) -
+                 (WEB_TYPE_PRIORITY[qb?.questionType ?? ''] ?? 99);
+        });
+        const created = await formsApi.createForm({ name: formName.trim(), questionIds: sortedIds, type: 'web', status: 'active' });
         // ensure only this new form is active — deactivates all other web forms
         await formsApi.activateWebForm(created.id);
       }
@@ -1558,33 +1584,99 @@ function WebFormTab() {
                 </div>
               )}
 
-              {/* Questions */}
+              {/* Questions — selected float to top, unselected dimmed below */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Questions</label>
                 {questions.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">No active questions found. Add questions in the Questions tab first.</p>
                 ) : (
                   <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                    {questions.map((q) => (
-                      <label key={q.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
-                        selectedIds.includes(q.id) ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
-                      }`}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(q.id)}
-                          onChange={() => toggleQ(q.id)}
-                          className="mt-0.5 accent-primary"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium leading-snug">{q.text}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{TYPE_LABEL[q.questionType] ?? q.questionType}</p>
-                        </div>
-                      </label>
-                    ))}
+                    {[
+                      ...questions.filter((q) => selectedIds.includes(q.id)),
+                      ...questions.filter((q) => !selectedIds.includes(q.id)),
+                    ].map((q, i, arr) => {
+                      const isSelected = selectedIds.includes(q.id);
+                      const prevIsSelected = i > 0 && selectedIds.includes(arr[i - 1].id);
+                      const showDivider = !isSelected && prevIsSelected;
+                      const meta = TYPE_META[q.questionType] ?? TYPE_META['text'];
+                      return (
+                        <>
+                          {showDivider && (
+                            <div key={`divider-${q.id}`} className="flex items-center gap-2 py-1">
+                              <div className="flex-1 h-px bg-border/50" />
+                              <span className="text-[10px] text-muted-foreground px-1">Other questions</span>
+                              <div className="flex-1 h-px bg-border/50" />
+                            </div>
+                          )}
+                          <label
+                            key={q.id}
+                            className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-primary/40 bg-primary/5 shadow-sm'
+                                : 'border-border/50 bg-muted/20 opacity-60 hover:opacity-90 hover:bg-muted/40'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleQ(q.id)}
+                              className="accent-primary shrink-0"
+                            />
+                            <div className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 ${meta.bg} ${meta.text}`}>
+                              {meta.icon}
+                            </div>
+                            <span className="text-sm font-medium flex-1 truncate">{q.text}</span>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.bg} ${meta.text}`}>
+                              {TYPE_LABEL[q.questionType] ?? q.questionType}
+                            </span>
+                          </label>
+                        </>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Question Order — glass-card drag-and-drop */}
+            {selectedIds.length > 1 && (
+              <div className="px-5 pb-4 space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Drag to set order</label>
+                <div className="space-y-1.5">
+                  {selectedIds.map((id, idx) => {
+                    const q = questions.find((x) => x.id === id);
+                    if (!q) return null;
+                    const meta = TYPE_META[q.questionType] ?? TYPE_META['text'];
+                    return (
+                      <div
+                        key={id}
+                        draggable
+                        onDragStart={() => { dragIdx.current = idx; }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          const from = dragIdx.current;
+                          if (from === null || from === idx) return;
+                          setSelectedIds((prev) => {
+                            const arr = [...prev];
+                            const [item] = arr.splice(from, 1);
+                            arr.splice(idx, 0, item);
+                            return arr;
+                          });
+                          dragIdx.current = null;
+                        }}
+                        className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/70 backdrop-blur-sm px-3 py-2.5 text-sm cursor-grab active:cursor-grabbing hover:bg-muted/40 hover:border-primary/30 hover:shadow-sm transition-all select-none"
+                      >
+                        <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
+                        <div className={`h-5 w-5 rounded-md flex items-center justify-center shrink-0 ${meta.bg} ${meta.text}`}>{meta.icon}</div>
+                        <span className="flex-1 truncate text-sm">{q.text}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${meta.bg} ${meta.text}`}>{TYPE_LABEL[q.questionType] ?? q.questionType}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Modal footer */}
             <div className="flex items-center justify-between px-5 py-4 border-t border-border gap-3">
