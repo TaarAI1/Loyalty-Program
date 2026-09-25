@@ -70,6 +70,10 @@ const SURVEY_STYLES = `
   0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,0.45); }
   50%       { box-shadow: 0 0 0 10px rgba(234,179,8,0); }
 }
+@keyframes cascadeIn {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 `;
 
 // ── Question renderer ─────────────────────────────────────────────────────────
@@ -90,11 +94,12 @@ function QuestionInput({
   if (questionType === 'rating') {
     return (
       <div className="flex justify-center gap-3 py-2">
-        {[1, 2, 3, 4, 5].map((star) => (
+        {[1, 2, 3, 4, 5].map((star, i) => (
           <button
             key={star}
             type="button"
             onClick={() => onPick(String(star))}
+            style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`text-5xl transition-all duration-200 hover:scale-110 drop-shadow-sm ${
               Number(value) >= star ? 'text-yellow-400' : 'text-gray-300'
             }`}
@@ -114,6 +119,7 @@ function QuestionInput({
             key={i}
             type="button"
             onClick={() => onPick(e.label)}
+            style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-200 ${
               value === e.label
                 ? 'bg-yellow-50/80 ring-2 ring-yellow-400 scale-110 shadow-md'
@@ -131,12 +137,14 @@ function QuestionInput({
   if (questionType === 'boolean') {
     return (
       <div className="flex gap-4 py-2">
-        {['Yes', 'No'].map((opt) => (
+        {['Yes', 'No'].map((opt, i) => (
           <button
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
-            style={value === opt ? { animation: 'pulseGold 0.6s ease-out' } : {}}
+            style={{
+              animation: `cascadeIn 0.3s ease-out ${0.18 + i * 0.09}s both${value === opt ? ', pulseGold 0.6s ease-out' : ''}`,
+            }}
             className={`flex-1 py-3.5 rounded-2xl text-base font-bold transition-all duration-200 border-2 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-lg scale-[1.02]'
@@ -153,12 +161,14 @@ function QuestionInput({
   if (questionType === 'select' && options && options.length > 0) {
     return (
       <div className="flex flex-col gap-2 py-2">
-        {options.map((opt) => (
+        {options.map((opt, i) => (
           <button
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
-            style={value === opt ? { animation: 'pulseGold 0.6s ease-out' } : {}}
+            style={{
+              animation: `cascadeIn 0.3s ease-out ${0.18 + i * 0.08}s both${value === opt ? ', pulseGold 0.6s ease-out' : ''}`,
+            }}
             className={`w-full py-3 px-4 rounded-2xl text-left text-sm font-semibold border-2 transition-all duration-200 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-md'
@@ -179,6 +189,7 @@ function QuestionInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Type your answer here…"
+        style={{ animation: 'cascadeIn 0.3s ease-out 0.18s both' }}
         className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
       />
     );
@@ -524,7 +535,10 @@ function SurveyContent() {
           className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-6"
         >
           {/* Question text */}
-          <p className="text-gray-800 font-semibold text-base leading-snug mb-5">
+          <p
+            className="text-gray-800 font-semibold text-base leading-snug mb-5"
+            style={{ animation: 'cascadeIn 0.3s ease-out 0.08s both' }}
+          >
             {fq.question.text}
           </p>
 
@@ -538,7 +552,7 @@ function SurveyContent() {
 
           {/* Next / Submit — only for text type or last question */}
           {(isText || isLast) && (
-            <div className="mt-5">
+            <div className="mt-5" style={{ animation: 'cascadeIn 0.3s ease-out 0.32s both' }}>
               {error && <p className="text-center text-sm text-red-500 mb-3">{error}</p>}
               <button
                 type="button"
