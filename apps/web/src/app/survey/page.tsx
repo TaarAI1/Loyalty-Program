@@ -38,27 +38,6 @@ const EMOJIS = [
   { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f604.svg', label: 'Excellent' },
 ];
 
-// ── Type priority for question ordering ───────────────────────────────────────
-
-const TYPE_PRIORITY: Record<string, number> = {
-  rating:   0,  // Star Rating first
-  textarea: 1,  // Emoji Feedback
-  boolean:  2,  // Yes / No
-  select:   3,  // Multiple Choice
-  text:     4,  // Short Text last
-};
-
-function sortFormQuestions(form: ActiveForm): ActiveForm {
-  return {
-    ...form,
-    formQuestions: [...form.formQuestions].sort(
-      (a, b) =>
-        (TYPE_PRIORITY[a.question.questionType] ?? 99) -
-        (TYPE_PRIORITY[b.question.questionType] ?? 99)
-    ),
-  };
-}
-
 // ── Question renderer ─────────────────────────────────────────────────────────
 
 function QuestionInput({
@@ -211,7 +190,7 @@ function SurveyContent() {
       ]);
 
       if (formRes.status === 'fulfilled' && formRes.value.data) {
-        setForm(sortFormQuestions(formRes.value.data));
+        setForm(formRes.value.data);
       } else {
         setNoForm(true);
       }
@@ -236,14 +215,14 @@ function SurveyContent() {
       try {
         const res = await axios.get(`${API_URL}/forms/web/active`);
         if (!res.data) return;
-        const sorted = sortFormQuestions(res.data as ActiveForm);
+        const refreshed = res.data as ActiveForm;
         setForm((prev) => {
-          if (!prev) return sorted;
+          if (!prev) return refreshed;
           // Only update state if something actually changed
           const changed =
-            prev.id !== sorted.id ||
-            JSON.stringify(prev.formQuestions) !== JSON.stringify(sorted.formQuestions);
-          return changed ? sorted : prev;
+            prev.id !== refreshed.id ||
+            JSON.stringify(prev.formQuestions) !== JSON.stringify(refreshed.formQuestions);
+          return changed ? refreshed : prev;
         });
       } catch {
         // silent — polling failures must not disrupt the user
