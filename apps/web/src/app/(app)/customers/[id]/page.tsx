@@ -1012,118 +1012,126 @@ export default function CustomerDetailPage() {
                 { axis: 'Frequency', value: p.rfmScores.frequency, fullMark: 5 },
                 { axis: 'Monetary',  value: p.rfmScores.monetary,  fullMark: 5 },
               ];
+              const dcsBreakdown = (customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[] ?? [];
+              const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
               return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                <div className="space-y-4">
 
-                  {/* ICP Persona */}
-                  <div className={`rounded-xl border p-3 space-y-2 self-start ${bc.bg} ${bc.border}`}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
-                    <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
-                      {bc.icon} {p.label}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.daysSinceVisit !== null && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
-                          <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
-                        <RotateCcw className="w-3 h-3" /> {p.redemptionRate}% redeemed
-                      </span>
-                      {p.preferredStore && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
-                          <Building2 className="w-3 h-3" /> {p.preferredStore}
-                        </span>
-                      )}
-                      {p.preferredDay && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
-                          <Calendar className="w-3 h-3" /> {p.preferredDay}s
-                        </span>
-                      )}
-                      {p.nextExpiryDate && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-700">
-                          <Zap className="w-3 h-3" /> {p.nextExpiryPoints} pts expiring {formatDate(p.nextExpiryDate)}
-                        </span>
-                      )}
-                      {p.birthdayDaysLeft !== null && p.birthdayDaysLeft <= 30 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-pink-100 border border-pink-200 text-pink-700">
-                          🎂 Birthday in {p.birthdayDaysLeft}d
-                        </span>
-                      )}
-                    </div>
-                    {/* Departments */}
-                    {((customer as any).dcsBreakdown ?? []).length > 0 && (
-                      <div className="pt-2 border-t border-border/50 space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Departments</p>
-                        {(() => {
-                          const dotColors = ['bg-green-500','bg-blue-500','bg-purple-500','bg-red-400','bg-yellow-500','bg-orange-500','bg-pink-500'];
-                          return ((customer as any).dcsBreakdown as { dscname: string; count: number; percentage: number }[]).map((d, i) => (
-                            <div key={d.dscname} className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColors[i % dotColors.length]}`} />
-                                <p className="text-xs font-semibold truncate">{d.dscname}</p>
-                              </div>
-                              <p className="text-xs font-semibold shrink-0">{d.percentage}%</p>
-                            </div>
-                          ));
-                        })()}
+                  {/* ── Row 1: ICP Persona | Demographics | Strategic Insights — equal height ── */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+
+                    {/* ICP Persona */}
+                    <div className={`rounded-xl border p-3 space-y-2 ${bc.bg} ${bc.border}`}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ICP Persona</p>
+                      <div className={`flex items-center gap-2 font-bold text-base ${bc.color}`}>
+                        {bc.icon} {p.label}
                       </div>
-                    )}
+                      <p className="text-xs text-muted-foreground leading-relaxed">{p.summary}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.daysSinceVisit !== null && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                            <Clock className="w-3 h-3" /> {p.daysSinceVisit}d since visit
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                          <RotateCcw className="w-3 h-3" /> {p.redemptionRate}% redeemed
+                        </span>
+                        {p.preferredStore && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                            <Building2 className="w-3 h-3" /> {p.preferredStore}
+                          </span>
+                        )}
+                        {p.preferredDay && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-background/70 border border-border">
+                            <Calendar className="w-3 h-3" /> {p.preferredDay}s
+                          </span>
+                        )}
+                        {p.nextExpiryDate && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-100 border border-orange-200 text-orange-700">
+                            <Zap className="w-3 h-3" /> {p.nextExpiryPoints} pts expiring {formatDate(p.nextExpiryDate)}
+                          </span>
+                        )}
+                        {p.birthdayDaysLeft !== null && p.birthdayDaysLeft <= 30 && (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-pink-100 border border-pink-200 text-pink-700">
+                            🎂 Birthday in {p.birthdayDaysLeft}d
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Demographics */}
+                    <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" /> Demographics
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {[
+                          { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
+                          { label: 'Generation', value: p.generation ?? '—' },
+                          { label: 'Redeemer',   value: p.redeemerType },
+                          { label: 'Occupation', value: (customer as any).occupation ?? '—' },
+                          { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
+                          { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
+                          { label: 'Redeem Rate',  value: `${p.redemptionRate}%` },
+                          { label: 'Pts Redeemed', value: formatNumber((customer as any).persona?.loyaltyStats?.pointsRedeemed ?? 0) },
+                        ].map(({ label, value }) => (
+                          <div key={label}>
+                            <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+                            <p className="text-sm font-semibold">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Strategic Insights + Recommended Actions */}
+                    <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20">
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
+                        </p>
+                        <ul className="space-y-1.5">
+                          {p.insights.slice(0, 2).map((insight, i) => (
+                            <li key={i} className="flex items-start gap-1.5 text-xs">
+                              <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+                              <span className="font-semibold leading-snug line-clamp-2">{insight.strategy}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="space-y-1.5 pt-1.5 border-t border-border">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
+                        </p>
+                        <ul className="space-y-1">
+                          {p.actionItems.slice(0, 2).map((item, i) => (
+                            <li key={i} className="flex items-start gap-1.5 text-xs">
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                              <span className="line-clamp-2">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
                   </div>
 
-                  {/* Demographics */}
-                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" /> Demographics
-                    </p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                      {[
-                        { label: 'Age',        value: p.age != null ? `${p.age} yrs` : '—' },
-                        { label: 'Generation', value: p.generation ?? '—' },
-                        { label: 'Redeemer',   value: p.redeemerType },
-                        { label: 'Occupation', value: (customer as any).occupation ?? '—' },
-                        { label: 'Marital',    value: (customer as any).maritalStatus ?? '—' },
-                        { label: 'Enrolled',   value: `${p.enrolledDaysAgo}d ago` },
-                        { label: 'Redeem Rate',  value: `${p.redemptionRate}%` },
-                        { label: 'Pts Redeemed', value: formatNumber((customer as any).persona?.loyaltyStats?.pointsRedeemed ?? 0) },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-                          <p className="text-sm font-semibold">{value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Strategic Insights + Recommended Actions */}
-                  <div className="rounded-xl border border-border p-3 space-y-2 bg-muted/20 self-start">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5 text-green-500" /> Strategic Insights
-                      </p>
-                      <ul className="space-y-1.5">
-                        {p.insights.map((insight, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-xs">
-                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                            <span className="font-semibold leading-snug">{insight.strategy}</span>
-                          </li>
+                  {/* ── Row 2: Departments — full width ── */}
+                  {dcsBreakdown.length > 0 && (
+                    <div className="rounded-xl border border-border p-3 bg-muted/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Departments</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {dcsBreakdown.map((d, i) => (
+                          <div key={d.dscname} className="flex items-center gap-2.5 rounded-lg bg-background border border-border/60 px-3 py-2">
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColors[i % dotColors.length]}`} />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold truncate">{d.dscname}</p>
+                              <p className="text-[11px] text-muted-foreground font-medium">{d.percentage}%</p>
+                            </div>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
-                    <div className="space-y-1.5 pt-1.5 border-t border-border">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Zap className="w-3.5 h-3.5 text-blue-500" /> Recommended Actions
-                      </p>
-                      <ul className="space-y-1">
-                        {p.actionItems.map((item, i) => (
-                          <li key={i} className="flex items-start gap-1.5 text-xs">
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" /> {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+                  )}
 
                 </div>
               );
