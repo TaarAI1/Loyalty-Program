@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 
@@ -72,7 +72,7 @@ function QuestionInput({
   question: Question;
   value: string;
   onChange: (v: string) => void;
-  onPick: (v: string) => void; // fires for selection types → triggers auto-advance
+  onPick: (v: string) => void;
 }) {
   const { questionType, options } = question;
 
@@ -84,8 +84,8 @@ function QuestionInput({
             key={star}
             type="button"
             onClick={() => onPick(String(star))}
-            className={`text-5xl transition-all duration-200 hover:scale-110 drop-shadow-md ${
-              Number(value) >= star ? 'text-yellow-300' : 'text-white/40'
+            className={`text-5xl transition-all duration-200 hover:scale-110 drop-shadow-sm ${
+              Number(value) >= star ? 'text-yellow-400' : 'text-gray-300'
             }`}
           >
             ★
@@ -105,12 +105,12 @@ function QuestionInput({
             onClick={() => onPick(e.label)}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-200 ${
               value === e.label
-                ? 'bg-white/30 scale-110 shadow-lg'
+                ? 'bg-yellow-50 ring-2 ring-yellow-400 scale-110 shadow-md'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
             }`}
           >
             <img src={e.src} alt={e.label} className="w-14 h-14 drop-shadow" />
-            <span className="text-[10px] font-semibold text-white/90">{e.label}</span>
+            <span className="text-[10px] font-semibold text-gray-600">{e.label}</span>
           </button>
         ))}
       </div>
@@ -128,7 +128,7 @@ function QuestionInput({
             className={`flex-1 py-3.5 rounded-2xl text-base font-bold transition-all duration-200 border-2 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-lg scale-[1.02]'
-                : 'bg-white/15 border-white/30 text-white hover:bg-white/25'
+                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-yellow-50'
             }`}
           >
             {opt}
@@ -149,7 +149,7 @@ function QuestionInput({
             className={`w-full py-3 px-4 rounded-2xl text-left text-sm font-semibold border-2 transition-all duration-200 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-md'
-                : 'bg-white/15 border-white/25 text-white hover:bg-white/25'
+                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-yellow-50'
             }`}
           >
             {opt}
@@ -166,7 +166,7 @@ function QuestionInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Type your answer here…"
-        className="w-full rounded-2xl border-2 border-white/30 bg-white px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+        className="w-full rounded-2xl border-2 border-gray-200 bg-white px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
       />
     );
   }
@@ -178,8 +178,8 @@ function QuestionInput({
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500">
-      <div className="w-10 h-10 border-4 border-white/60 border-t-white rounded-full animate-spin" />
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-10 h-10 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin" />
     </div>
   );
 }
@@ -204,6 +204,11 @@ function SurveyContent() {
   // ── One-at-a-time navigation state ───────────────────────────────────────────
   const [currentIdx, setCurrentIdx] = useState(0);
   const [slideDir, setSlideDir]     = useState<'right' | 'left'>('right');
+
+  // ── Countdown state (Thank You screen) ───────────────────────────────────────
+  const [countdown, setCountdown]   = useState(4);
+  // Controls the shrinking progress bar (starts wide, shrinks to 0 on mount)
+  const [barWidth, setBarWidth]     = useState('100%');
 
   const loadData = useCallback(async () => {
     if (!retailproId || !transactionId) {
@@ -260,6 +265,24 @@ function SurveyContent() {
     }, 30_000);
     return () => clearInterval(interval);
   }, [submitted, blocked]);
+
+  // ── Countdown timer (fires once when submitted becomes true) ─────────────────
+  useEffect(() => {
+    if (!submitted) return;
+    // Trigger the shrinking bar on next tick
+    const barTimer = setTimeout(() => setBarWidth('0%'), 50);
+    // Tick countdown every second
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) { clearInterval(interval); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => {
+      clearTimeout(barTimer);
+      clearInterval(interval);
+    };
+  }, [submitted]);
 
   // ── Navigation helpers ────────────────────────────────────────────────────────
 
@@ -321,16 +344,16 @@ function SurveyContent() {
   // ── Render: already submitted ─────────────────────────────────────────────────
   if (blocked === 'already_submitted') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white/25 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
              style={{ animation: 'fadeIn 0.4s ease-out' }}>
-          <div className="w-20 h-20 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6"
+          <div className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
                style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}>
-            <span className="text-5xl">✅</span>
+            <span className="text-4xl text-yellow-500 font-bold">✓</span>
           </div>
-          <h2 className="text-2xl font-bold text-white drop-shadow mb-2">Already Submitted</h2>
-          <p className="text-white/80 text-sm">You have already submitted feedback for this visit. Thank you!</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Already Submitted</h2>
+          <p className="text-gray-500 text-sm">You have already submitted feedback for this visit. Thank you!</p>
         </div>
       </div>
     );
@@ -339,13 +362,13 @@ function SurveyContent() {
   // ── Render: blocked ───────────────────────────────────────────────────────────
   if (blocked) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white/25 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
              style={{ animation: 'fadeIn 0.4s ease-out' }}>
           <div className="text-6xl mb-5">🚫</div>
-          <h2 className="text-2xl font-bold text-white drop-shadow mb-2">Invalid Feedback Link</h2>
-          <p className="text-white/80 text-sm">This feedback link is not valid for your account.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Invalid Feedback Link</h2>
+          <p className="text-gray-500 text-sm">This feedback link is not valid for your account.</p>
         </div>
       </div>
     );
@@ -354,13 +377,13 @@ function SurveyContent() {
   // ── Render: no active form ────────────────────────────────────────────────────
   if (noForm || !form) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white/25 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
              style={{ animation: 'fadeIn 0.4s ease-out' }}>
           <div className="text-6xl mb-5">📋</div>
-          <h2 className="text-xl font-bold text-white drop-shadow mb-2">No Survey Available</h2>
-          <p className="text-white/80 text-sm">There is no active survey at the moment. Thank you!</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">No Survey Available</h2>
+          <p className="text-gray-500 text-sm">There is no active survey at the moment. Thank you!</p>
         </div>
       </div>
     );
@@ -369,21 +392,42 @@ function SurveyContent() {
   // ── Render: thank you ─────────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white/25 backdrop-blur-xl border border-white/40 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
              style={{ animation: 'slideInFromRight 0.4s ease-out' }}>
-          <div className="w-24 h-24 rounded-full bg-white/40 flex items-center justify-center mx-auto mb-6"
-               style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}>
-            <span className="text-5xl text-white drop-shadow">✓</span>
+          {/* Animated checkmark circle */}
+          <div
+            className="w-24 h-24 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
+            style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
+          >
+            <span className="text-5xl text-yellow-500 font-bold leading-none">✓</span>
           </div>
-          <h2 className="text-3xl font-bold text-white drop-shadow mb-3">
+
+          <h2 className="text-3xl font-bold text-gray-800 mb-3">
             Thank You{firstName ? `, ${firstName}` : ''}!
           </h2>
-          <p className="text-white/85 text-sm leading-relaxed">
+          <p className="text-gray-500 text-sm leading-relaxed">
             Your feedback has been submitted.<br />We appreciate your time!
           </p>
-          <p className="text-white/50 text-xs mt-6">Powered by LoyaltyPlus</p>
+
+          {/* Countdown message */}
+          <p className="text-gray-400 text-xs mt-5">
+            {countdown > 0 ? `Closing in ${countdown}s…` : 'You can close this tab.'}
+          </p>
+
+          <p className="text-gray-300 text-xs mt-4">Powered by LoyaltyPlus</p>
+        </div>
+
+        {/* Shrinking yellow progress bar below the card */}
+        <div className="w-full max-w-sm mt-3 bg-gray-100 rounded-full h-1 overflow-hidden">
+          <div
+            className="bg-yellow-400 h-1 rounded-full"
+            style={{
+              width: barWidth,
+              transition: barWidth === '0%' ? 'width 4000ms linear' : 'none',
+            }}
+          />
         </div>
       </div>
     );
@@ -397,18 +441,14 @@ function SurveyContent() {
   const progress = ((currentIdx + 1) / totalQuestions) * 100;
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-yellow-400 via-amber-300 to-orange-500 flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
+    <div className="relative min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
       <style>{SURVEY_STYLES}</style>
-
-      {/* Decorative blobs for depth */}
-      <div className="absolute top-[-80px] right-[-80px] w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full bg-orange-600/20 blur-3xl pointer-events-none" />
 
       {/* Back button */}
       {currentIdx > 0 && (
         <button
           onClick={goBack}
-          className="absolute top-5 left-5 text-white/75 hover:text-white text-sm font-semibold transition-colors flex items-center gap-1"
+          className="absolute top-5 left-5 text-gray-400 hover:text-gray-700 text-sm font-semibold transition-colors flex items-center gap-1"
         >
           ← Back
         </button>
@@ -417,22 +457,22 @@ function SurveyContent() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/30 backdrop-blur mb-3 shadow-lg">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-50 border border-yellow-200 mb-3 shadow-sm">
             <span className="text-2xl">📝</span>
           </div>
-          <h1 className="text-xl font-bold text-white drop-shadow">Your Feedback Matters to Us</h1>
+          <h1 className="text-xl font-bold text-gray-800">Your Feedback Matters to Us</h1>
           {firstName && (
-            <p className="text-white/75 text-xs mt-1">Hi {firstName}, we&apos;d love your feedback!</p>
+            <p className="text-gray-500 text-xs mt-1">Hi {firstName}, we&apos;d love your feedback!</p>
           )}
         </div>
 
         {/* Progress */}
-        <p className="text-white/70 text-xs text-center mb-2">
+        <p className="text-gray-400 text-xs text-center mb-2">
           Question {currentIdx + 1} of {totalQuestions}
         </p>
-        <div className="w-full bg-white/25 rounded-full h-1.5 mb-5">
+        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-5">
           <div
-            className="bg-white rounded-full h-1.5 transition-all duration-500"
+            className="bg-yellow-400 rounded-full h-1.5 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -441,10 +481,10 @@ function SurveyContent() {
         <div
           key={currentIdx}
           style={{ animation: `${slideDir === 'right' ? 'slideInFromRight' : 'slideInFromLeft'} 0.35s ease-out` }}
-          className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-3xl shadow-2xl p-6"
+          className="bg-white border border-gray-100 rounded-3xl shadow-xl p-6"
         >
           {/* Question text */}
-          <p className="text-white font-semibold text-base leading-snug mb-5 drop-shadow-sm">
+          <p className="text-gray-800 font-semibold text-base leading-snug mb-5">
             {fq.question.text}
           </p>
 
@@ -459,12 +499,12 @@ function SurveyContent() {
           {/* Next / Submit button — only for text type or last question */}
           {(isText || isLast) && (
             <div className="mt-5">
-              {error && <p className="text-center text-sm text-white font-semibold mb-3">{error}</p>}
+              {error && <p className="text-center text-sm text-red-500 mb-3">{error}</p>}
               <button
                 type="button"
                 disabled={!canSubmitOrNext || submitting}
                 onClick={isLast ? handleSubmit : goNext}
-                className="w-full py-3.5 rounded-2xl bg-white text-amber-500 font-bold text-base shadow-lg hover:bg-white/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-2xl bg-yellow-400 text-white font-bold text-base shadow-lg hover:bg-yellow-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting…' : isLast ? 'Submit Feedback' : 'Next →'}
               </button>
@@ -472,7 +512,7 @@ function SurveyContent() {
           )}
         </div>
 
-        <p className="text-center text-white/40 text-xs mt-6">Powered by LoyaltyPlus</p>
+        <p className="text-center text-gray-300 text-xs mt-6">Powered by LoyaltyPlus</p>
       </div>
     </div>
   );
