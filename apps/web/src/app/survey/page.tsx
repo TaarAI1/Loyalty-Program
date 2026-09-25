@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 
@@ -38,7 +38,10 @@ const EMOJIS = [
   { src: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f604.svg', label: 'Excellent' },
 ];
 
-// ── CSS keyframes (injected once) ─────────────────────────────────────────────
+// ── SVG ring circumference (r=50 → 2π×50 ≈ 314) ──────────────────────────────
+const RING_CIRC = 314;
+
+// ── CSS keyframes ─────────────────────────────────────────────────────────────
 
 const SURVEY_STYLES = `
 @keyframes slideInFromRight {
@@ -58,6 +61,14 @@ const SURVEY_STYLES = `
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,0.45); }
+  50%       { box-shadow: 0 0 0 10px rgba(234,179,8,0); }
 }
 `;
 
@@ -105,7 +116,7 @@ function QuestionInput({
             onClick={() => onPick(e.label)}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-200 ${
               value === e.label
-                ? 'bg-yellow-50 ring-2 ring-yellow-400 scale-110 shadow-md'
+                ? 'bg-yellow-50/80 ring-2 ring-yellow-400 scale-110 shadow-md'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
             }`}
           >
@@ -125,10 +136,11 @@ function QuestionInput({
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
+            style={value === opt ? { animation: 'pulseGold 0.6s ease-out' } : {}}
             className={`flex-1 py-3.5 rounded-2xl text-base font-bold transition-all duration-200 border-2 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-lg scale-[1.02]'
-                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-yellow-50'
+                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-yellow-50/60 backdrop-blur-sm'
             }`}
           >
             {opt}
@@ -146,10 +158,11 @@ function QuestionInput({
             key={opt}
             type="button"
             onClick={() => onPick(opt)}
+            style={value === opt ? { animation: 'pulseGold 0.6s ease-out' } : {}}
             className={`w-full py-3 px-4 rounded-2xl text-left text-sm font-semibold border-2 transition-all duration-200 ${
               value === opt
                 ? 'bg-yellow-400 border-yellow-400 text-white shadow-md'
-                : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-yellow-50'
+                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-yellow-50/60 backdrop-blur-sm'
             }`}
           >
             {opt}
@@ -166,7 +179,7 @@ function QuestionInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Type your answer here…"
-        className="w-full rounded-2xl border-2 border-gray-200 bg-white px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
       />
     );
   }
@@ -178,7 +191,7 @@ function QuestionInput({
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50">
       <div className="w-10 h-10 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin" />
     </div>
   );
@@ -199,16 +212,16 @@ function SurveyContent() {
   const [submitted, setSubmitted]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
   const [noForm, setNoForm]             = useState(false);
-  const [blocked, setBlocked]           = useState<'invalid_link' | 'transaction_not_found' | 'transaction_not_yours' | 'already_submitted' | null>(null);
+  const [blocked, setBlocked]           = useState<
+    'invalid_link' | 'transaction_not_found' | 'transaction_not_yours' | 'already_submitted' | null
+  >(null);
 
-  // ── One-at-a-time navigation state ───────────────────────────────────────────
+  // ── One-at-a-time navigation ──────────────────────────────────────────────────
   const [currentIdx, setCurrentIdx] = useState(0);
   const [slideDir, setSlideDir]     = useState<'right' | 'left'>('right');
 
-  // ── Countdown state (Thank You screen) ───────────────────────────────────────
-  const [countdown, setCountdown]   = useState(4);
-  // Controls the shrinking progress bar (starts wide, shrinks to 0 on mount)
-  const [barWidth, setBarWidth]     = useState('100%');
+  // ── Countdown (Thank You screen) ──────────────────────────────────────────────
+  const [countdown, setCountdown] = useState(4);
 
   const loadData = useCallback(async () => {
     if (!retailproId || !transactionId) {
@@ -266,22 +279,16 @@ function SurveyContent() {
     return () => clearInterval(interval);
   }, [submitted, blocked]);
 
-  // ── Countdown timer (fires once when submitted becomes true) ─────────────────
+  // ── Countdown timer fires once when submitted becomes true ────────────────────
   useEffect(() => {
     if (!submitted) return;
-    // Trigger the shrinking bar on next tick
-    const barTimer = setTimeout(() => setBarWidth('0%'), 50);
-    // Tick countdown every second
     const interval = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) { clearInterval(interval); return 0; }
         return c - 1;
       });
     }, 1000);
-    return () => {
-      clearTimeout(barTimer);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [submitted]);
 
   // ── Navigation helpers ────────────────────────────────────────────────────────
@@ -338,18 +345,25 @@ function SurveyContent() {
 
   const firstName = customerName ? customerName.split(' ')[0] : null;
 
+  // Ring offset: 0 = full ring, RING_CIRC = empty. Drains 1/4 per second.
+  const ringOffset = ((4 - countdown) / 4) * RING_CIRC;
+
   // ── Render: loading ───────────────────────────────────────────────────────────
   if (loading) return <Spinner />;
 
   // ── Render: already submitted ─────────────────────────────────────────────────
   if (blocked === 'already_submitted') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
-             style={{ animation: 'fadeIn 0.4s ease-out' }}>
-          <div className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
-               style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}>
+        <div
+          className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+          style={{ animation: 'fadeIn 0.4s ease-out' }}
+        >
+          <div
+            className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
+            style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
+          >
             <span className="text-4xl text-yellow-500 font-bold">✓</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Already Submitted</h2>
@@ -362,10 +376,12 @@ function SurveyContent() {
   // ── Render: blocked ───────────────────────────────────────────────────────────
   if (blocked) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
-             style={{ animation: 'fadeIn 0.4s ease-out' }}>
+        <div
+          className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+          style={{ animation: 'fadeIn 0.4s ease-out' }}
+        >
           <div className="text-6xl mb-5">🚫</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Invalid Feedback Link</h2>
           <p className="text-gray-500 text-sm">This feedback link is not valid for your account.</p>
@@ -377,10 +393,12 @@ function SurveyContent() {
   // ── Render: no active form ────────────────────────────────────────────────────
   if (noForm || !form) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl p-10 text-center max-w-sm w-full"
-             style={{ animation: 'fadeIn 0.4s ease-out' }}>
+        <div
+          className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+          style={{ animation: 'fadeIn 0.4s ease-out' }}
+        >
           <div className="text-6xl mb-5">📋</div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">No Survey Available</h2>
           <p className="text-gray-500 text-sm">There is no active survey at the moment. Thank you!</p>
@@ -392,16 +410,40 @@ function SurveyContent() {
   // ── Render: thank you ─────────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
-             style={{ animation: 'slideInFromRight 0.4s ease-out' }}>
-          {/* Animated checkmark circle */}
-          <div
-            className="w-24 h-24 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
-            style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
-          >
-            <span className="text-5xl text-yellow-500 font-bold leading-none">✓</span>
+        <div
+          className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
+          style={{ animation: 'scaleUp 0.4s ease-out' }}
+        >
+          {/* Circular countdown ring around checkmark */}
+          <div className="relative w-28 h-28 mx-auto mb-6">
+            {/* SVG ring — rotated so it drains from top clockwise */}
+            <svg
+              className="absolute inset-0 w-full h-full -rotate-90"
+              viewBox="0 0 112 112"
+            >
+              {/* Track */}
+              <circle cx="56" cy="56" r="50" fill="none" stroke="#fef9c3" strokeWidth="5" />
+              {/* Countdown arc */}
+              <circle
+                cx="56" cy="56" r="50"
+                fill="none"
+                stroke="#eab308"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray={RING_CIRC}
+                strokeDashoffset={ringOffset}
+                style={{ transition: 'stroke-dashoffset 1s linear' }}
+              />
+            </svg>
+            {/* Checkmark disc */}
+            <div
+              className="absolute inset-0 rounded-full bg-yellow-50 flex items-center justify-center m-2"
+              style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
+            >
+              <span className="text-4xl text-yellow-500 font-bold leading-none">✓</span>
+            </div>
           </div>
 
           <h2 className="text-3xl font-bold text-gray-800 mb-3">
@@ -411,23 +453,12 @@ function SurveyContent() {
             Your feedback has been submitted.<br />We appreciate your time!
           </p>
 
-          {/* Countdown message */}
+          {/* Countdown text */}
           <p className="text-gray-400 text-xs mt-5">
             {countdown > 0 ? `Closing in ${countdown}s…` : 'You can close this tab.'}
           </p>
 
           <p className="text-gray-300 text-xs mt-4">Powered by LoyaltyPlus</p>
-        </div>
-
-        {/* Shrinking yellow progress bar below the card */}
-        <div className="w-full max-w-sm mt-3 bg-gray-100 rounded-full h-1 overflow-hidden">
-          <div
-            className="bg-yellow-400 h-1 rounded-full"
-            style={{
-              width: barWidth,
-              transition: barWidth === '0%' ? 'width 4000ms linear' : 'none',
-            }}
-          />
         </div>
       </div>
     );
@@ -441,23 +472,27 @@ function SurveyContent() {
   const progress = ((currentIdx + 1) / totalQuestions) * 100;
 
   return (
-    <div className="relative min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
+    <div className="relative min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
       <style>{SURVEY_STYLES}</style>
+
+      {/* Decorative blobs for glass depth */}
+      <div className="absolute top-[-100px] right-[-80px] w-80 h-80 rounded-full bg-yellow-200/30 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
 
       {/* Back button */}
       {currentIdx > 0 && (
         <button
           onClick={goBack}
-          className="absolute top-5 left-5 text-gray-400 hover:text-gray-700 text-sm font-semibold transition-colors flex items-center gap-1"
+          className="absolute top-5 left-5 text-gray-400 hover:text-gray-700 text-sm font-semibold transition-colors flex items-center gap-1 z-10"
         >
           ← Back
         </button>
       )}
 
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm relative z-10">
         {/* Header */}
         <div className="text-center mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-50 border border-yellow-200 mb-3 shadow-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-50 border border-yellow-200 mb-3 shadow-md">
             <span className="text-2xl">📝</span>
           </div>
           <h1 className="text-xl font-bold text-gray-800">Your Feedback Matters to Us</h1>
@@ -477,11 +512,11 @@ function SurveyContent() {
           />
         </div>
 
-        {/* Question card — keyed on currentIdx for slide re-mount animation */}
+        {/* Question card — keyed on currentIdx to trigger slide re-mount animation */}
         <div
           key={currentIdx}
           style={{ animation: `${slideDir === 'right' ? 'slideInFromRight' : 'slideInFromLeft'} 0.35s ease-out` }}
-          className="bg-white border border-gray-100 rounded-3xl shadow-xl p-6"
+          className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-6"
         >
           {/* Question text */}
           <p className="text-gray-800 font-semibold text-base leading-snug mb-5">
@@ -496,7 +531,7 @@ function SurveyContent() {
             onPick={(v) => pickAnswer(fq.question.id, v)}
           />
 
-          {/* Next / Submit button — only for text type or last question */}
+          {/* Next / Submit — only for text type or last question */}
           {(isText || isLast) && (
             <div className="mt-5">
               {error && <p className="text-center text-sm text-red-500 mb-3">{error}</p>}
@@ -512,7 +547,7 @@ function SurveyContent() {
           )}
         </div>
 
-        <p className="text-center text-gray-300 text-xs mt-6">Powered by LoyaltyPlus</p>
+        <p className="text-center text-gray-400/60 text-xs mt-6">Powered by LoyaltyPlus</p>
       </div>
     </div>
   );
