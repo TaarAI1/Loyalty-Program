@@ -4,50 +4,16 @@
 cd "$(dirname "$0")"
 echo ">>> Working directory: $(pwd)"
 
-# ── Step 1: Try a normal migrate deploy ─────────────────────────────────────
+# ── Run migrations (safe — never drops tables) ───────────────────────────────
+# If deploy fails (e.g. DB already has tables but _prisma_migrations is empty),
+# we log a warning and start the app anyway using the existing schema.
+# To fix a baseline issue, insert rows into _prisma_migrations manually via the
+# Railway PostgreSQL query console — see project README for the SQL.
 echo ">>> Running prisma migrate deploy..."
-if node_modules/.bin/prisma migrate deploy; then
-  echo ">>> Migrations OK."
-else
-  # ── Step 2: Deploy failed — wipe all tables + migration history and retry ──
-  echo ">>> Migration failed — performing full database reset..."
+node_modules/.bin/prisma migrate deploy \
+  && echo ">>> Migrations applied." \
+  || echo ">>> Warning: could not apply all migrations - starting with existing schema."
 
-  cat > /tmp/reset_db.sql << ENDSQL
-DROP TABLE IF EXISTS "pending_surveys"       CASCADE;
-DROP TABLE IF EXISTS "form_responses"        CASCADE;
-DROP TABLE IF EXISTS "form_assignments"      CASCADE;
-DROP TABLE IF EXISTS "survey_form_questions" CASCADE;
-DROP TABLE IF EXISTS "survey_questions"      CASCADE;
-DROP TABLE IF EXISTS "survey_forms"          CASCADE;
-DROP TABLE IF EXISTS "devices"               CASCADE;
-DROP TABLE IF EXISTS "oracle_config"         CASCADE;
-DROP TABLE IF EXISTS "transaction_items"     CASCADE;
-DROP TABLE IF EXISTS "points_expiry"         CASCADE;
-DROP TABLE IF EXISTS "points_ledger"         CASCADE;
-DROP TABLE IF EXISTS "notification_logs"     CASCADE;
-DROP TABLE IF EXISTS "transactions"          CASCADE;
-DROP TABLE IF EXISTS "customers"             CASCADE;
-DROP TABLE IF EXISTS "campaigns"             CASCADE;
-DROP TABLE IF EXISTS "points_rules"          CASCADE;
-DROP TABLE IF EXISTS "loyalty_tiers"         CASCADE;
-DROP TABLE IF EXISTS "whatsapp_config"       CASCADE;
-DROP TABLE IF EXISTS "sms_config"            CASCADE;
-DROP TABLE IF EXISTS "email_config"          CASCADE;
-DROP TABLE IF EXISTS "audit_logs"            CASCADE;
-DROP TABLE IF EXISTS "users"                 CASCADE;
-DELETE FROM "_prisma_migrations";
-ENDSQL
-
-  node_modules/.bin/prisma db execute \
-    --file /tmp/reset_db.sql \
-    --schema ./prisma/schema.prisma \
-    && echo ">>> Reset complete." \
-    || echo ">>> Reset step skipped."
-
-  echo ">>> Re-running prisma migrate deploy..."
-  node_modules/.bin/prisma migrate deploy || exit 1
-fi
-
-# ── Step 3: Start the application ───────────────────────────────────────────
+# ── Start the application ────────────────────────────────────────────────────
 echo ">>> Starting application..."
 exec node dist/main
