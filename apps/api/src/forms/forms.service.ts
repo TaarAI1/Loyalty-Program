@@ -189,6 +189,15 @@ export class FormsService {
     return { success: true };
   }
 
+  async activateAssignment(id: number) {
+    await this.prisma.formAssignment.findFirstOrThrow({ where: { id } });
+    return this.prisma.formAssignment.update({
+      where: { id },
+      data: { assignedAt: new Date() },
+      include: { form: true, device: true },
+    });
+  }
+
   // ── Kiosk ─────────────────────────────────────────────────────────────────────
 
   async kioskConnect(code: string) {

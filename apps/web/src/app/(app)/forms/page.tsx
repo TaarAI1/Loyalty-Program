@@ -905,6 +905,12 @@ function FormAssignTab() {
     });
   }
 
+  async function handleActivateAssignment(id: number) {
+    await formsApi.activateAssignment(id);
+    const a = await formsApi.getAssignments();
+    setAssignments(a);
+  }
+
   function openAddDevice() {
     setEditingDevice(null);
     setDeviceForm({ name: '', deviceType: 'workstation', store: '' });
@@ -1175,6 +1181,16 @@ function FormAssignTab() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1 justify-end">
+                          {!activeIds.has(a.id) && (
+                            <button
+                              type="button"
+                              title="Set as active form on this device"
+                              onClick={() => handleActivateAssignment(a.id)}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+                            >
+                              Set Active
+                            </button>
+                          )}
                           {a.device.pairingCode && (
                             <button
                               type="button"

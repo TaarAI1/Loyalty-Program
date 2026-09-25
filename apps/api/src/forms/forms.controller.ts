@@ -113,6 +113,11 @@ export class FormsController {
     return this.formsService.deleteAssignment(id);
   }
 
+  @Put('assignments/:id/activate')
+  activateAssignment(@Param('id', ParseIntPipe) id: number) {
+    return this.formsService.activateAssignment(id);
+  }
+
   // ── Kiosk (Public — no API key required) ─────────────────────────────────────
 
   @Public()
