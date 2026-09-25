@@ -336,8 +336,13 @@ function SurveyContent() {
         })),
       });
       setSubmitted(true);
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 409) {
+        setBlocked('already_submitted');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
