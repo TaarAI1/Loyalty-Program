@@ -1347,9 +1347,12 @@ export default function CustomerDetailPage() {
                             <p className="text-xs font-bold">{d.day} — {d.visits} visit{d.visits !== 1 ? 's' : ''}</p>
                             {d.dates?.length > 0 && (
                               <div className="space-y-0.5">
-                                {d.dates.map((date) => (
-                                  <p key={date} className="text-[11px] text-muted-foreground">{formatDate(date)}</p>
+                            {d.dates.slice(0, 7).map((date, idx) => (
+                                  <p key={`${date}-${idx}`} className="text-[11px] text-muted-foreground">{formatDate(date)}</p>
                                 ))}
+                                {d.dates.length > 7 && (
+                                  <p className="text-[11px] text-muted-foreground font-semibold">+{d.dates.length - 7} more</p>
+                                )}
                               </div>
                             )}
                           </div>

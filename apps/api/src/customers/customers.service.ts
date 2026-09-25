@@ -911,7 +911,7 @@ export class CustomersService {
       return {
         day,
         visits: txOnDay.length,
-        dates: [...new Set(txOnDay.map((t) => t.transactionDate.toISOString().slice(0, 10)))].sort(),
+        dates: txOnDay.map((t) => t.transactionDate.toISOString().slice(0, 10)).sort(),
       };
     });
 
