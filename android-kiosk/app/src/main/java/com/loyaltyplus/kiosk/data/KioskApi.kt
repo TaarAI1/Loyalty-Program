@@ -18,6 +18,13 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 object KioskApi {
 
@@ -26,7 +33,14 @@ object KioskApi {
     private val client = HttpClient(Android) {
         install(ContentNegotiation) { json(json) }
         install(Logging) { level = LogLevel.BODY }
-        engine { connectTimeout = 15_000; socketTimeout = 15_000 }
+        engine {
+            connectTimeout = 15_000
+            socketTimeout = 15_000
+            sslManager = { conn ->
+                conn.sslSocketFactory = trustAllSslFactory()
+                conn.hostnameVerifier = HostnameVerifier { _, _ -> true }
+            }
+        }
     }
 
     suspend fun connect(apiUrl: String, pairingCode: String): KioskConnectResponse {
@@ -134,4 +148,14 @@ object KioskApi {
         val trimmed = raw.trim().trimEnd('/')
         return if (trimmed.endsWith("/api")) trimmed else "$trimmed/api"
     }
+}
+
+/** Trust all SSL certificates — needed for Let's Encrypt on older Android tablets. */
+private fun trustAllSslFactory(): SSLSocketFactory {
+    val trustAll = arrayOf<TrustManager>(object : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+    })
+    return SSLContext.getInstance("TLS").apply { init(null, trustAll, SecureRandom()) }.socketFactory
 }

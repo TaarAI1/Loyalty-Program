@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -178,10 +178,10 @@ fun KioskApp(viewModel: KioskViewModel) {
                     else -> Unit
                 }
 
-                // Gear icon — only on Home screen (top-right corner)
+                // Scanner icon — only on Home screen (top-right corner)
                 if (state.screen == Screen.HOME) {
                     IconButton(
-                        onClick = viewModel::navigateSettingsPanel,
+                        onClick = viewModel::navigateToScanQr,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(12.dp)
@@ -190,8 +190,8 @@ fun KioskApp(viewModel: KioskViewModel) {
                             .background(Color(0xCC000000)),
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Settings",
+                            imageVector = Icons.Filled.QrCodeScanner,
+                            contentDescription = "Scan QR",
                             tint = Color.White,
                             modifier = Modifier.size(22.dp),
                         )
