@@ -19,7 +19,9 @@ import {
   formatDate,
   formatDateTime,
 } from '@/lib/utils';
-import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Edit2, ChevronLeft, ChevronRight, Gift, Zap, ShoppingBag, Star, RotateCcw, BarChart2, Calendar, ChevronDown, ChevronUp, Package, RefreshCw, TrendingUp, MapPin, Building2, Users, StickyNote, Trash2, Clock, Trophy, AlertTriangle, UserX, Flame, Sparkles, UserCheck, MessageSquare, Eye, Phone } from 'lucide-react';
+import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -819,41 +821,53 @@ export default function CustomerDetailPage() {
                   <p className="text-xs text-muted-foreground mt-1">Submissions from kiosk or web will appear here.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  {feedbacks.map((fb) => (
-                    <button
-                      key={`${fb.source}-${fb.id}`}
-                      type="button"
-                      onClick={() => router.push(`/feedback/${fb.id}`)}
-                      className="text-left rounded-xl border bg-background hover:shadow-md hover:border-primary/40 transition-all p-4 flex flex-col gap-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          {fb.formName}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Form</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {feedbacks.map((fb) => (
+                      <TableRow key={`${fb.source}-${fb.id}`} className="hover:bg-muted/40 transition-colors">
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                            {fb.formName}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             fb.source === 'web'
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-green-100 text-green-700'
                           }`}>
                             {fb.source === 'web' ? 'Web' : 'Kiosk'}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(fb.submittedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MessageSquare className="h-3 w-3" />
-                        <span>{fb.deviceName}{fb.store ? ` · ${fb.store}` : ''}</span>
-                      </div>
-                      <span className="text-xs font-medium text-primary hover:underline mt-auto">
-                        View details →
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col leading-tight">
+                            <span className="text-sm font-medium">
+                              {new Date(fb.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(fb.submittedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={fb.source === 'web' ? `/feedback/web/${fb.id}` : `/feedback/${fb.id}`}>
+                            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7 px-2.5">
+                              <Eye className="h-3.5 w-3.5" /> View
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </TabsContent>
           </Tabs>
