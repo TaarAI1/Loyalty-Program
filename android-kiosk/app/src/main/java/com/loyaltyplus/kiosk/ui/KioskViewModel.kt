@@ -149,6 +149,15 @@ class KioskViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         break // stop this polling loop; a new one starts on next connect()
                     }
+
+                    // ── Form refresh — pick up form changes from the web dashboard ──
+                    try {
+                        val refreshed = KioskApi.connect(prefs.apiUrl, prefs.pairingCode)
+                        val current = _state.value.form
+                        if (refreshed.form.id != current.id || refreshed.form.name != current.name) {
+                            _state.update { it.copy(form = refreshed.form.toSurveyForm()) }
+                        }
+                    } catch (_: Exception) { /* silent — don't crash on form refresh failure */ }
                 }
 
                 // ── Pending-survey poll ────────────────────────────────────────
