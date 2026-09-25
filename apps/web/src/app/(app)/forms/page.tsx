@@ -1304,6 +1304,7 @@ function WebFormTab() {
   const [formName, setFormName]       = useState('');
   const [formStatus, setFormStatus]   = useState<'active' | 'inactive'>('active');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const dragIdx = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1601,6 +1602,48 @@ function WebFormTab() {
                 )}
               </div>
             </div>
+
+            {/* Question Order drag-and-drop */}
+            {selectedIds.length > 1 && (
+              <div className="px-5 pb-4 space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Question Order</label>
+                <div className="border rounded-lg divide-y">
+                  {selectedIds.map((id, idx) => {
+                    const q = questions.find((x) => x.id === id);
+                    if (!q) return null;
+                    const meta = TYPE_META[q.questionType] ?? TYPE_META['text'];
+                    return (
+                      <div
+                        key={id}
+                        draggable
+                        onDragStart={() => { dragIdx.current = idx; }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          const from = dragIdx.current;
+                          if (from === null || from === idx) return;
+                          setSelectedIds((prev) => {
+                            const arr = [...prev];
+                            const [item] = arr.splice(from, 1);
+                            arr.splice(idx, 0, item);
+                            return arr;
+                          });
+                          dragIdx.current = null;
+                        }}
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-colors select-none"
+                      >
+                        <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                        <span className="w-5 text-center text-xs text-muted-foreground font-medium">{idx + 1}</span>
+                        <div className={`h-5 w-5 rounded flex items-center justify-center shrink-0 ${meta.bg} ${meta.text}`}>
+                          {meta.icon}
+                        </div>
+                        <span className="flex-1 truncate">{q.text}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{TYPE_LABEL[q.questionType] ?? q.questionType}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Modal footer */}
             <div className="flex items-center justify-between px-5 py-4 border-t border-border gap-3">
