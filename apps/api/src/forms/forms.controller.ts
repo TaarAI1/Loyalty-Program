@@ -203,6 +203,15 @@ export class FormsController {
   }
 
   @Public()
+  @Get('web/validate')
+  validateWebSurvey(
+    @Query('retailpro_id') retailproId: string,
+    @Query('transaction_id') transactionId: string,
+  ) {
+    return this.formsService.validateWebSurvey(retailproId, transactionId);
+  }
+
+  @Public()
   @Post('web/submit')
   webSubmit(@Body() body: {
     formId: number;

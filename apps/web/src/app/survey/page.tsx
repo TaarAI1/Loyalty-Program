@@ -162,15 +162,31 @@ function SurveyContent() {
   const [submitted, setSubmitted]   = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [noForm, setNoForm]         = useState(false);
+  const [blocked, setBlocked] = useState<'invalid_link' | 'transaction_not_found' | 'transaction_not_yours' | 'already_submitted' | null>(null);
 
   const loadData = useCallback(async () => {
+    // Guard: both params required
+    if (!retailproId || !transactionId) {
+      setBlocked('invalid_link');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Validate transaction ownership + duplicate check first
+      const validateRes = await axios.get(
+        `${API_URL}/forms/web/validate?retailpro_id=${encodeURIComponent(retailproId)}&transaction_id=${encodeURIComponent(transactionId)}`
+      );
+      if (!validateRes.data.valid) {
+        setBlocked(validateRes.data.reason as 'transaction_not_found' | 'transaction_not_yours' | 'already_submitted');
+        setLoading(false);
+        return;
+      }
+
       // Fetch active form and customer name in parallel
       const [formRes, nameRes] = await Promise.allSettled([
         axios.get(`${API_URL}/forms/web/active`),
-        retailproId
-          ? axios.get(`${API_URL}/forms/web/customer?retailpro_id=${encodeURIComponent(retailproId)}`)
-          : Promise.resolve({ data: { name: null } }),
+        axios.get(`${API_URL}/forms/web/customer?retailpro_id=${encodeURIComponent(retailproId)}`),
       ]);
 
       if (formRes.status === 'fulfilled' && formRes.value.data) {
@@ -187,7 +203,7 @@ function SurveyContent() {
     } finally {
       setLoading(false);
     }
-  }, [retailproId]);
+  }, [retailproId, transactionId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -229,6 +245,34 @@ function SurveyContent() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // ── Blocked screens ───────────────────────────────────────────────────────────
+  if (blocked === 'already_submitted') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="text-center max-w-xs">
+          <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-5">
+            <span className="text-4xl">✅</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Already Submitted</h2>
+          <p className="text-sm text-gray-500">You have already submitted feedback for this visit. Thank you!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (blocked) {
+    // invalid_link | transaction_not_found | transaction_not_yours
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="text-center max-w-xs">
+          <div className="text-5xl mb-4">🚫</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Invalid Feedback Link</h2>
+          <p className="text-sm text-gray-500">This feedback link is not valid for your account.</p>
+        </div>
       </div>
     );
   }

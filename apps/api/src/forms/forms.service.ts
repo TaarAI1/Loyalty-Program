@@ -435,6 +435,28 @@ export class FormsService {
     };
   }
 
+  async validateWebSurvey(retailproId: string, transactionId: string) {
+    // 1. Find the transaction by retailpro transaction ID
+    const tx = await this.prisma.transaction.findFirst({
+      where: { retailproTransactionId: transactionId },
+      include: { customer: { select: { retailproId: true } } },
+    });
+    if (!tx) return { valid: false, reason: 'transaction_not_found' };
+
+    // 2. Check ownership — transaction must belong to this customer
+    if (tx.customer.retailproId !== retailproId) {
+      return { valid: false, reason: 'transaction_not_yours' };
+    }
+
+    // 3. Check for duplicate submission against this transaction
+    const existing = await this.prisma.formResponse.findFirst({
+      where: { transactionId },
+    });
+    if (existing) return { valid: false, reason: 'already_submitted' };
+
+    return { valid: true };
+  }
+
   async getActiveWebForm() {
     return this.prisma.surveyForm.findFirst({
       where: { type: 'web', status: 'active' },
@@ -489,6 +511,8 @@ export class FormsService {
         formId: data.formId,
         customerName,
         customerPhone,
+        transactionId: data.transactionId ?? null,
+        retailproId:   data.retailproId   ?? null,
         answers: data.answers,
       },
     });
