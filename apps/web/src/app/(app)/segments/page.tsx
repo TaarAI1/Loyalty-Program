@@ -23,6 +23,15 @@ import {
   Users,
 } from 'lucide-react';
 
+const SEGMENT_COLORS: Record<string, string> = {
+  champion:  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  loyal:     'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  potential: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  new:       'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  at_risk:   'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  dormant:   'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+};
+
 const RECENCY_OPTIONS = [
   { value: '', label: 'Any recency' },
   { value: '<30', label: 'Active — last 30 days' },
@@ -51,6 +60,7 @@ interface Filters {
   enrolledAfter: string;
   enrolledBefore: string;
   isActive: string;
+  neverRedeemed: boolean;
 }
 
 const defaultFilters: Filters = {
@@ -67,6 +77,7 @@ const defaultFilters: Filters = {
   enrolledAfter: '',
   enrolledBefore: '',
   isActive: '',
+  neverRedeemed: false,
 };
 
 function buildParams(filters: Filters, page: number, pageSize: number) {
@@ -85,6 +96,7 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
       enrolledAfter: filters.enrolledAfter || undefined,
       enrolledBefore: filters.enrolledBefore || undefined,
       isActive: filters.isActive || undefined,
+      neverRedeemed: filters.neverRedeemed ? 'true' : undefined,
       page,
       pageSize,
     }).filter(([, v]) => v !== undefined),
@@ -106,6 +118,10 @@ interface SegmentCustomer {
   transactionCount: number;
   store: string | null;
   createdAt: string;
+  segment: string;
+  avgTransactionValue: number;
+  totalPointsRedeemed: number;
+  tenureDays: number;
 }
 
 export default function SegmentsPage() {
@@ -149,10 +165,14 @@ export default function SegmentsPage() {
         'Phone': `+${c.countryCode}${c.mobileNumber}`,
         'Active': c.isActive ? 'Yes' : 'No',
         'Tier': c.tier ?? '',
+        'RFM Segment': c.segment,
         'Points Balance': c.totalPoints,
+        'Points Redeemed': c.totalPointsRedeemed,
         'Last Purchase': c.lastVisitDate ? formatDate(c.lastVisitDate) : '',
         'Lifetime Spend': Number(c.lifetimeSale),
+        'Avg. Txn Value': Math.round(c.avgTransactionValue),
         'Total Visits': c.transactionCount,
+        'Tenure (days)': c.tenureDays,
         'Home Store': c.store ?? '',
         'Enrolled On': formatDate(c.createdAt),
       }));
@@ -323,6 +343,18 @@ export default function SegmentsPage() {
                 />
               </div>
 
+              {/* Redemption */}
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pt-1">Redemption</p>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={filters.neverRedeemed}
+                  onChange={(e) => setFilters((f) => ({ ...f, neverRedeemed: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 accent-yellow-500"
+                />
+                <span className="text-sm">Never redeemed points</span>
+              </label>
+
               <div className="flex gap-2 pt-2">
                 <Button className="flex-1" size="sm" onClick={applyFilters}>
                   Apply
@@ -396,10 +428,14 @@ export default function SegmentsPage() {
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Phone</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Active</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Tier</th>
+                      <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Segment</th>
                       <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Points</th>
+                      <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Pts Redeemed</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Last Purchase</th>
                       <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Lifetime Spend</th>
+                      <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Avg. Txn</th>
                       <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Visits</th>
+                      <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Tenure</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Store</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Enrolled On</th>
                     </tr>
@@ -436,8 +472,16 @@ export default function SegmentsPage() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <TierBadge name={c.tier} />
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${SEGMENT_COLORS[c.segment] ?? SEGMENT_COLORS['new']}`}>
+                            {c.segment.replace('_', ' ')}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
                           {c.totalPoints.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-muted-foreground">
+                          {c.totalPointsRedeemed.toLocaleString()}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
                           {c.lastVisitDate ? formatDate(c.lastVisitDate) : '—'}
@@ -445,8 +489,14 @@ export default function SegmentsPage() {
                         <td className="px-4 py-3 text-right whitespace-nowrap">
                           {formatCurrency(Number(c.lifetimeSale))}
                         </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-muted-foreground">
+                          {formatCurrency(Math.round(c.avgTransactionValue))}
+                        </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
                           {c.transactionCount}
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap text-muted-foreground">
+                          {c.tenureDays}d
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
                           {c.store ?? '—'}

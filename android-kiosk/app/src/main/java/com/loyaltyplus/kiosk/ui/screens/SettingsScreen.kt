@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -62,6 +64,7 @@ fun SettingsScreen(
     onPairingCodeChange: (String) -> Unit,
     onConnect: () -> Unit,
     onToastDismissed: () -> Unit,
+    onScanQr: () -> Unit = {},
 ) {
     // Auto-dismiss toast after 4 seconds
     LaunchedEffect(toast) {
@@ -143,6 +146,22 @@ fun SettingsScreen(
                 )
 
                 Spacer(Modifier.height(32.dp))
+
+                // Scan QR Code button
+                OutlinedButton(
+                    onClick = onScanQr,
+                    enabled = !isConnecting,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(2.dp, Gold),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold),
+                ) {
+                    Text("Scan QR Code", fontWeight = FontWeight.Black, fontSize = 17.sp)
+                }
+
+                Spacer(Modifier.height(12.dp))
 
                 Button(
                     onClick = onConnect,

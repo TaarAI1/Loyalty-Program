@@ -20,6 +20,7 @@ export class SegmentsController {
     @Query('enrolledAfter') enrolledAfter?: string,
     @Query('enrolledBefore') enrolledBefore?: string,
     @Query('isActive') isActive?: string,
+    @Query('neverRedeemed') neverRedeemed?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize = 50,
   ) {
@@ -37,6 +38,7 @@ export class SegmentsController {
       enrolledAfter: enrolledAfter || undefined,
       enrolledBefore: enrolledBefore || undefined,
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      neverRedeemed: neverRedeemed === 'true' ? true : undefined,
       page,
       pageSize,
     });

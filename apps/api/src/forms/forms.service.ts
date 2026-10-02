@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 function generatePairingCode(): string {
@@ -502,6 +502,17 @@ export class FormsService {
       if (c) {
         customerName  = c.name;
         customerPhone = c.mobileNumber;
+      }
+    }
+
+    // Prevent duplicate submission for the same transaction
+    if (data.transactionId) {
+      const duplicate = await this.prisma.formResponse.findFirst({
+        where: { transactionId: data.transactionId },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new ConflictException('Feedback already submitted for this transaction.');
       }
     }
 
