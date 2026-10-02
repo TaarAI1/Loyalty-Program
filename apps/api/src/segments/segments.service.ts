@@ -16,6 +16,7 @@ export interface SegmentFilters {
   enrolledAfter?: string;
   enrolledBefore?: string;
   isActive?: boolean;
+  neverRedeemed?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -34,6 +35,7 @@ export class SegmentsService {
       store, region,
       enrolledAfter, enrolledBefore,
       isActive,
+      neverRedeemed,
       page = 1,
       pageSize = 50,
     } = filters;
@@ -78,6 +80,9 @@ export class SegmentsService {
           }
         : {}),
       ...recencyWhere,
+      ...(neverRedeemed && {
+        transactions: { none: { pointsRedeemed: { gt: 0 } } },
+      }),
     };
 
     const skip = (page - 1) * pageSize;
@@ -88,7 +93,20 @@ export class SegmentsService {
         skip,
         take: pageSize,
         orderBy: { lifetimeSale: 'desc' },
-        include: {
+        select: {
+          id: true,
+          retailproId: true,
+          name: true,
+          email: true,
+          mobileNumber: true,
+          countryCode: true,
+          isActive: true,
+          segment: true,
+          lifetimeSale: true,
+          totalPoints: true,
+          lastVisitDate: true,
+          store: true,
+          createdAt: true,
           tier: { select: { name: true } },
           _count: { select: { transactions: true } },
         },
@@ -107,6 +125,21 @@ export class SegmentsService {
           })
         : customers;
 
+    // Batch fetch total points redeemed per customer (single query for the page)
+    const customerIds = filtered.map((c) => c.id);
+    const redemptions = customerIds.length
+      ? await this.prisma.transaction.groupBy({
+          by: ['customerId'],
+          where: { customerId: { in: customerIds } },
+          _sum: { pointsRedeemed: true },
+        })
+      : [];
+    const redemptionMap: Record<string, number> = Object.fromEntries(
+      redemptions.map((r) => [r.customerId, r._sum.pointsRedeemed ?? 0]),
+    );
+
+    const nowMs = Date.now();
+
     const data = filtered.map((c) => ({
       id: c.id,
       retailproId: c.retailproId,
@@ -122,6 +155,14 @@ export class SegmentsService {
       transactionCount: c._count.transactions,
       store: c.store,
       createdAt: c.createdAt,
+      // ── New strategic columns ──────────────────────────────────────────────
+      segment: c.segment ?? 'new',
+      avgTransactionValue:
+        c._count.transactions > 0
+          ? Number(c.lifetimeSale) / c._count.transactions
+          : 0,
+      totalPointsRedeemed: redemptionMap[c.id] ?? 0,
+      tenureDays: Math.floor((nowMs - new Date(c.createdAt).getTime()) / 86400000),
     }));
 
     return { data, total, page, pageSize };
