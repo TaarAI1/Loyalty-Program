@@ -1374,13 +1374,15 @@ export default function CustomerDetailPage() {
                 <p className="text-[11px] text-muted-foreground">
                   Each bubble = one transaction · X = purchase # · Y = discount value (PKR) · Size = sale amount
                 </p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <ScatterChart margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <ScatterChart margin={{ top: 12, right: 20, left: 16, bottom: 28 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis
                       dataKey="index"
                       name="Transaction #"
                       type="number"
+                      allowDecimals={false}
+                      domain={[0, 'dataMax + 1']}
                       label={{ value: 'Transaction #', position: 'insideBottom', offset: -8, fontSize: 10 }}
                       tick={{ fontSize: 10 }}
                     />
@@ -1389,8 +1391,9 @@ export default function CustomerDetailPage() {
                       name="Discount Value"
                       tickFormatter={(v: number) => formatCurrency(v)}
                       tick={{ fontSize: 10 }}
+                      domain={[0, 'dataMax + 200']}
                     />
-                    <ZAxis dataKey="saleAmount" name="Sale Amount" range={[40, 600]} />
+                    <ZAxis dataKey="saleAmount" name="Sale Amount" range={[60, 700]} />
                     <Tooltip
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
