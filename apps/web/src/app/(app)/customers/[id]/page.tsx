@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ScatterChart, Scatter, ZAxis,
 } from 'recharts';
 import { toast } from 'sonner';
 import { isValidEmail } from '@loyalty/shared';
@@ -1366,9 +1367,62 @@ export default function CustomerDetailPage() {
               </div>
             </div>
 
+            {/* ── Scatter: Transaction Bubble Chart ── */}
+            {(activityData?.transactions?.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Transaction Pattern</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Each bubble = one transaction · X = purchase # · Y = discount value (PKR) · Size = sale amount
+                </p>
+                <ResponsiveContainer width="100%" height={220}>
+                  <ScatterChart margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis
+                      dataKey="index"
+                      name="Transaction #"
+                      type="number"
+                      label={{ value: 'Transaction #', position: 'insideBottom', offset: -8, fontSize: 10 }}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis
+                      dataKey="redemptionAmount"
+                      name="Discount Value"
+                      tickFormatter={(v: number) => formatCurrency(v)}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <ZAxis dataKey="saleAmount" name="Sale Amount" range={[40, 600]} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload as {
+                          index: number; date: string;
+                          saleAmount: number; redemptionAmount: number; pointsRedeemed: number;
+                        };
+                        return (
+                          <div className="rounded-lg border border-border bg-background shadow-md px-3 py-2 space-y-1 text-xs">
+                            <p className="font-bold">Transaction #{d.index}</p>
+                            <p className="text-muted-foreground">{formatDate(d.date)}</p>
+                            <p>Sale: <span className="font-semibold">{formatCurrency(d.saleAmount)}</span></p>
+                            <p>Discount: <span className="font-semibold text-orange-600">{formatCurrency(d.redemptionAmount)}</span></p>
+                            <p>Pts Redeemed: <span className="font-semibold">{d.pointsRedeemed.toLocaleString()}</span></p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Scatter
+                      data={activityData.transactions}
+                      fill="#FFD000"
+                      fillOpacity={0.75}
+                      stroke="#d4a000"
+                      strokeWidth={1}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
             {/* ── Notes ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <div className="space-y-3">              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                 <StickyNote className="w-3.5 h-3.5" /> Staff Notes
               </p>
               <div className="space-y-2">

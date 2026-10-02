@@ -900,10 +900,16 @@ export class CustomersService {
       }
     }
 
-    // Day of week breakdown (all-time)
+    // Day of week breakdown (all-time) — also used for scatter chart
     const allTx = await this.prisma.transaction.findMany({
       where: { customerId },
-      select: { transactionDate: true },
+      select: {
+        transactionDate: true,
+        saleAmount: true,
+        redemptionAmount: true,
+        pointsRedeemed: true,
+      },
+      orderBy: { transactionDate: 'asc' },
     });
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayCounts = dayLabels.map((day, i) => {
@@ -915,7 +921,16 @@ export class CustomersService {
       };
     });
 
-    return { data: Object.values(monthMap), dayOfWeek: dayCounts };
+    // Scatter chart data — each transaction as a point
+    const scatterTransactions = allTx.map((t, i) => ({
+      index: i + 1,
+      date: t.transactionDate,
+      saleAmount: Number(t.saleAmount),
+      redemptionAmount: Number(t.redemptionAmount),
+      pointsRedeemed: t.pointsRedeemed,
+    }));
+
+    return { data: Object.values(monthMap), dayOfWeek: dayCounts, transactions: scatterTransactions };
   }
 
   async getNotes(customerId: string) {
