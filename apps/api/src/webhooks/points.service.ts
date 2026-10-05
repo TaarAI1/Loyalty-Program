@@ -52,6 +52,7 @@ export class PointsService {
     countryCode?: string;
     items?: TransactionItemDto[];
     text?: string;
+    totalDiscount?: number;
   }): Promise<ProcessTransactionResult> {
     const { retailproTransactionId, custSid, customerMobile, customerName, saleAmount, grossAmount, netAmount, taxAmount, redeemPoints = 0, countryCode = '92' } = params;
 
@@ -172,6 +173,7 @@ export class PointsService {
           outlet: params.outlet,
           taxAmount: taxAmount ?? null,
           grossAmount: grossAmount ?? null,
+          totalDiscount: params.totalDiscount ?? null,
           status: 'completed',
           text: params.text ?? null,
         },
@@ -216,6 +218,7 @@ export class PointsService {
             description: item.description ?? null,
             qty: item.qty ?? 0,
             unitPrice: item.unit_price ?? 0,
+            itemDiscount: item.item_discount ?? null,
             totalPrice: item.total_price ?? 0,
             taxAmount: item.tax_amount ?? null,
             grossAmount: item.gross_amount ?? null,

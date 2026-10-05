@@ -99,6 +99,7 @@ model Transaction {
   outlet                  String?   @db.VarChar(100)
   taxAmount               Decimal?  @map("tax_amount") @db.Decimal(10, 2)
   grossAmount             Decimal?  @map("gross_amount") @db.Decimal(10, 2)
+  totalDiscount           Decimal?  @map("total_discount") @db.Decimal(10, 2)
   status                  String    @default("completed") @db.VarChar(20)
   text                    String?   @map("text") @db.Text
   createdAt               DateTime  @default(now()) @map("created_at")
@@ -119,6 +120,7 @@ model TransactionItem {
   description   String?  @db.VarChar(500)
   qty           Decimal  @db.Decimal(10, 3)
   unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
+  itemDiscount  Decimal? @map("item_discount") @db.Decimal(10, 2)
   totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
   taxAmount     Decimal? @map("tax_amount") @db.Decimal(10, 2)
   grossAmount   Decimal? @map("gross_amount") @db.Decimal(10, 2)
