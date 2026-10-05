@@ -96,6 +96,7 @@ model Transaction {
   region                  String?   @db.VarChar(100)
   outlet                  String?   @db.VarChar(100)
   status                  String    @default("completed") @db.VarChar(20)
+  totalDiscount           Decimal?  @map("total_discount") @db.Decimal(10, 2)
   createdAt               DateTime  @default(now()) @map("created_at")
 
   customer      Customer         @relation(fields: [customerId], references: [id])
@@ -114,6 +115,7 @@ model TransactionItem {
   description   String?  @db.VarChar(500)
   qty           Decimal  @db.Decimal(10, 3)
   unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
+  itemDiscount  Decimal? @map("item_discount") @db.Decimal(10, 2)
   totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
   createdAt     DateTime @default(now()) @map("created_at")
 

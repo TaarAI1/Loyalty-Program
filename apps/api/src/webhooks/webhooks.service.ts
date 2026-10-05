@@ -65,6 +65,7 @@ export class WebhooksService {
       countryCode: cc,
       items: dto.items,
       text: dto.text,
+      totalDiscount: dto.total_discount,
     });
 
     const customerSummary = await this.buildCustomerResponse('updated', result.customerId);

@@ -17,12 +17,13 @@ export const TransactionItemSchema = z.object({
   sku:          z.string().max(100).optional(),
   description:  z.string().max(500).optional(),
   qty:          z.number().positive().optional(),
-  unit_price:   z.number().nonnegative().optional(),
-  total_price:  z.number().nonnegative().optional(),
-  tax_amount:   z.number().nonnegative().optional(),
-  gross_amount: z.number().nonnegative().optional(),
-  net_amount:   z.number().nonnegative().optional(),
-  dcs:          z.array(DcsItemSchema).optional(),
+  unit_price:    z.number().nonnegative().optional(),
+  item_discount: z.number().nonnegative().optional(),
+  total_price:   z.number().nonnegative().optional(),
+  tax_amount:    z.number().nonnegative().optional(),
+  gross_amount:  z.number().nonnegative().optional(),
+  net_amount:    z.number().nonnegative().optional(),
+  dcs:           z.array(DcsItemSchema).optional(),
 });
 export type TransactionItemDto = z.infer<typeof TransactionItemSchema>;
 
@@ -36,6 +37,7 @@ export const WebhookTransactionSchema = z.object({
   tax_amount:       z.number().nonnegative().optional(),
   gross_amount:     z.number().nonnegative().optional(),
   net_amount:       z.number().nonnegative().optional(),
+  total_discount:   z.number().nonnegative().optional(),
   transaction_date: z.string().datetime({ offset: true }).optional(),
   store:            z.string().max(100).default(''),
   region:           z.string().max(100).default(''),
