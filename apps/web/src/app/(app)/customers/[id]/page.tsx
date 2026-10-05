@@ -357,11 +357,12 @@ export default function CustomerDetailPage() {
 
         function tierDotColor(name: string): string {
           switch (name?.toLowerCase()) {
-            case 'silver':   return '#94a3b8';
-            case 'gold':     return '#f59e0b';
-            case 'platinum': return '#a855f7';
-            case 'diamond':  return '#22d3ee';
-            default:         return '#FFD000';
+            case 'classic':  return '#FFF7D4';
+            case 'silver':   return '#C0C0C0';
+            case 'gold':     return '#D4AF37';
+            case 'platinum': return '#7a7a7a';
+            case 'diamond':  return '#63B3ED';
+            default:         return '#D4AF37';
           }
         }
 
