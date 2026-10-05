@@ -35,11 +35,11 @@ import Link from 'next/link';
 
 function tierPieColor(tier: string): string {
   switch (tier?.toLowerCase()) {
-    case 'classic':  return '#d6cfc7';
-    case 'silver':   return '#cbd5e1';
-    case 'gold':     return '#f59e0b';
-    case 'platinum': return '#a855f7';
-    case 'diamond':  return '#22d3ee';
+    case 'classic':  return '#FFF7D4';
+    case 'silver':   return '#C0C0C0';
+    case 'gold':     return '#D4AF37';
+    case 'platinum': return '#7a7a7a';
+    case 'diamond':  return '#63B3ED';
     default:         return '#9ca3af';
   }
 }
