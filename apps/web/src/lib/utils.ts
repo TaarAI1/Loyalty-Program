@@ -58,15 +58,15 @@ export function tierColor(tier: string): string {
 export function tierStyle(tier: string): React.CSSProperties {
   switch (tier?.toLowerCase()) {
     case 'classic':
-      return { background: '#fffde7', color: '#1a1a1a', border: '1px solid #e6cc80', fontWeight: 600 };
+      return { background: '#d6cfc7', color: '#44403c', border: '1px solid #a8a29e', fontWeight: 600 };
     case 'silver':
-      return { background: 'linear-gradient(135deg,#ffe066 0%,#ffd700 100%)', color: '#111111', border: '1px solid #d4b800', fontWeight: 700 };
+      return { background: 'linear-gradient(135deg,#e2e8f0 0%,#cbd5e1 100%)', color: '#1e293b', border: '1px solid #94a3b8', fontWeight: 600 };
     case 'gold':
-      return { background: 'linear-gradient(135deg,#d4a017 0%,#b8860b 100%)', color: '#fffde7', border: '1px solid #7a5c00', fontWeight: 700 };
+      return { background: 'linear-gradient(135deg,#fde68a 0%,#f59e0b 100%)', color: '#78350f', border: '1px solid #d97706', fontWeight: 700 };
     case 'platinum':
-      return { background: 'linear-gradient(135deg,#222222 0%,#333333 100%)', color: '#ffd700', border: '1px solid #111111', fontWeight: 700 };
+      return { background: 'linear-gradient(135deg,#e9d5ff 0%,#a855f7 100%)', color: '#3b0764', border: '1px solid #9333ea', fontWeight: 700 };
     case 'diamond':
-      return { background: 'linear-gradient(135deg,#000000 0%,#111111 100%)', color: '#ffd700', border: '1px solid #ffd700', fontWeight: 700 };
+      return { background: 'linear-gradient(135deg,#a5f3fc 0%,#22d3ee 100%)', color: '#083344', border: '1px solid #0891b2', fontWeight: 700 };
     default:
       return { background: '#e5e7eb', color: '#374151', border: '1px solid #9ca3af', fontWeight: 600 };
   }
