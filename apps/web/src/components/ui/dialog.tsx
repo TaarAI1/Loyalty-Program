@@ -32,11 +32,12 @@ export function Dialog({ open, onClose, title, headerExtra, children, className 
       <div
         ref={ref}
         className={cn(
-          'relative z-10 w-full max-w-lg bg-background rounded-xl shadow-xl border border-border p-6',
+          'relative z-10 w-full max-w-lg bg-background rounded-xl shadow-xl border border-border flex flex-col max-h-[90vh]',
           className,
         )}
       >
-        <div className="flex items-center justify-between mb-4">
+        {/* Header — always visible, never scrolls */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">{title}</h2>
             {headerExtra}
@@ -48,7 +49,10 @@ export function Dialog({ open, onClose, title, headerExtra, children, className 
             <X className="w-4 h-4" />
           </button>
         </div>
-        {children}
+        {/* Body — scrollable with sidebar scrollbar */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+          {children}
+        </div>
       </div>
     </div>
   );
