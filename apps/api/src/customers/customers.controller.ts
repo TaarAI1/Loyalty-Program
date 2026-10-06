@@ -95,9 +95,10 @@ export class CustomersController {
   @Post(':id/notify')
   sendNotification(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { template_name: string; sms_invoice?: string; sms_no?: string },
+    @Body() body: { template_name: string; message?: string; sms_invoice?: string; sms_no?: string },
   ) {
     const extraVars: Record<string, string> = {};
+    if (body.message)     extraVars['message']     = body.message;
     if (body.sms_invoice) extraVars['sms_invoice'] = body.sms_invoice;
     if (body.sms_no)      extraVars['sms_no']      = body.sms_no;
     return this.customersService.sendManualWhatsApp(id, body.template_name, extraVars);
