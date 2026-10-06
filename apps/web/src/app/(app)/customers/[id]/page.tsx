@@ -176,13 +176,13 @@ export default function CustomerDetailPage() {
     onError: (err) => toast.error(String(err)),
   });
 
-  const [notifyForm, setNotifyForm] = useState({ template_name: '', sms_invoice: '', sms_no: '' });
+  const [notifyForm, setNotifyForm] = useState({ template_name: '', message: '', sms_invoice: '', sms_no: '' });
   const notifyMutation = useMutation({
     mutationFn: () => customersApi.sendNotification(id, notifyForm),
     onSuccess: () => {
       toast.success('WhatsApp notification queued');
       setNotifyOpen(false);
-      setNotifyForm({ template_name: '', sms_invoice: '', sms_no: '' });
+      setNotifyForm({ template_name: '', message: '', sms_invoice: '', sms_no: '' });
     },
     onError: (err) => toast.error(String(err)),
   });
@@ -1623,6 +1623,15 @@ export default function CustomerDetailPage() {
               placeholder="e.g. points_earned_confirmation"
               value={notifyForm.template_name}
               onChange={(e) => setNotifyForm((f) => ({ ...f, template_name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Message <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <textarea
+              className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              placeholder="Override body text..."
+              value={notifyForm.message}
+              onChange={(e) => setNotifyForm((f) => ({ ...f, message: e.target.value }))}
             />
           </div>
           <p className="text-xs text-muted-foreground">
