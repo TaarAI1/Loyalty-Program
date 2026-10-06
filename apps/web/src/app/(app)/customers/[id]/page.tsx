@@ -176,12 +176,13 @@ export default function CustomerDetailPage() {
     onError: (err) => toast.error(String(err)),
   });
 
-  const [notifyForm, setNotifyForm] = useState({ template_name: '', message: '' });
+  const [notifyForm, setNotifyForm] = useState({ template_name: '', sms_invoice: '', sms_no: '' });
   const notifyMutation = useMutation({
     mutationFn: () => customersApi.sendNotification(id, notifyForm),
     onSuccess: () => {
       toast.success('WhatsApp notification queued');
       setNotifyOpen(false);
+      setNotifyForm({ template_name: '', sms_invoice: '', sms_no: '' });
     },
     onError: (err) => toast.error(String(err)),
   });
@@ -1624,14 +1625,27 @@ export default function CustomerDetailPage() {
               onChange={(e) => setNotifyForm((f) => ({ ...f, template_name: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <Label>Message (optional)</Label>
-            <textarea
-              className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Override body text..."
-              value={notifyForm.message}
-              onChange={(e) => setNotifyForm((f) => ({ ...f, message: e.target.value }))}
-            />
+          <p className="text-xs text-muted-foreground">
+            Birthday and registration template variables are loaded automatically from Configuration.
+            For the transaction template, fill in the fields below.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label>Invoice Amount <span className="text-muted-foreground font-normal">(sms_invoice)</span></Label>
+              <Input
+                placeholder="e.g. 5000"
+                value={notifyForm.sms_invoice}
+                onChange={(e) => setNotifyForm((f) => ({ ...f, sms_invoice: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Invoice No. <span className="text-muted-foreground font-normal">(sms_no)</span></Label>
+              <Input
+                placeholder="e.g. INV-0042"
+                value={notifyForm.sms_no}
+                onChange={(e) => setNotifyForm((f) => ({ ...f, sms_no: e.target.value }))}
+              />
+            </div>
           </div>
           <div className="flex gap-2 pt-2">
             <Button

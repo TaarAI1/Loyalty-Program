@@ -95,6 +95,7 @@ export interface WhatsAppJobPayload {
   customerId?: string;
   notificationType?: string;
   existingLogId?: string; // BigInt serialized as string — update existing log on resend
+  manualSend?: boolean;  // disables Bull retries for manual sends (prevents 3x duplicate logs)
 }
 
 export interface SMSJobPayload {
