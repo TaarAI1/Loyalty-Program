@@ -21,7 +21,7 @@ export class QueueService {
   async enqueueWhatsApp(payload: WhatsAppJobPayload, opts?: { delay?: number }) {
     const job = await this.waQueue.add('send', payload, {
       delay: opts?.delay,
-      attempts: 3,
+      attempts: payload.manualSend ? 1 : 3,  // no retries for manual sends — prevents duplicate log entries
       backoff: { type: 'exponential', delay: 2000 },
     });
     this.logger.log(

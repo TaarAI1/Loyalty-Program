@@ -835,11 +835,30 @@ export class CustomersService {
     });
   }
 
-  async sendManualWhatsApp(customerId: string, templateName: string, message?: string) {
+  async sendManualWhatsApp(customerId: string, templateName: string, extraVars?: Record<string, string>) {
     const customer = await this.findOne(customerId);
     const config = await this.prisma.whatsappConfig.findFirst({ where: { id: 1, isActive: true } });
     if (!config?.apiUrl) {
       return { success: false, message: 'WhatsApp not configured' };
+    }
+
+    // Auto-resolve saved vars based on which template is being sent.
+    // Birthday and registration vars are stored in whatsapp_config so the user
+    // doesn't have to type them manually each time.
+    let vars: Record<string, string> = {};
+    if (templateName === config.templateBirthday) {
+      vars = {
+        order_number:     config.birthdayVarOrder      ?? '',
+        dispatched_order: config.birthdayVarDispatched ?? '',
+      };
+    } else if (templateName === config.templatePointsEarned) {
+      vars = {
+        order_no_1:        config.regVarOrderNo1    ?? '',
+        dispatched_order1: config.regVarDispatched1 ?? '',
+      };
+    } else {
+      // Transaction template or any other — use caller-supplied vars (sms_invoice, sms_no, etc.)
+      vars = extraVars ?? {};
     }
 
     const phone = formatPhoneNumber(customer.mobileNumber, customer.countryCode);
@@ -847,9 +866,10 @@ export class CustomersService {
       to: phone,
       templateName,
       customerName: customer.name,
-      vars: message ? { message } : {},
+      vars,
       customerId,
       notificationType: 'manual',
+      manualSend: true,
     });
     this.logger.log({ customerId, phone, templateName }, 'Manual WhatsApp notification queued');
     return { success: true };
