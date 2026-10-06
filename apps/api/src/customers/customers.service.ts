@@ -38,6 +38,29 @@ export class CustomersService {
     private readonly queue: QueueService,
   ) {}
 
+  /**
+   * Given a raw search string, returns all plausible mobileNumber variants so
+   * the list search works regardless of how the user types the number:
+   *   +92 3044689569 / +923044689569 / 923044689569 / 033044689569 / 3044689569
+   * Returns an empty array if the input doesn't look like a phone number.
+   */
+  private phoneSearchVariants(input: string): string[] {
+    const raw = input.replace(/[\s\-().]/g, '');
+    if (!/^\+?[\d]{7,15}$/.test(raw)) return []; // not a phone number
+
+    let local = raw;
+    if (local.startsWith('+92'))                         local = local.slice(3);   // +923044… → 3044…
+    else if (local.startsWith('92') && local.length >= 11) local = local.slice(2); // 923044… → 3044…
+    else if (local.startsWith('0'))                      local = local.slice(1);   // 03044… → 3044…
+
+    return [
+      local,           // 3044689569
+      '0' + local,     // 03044689569
+      '+92' + local,   // +923044689569
+      '92' + local,    // 923044689569
+    ];
+  }
+
   async findByPhone(phone: string) {
     // Normalize the input: strip spaces, dashes, parentheses
     const raw = phone.replace(/[\s\-().]/g, '');
@@ -93,11 +116,16 @@ export class CustomersService {
     const { search, tierId, region, store, isActive, status, page, pageSize } = params;
     const skip = (page - 1) * pageSize;
 
+    const phoneVariants = search ? this.phoneSearchVariants(search) : [];
+
     const where = {
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
-          { mobileNumber: { contains: normalizePhone(search) } },
+          // Phone number search: expand to all format variants so +92, 92, 0, or bare local all match
+          ...phoneVariants.map(v => ({ mobileNumber: { contains: v } })),
+          // Fallback raw contains for non-phone partial matches (e.g. typing a raw partial number)
+          ...(phoneVariants.length === 0 ? [{ mobileNumber: { contains: search } }] : []),
           { email: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
