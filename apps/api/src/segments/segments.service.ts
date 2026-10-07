@@ -16,6 +16,7 @@ export interface SegmentFilters {
   enrolledAfter?: string;
   enrolledBefore?: string;
   isActive?: boolean;
+  status?: string;
   neverRedeemed?: boolean;
   page?: number;
   pageSize?: number;
@@ -35,6 +36,7 @@ export class SegmentsService {
       store, region,
       enrolledAfter, enrolledBefore,
       isActive,
+      status,
       neverRedeemed,
       page = 1,
       pageSize = 50,
@@ -65,6 +67,7 @@ export class SegmentsService {
       ...(store && { store }),
       ...(region && { region }),
       ...(isActive !== undefined && { isActive }),
+      ...(status && { status }),
       ...(minSpend !== undefined || maxSpend !== undefined
         ? { lifetimeSale: { ...(minSpend !== undefined && { gte: minSpend }), ...(maxSpend !== undefined && { lte: maxSpend }) } }
         : {}),
@@ -101,6 +104,7 @@ export class SegmentsService {
           mobileNumber: true,
           countryCode: true,
           isActive: true,
+          status: true,
           segment: true,
           lifetimeSale: true,
           totalPoints: true,
@@ -148,6 +152,7 @@ export class SegmentsService {
       mobileNumber: c.mobileNumber,
       countryCode: c.countryCode,
       isActive: c.isActive,
+      status: c.status,
       tier: c.tier?.name ?? null,
       totalPoints: c.totalPoints,
       lastVisitDate: c.lastVisitDate,
