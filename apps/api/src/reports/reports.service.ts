@@ -274,7 +274,7 @@ export class ReportsService {
         COALESCE(SUM(t.points_earned), 0)::int as total_earning,
         COALESCE(SUM(t.points_redeemed), 0)::int as redemption,
         (COALESCE(SUM(t.points_earned), 0) - COALESCE(SUM(t.points_redeemed), 0))::int as available_reward,
-        'BLOCK' as status,
+        CASE WHEN fa.email_sent = true THEN 'Suspicious' ELSE 'Active' END as status,
         fa.alert_date as action_date
       FROM forensic_alerts fa
       JOIN customers c 
@@ -286,7 +286,7 @@ export class ReportsService {
         ${dateTo ? Prisma.sql`AND fa.alert_date <= ${new Date(dateTo)}` : Prisma.empty}
         ${store ? Prisma.sql`AND t.store = ${store}` : Prisma.empty}
         ${region ? Prisma.sql`AND t.region = ${region}` : Prisma.empty}
-      GROUP BY t.store, c.id, c.name, fa.alert_date
+      GROUP BY t.store, c.id, c.name, fa.alert_date, fa.email_sent
       ORDER BY fa.alert_date DESC
       LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
     `;
