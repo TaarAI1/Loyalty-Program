@@ -1153,7 +1153,9 @@ function OracleTab() {
         password: data.password ?? '',
         service: data.service ?? '',
       });
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err: unknown) => {
+      toast.error(err instanceof Error ? err.message : 'Could not load Oracle configuration.');
+    }).finally(() => setLoading(false));
   }, []);
 
   async function handleSave() {
@@ -1221,14 +1223,15 @@ function OracleTab() {
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   placeholder="Enter password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  value={form.password ?? ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                   className="pr-10"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
+                  onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

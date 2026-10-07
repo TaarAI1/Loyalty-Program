@@ -45,4 +45,22 @@ export class EncryptionService {
   isEncrypted(value: string): boolean {
     return value.split(':').length === 3;
   }
+
+  /** Decrypt config secrets for admin GET; never logs stored values. */
+  decryptIfNeeded(stored: string): string {
+    if (!stored) return '';
+    if (!this.isEncrypted(stored)) return stored;
+    try {
+      const [ivHex, tagHex, dataHex] = stored.split(':');
+      if (!ivHex || !tagHex || !dataHex) return '';
+      const iv = Buffer.from(ivHex, 'hex');
+      const tag = Buffer.from(tagHex, 'hex');
+      const data = Buffer.from(dataHex, 'hex');
+      const decipher = crypto.createDecipheriv(ALGORITHM, this.key, iv);
+      decipher.setAuthTag(tag);
+      return decipher.update(data) + decipher.final('utf8');
+    } catch {
+      return '';
+    }
+  }
 }

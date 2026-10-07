@@ -455,7 +455,7 @@ export class ConfigurationService {
     const c = config as Record<string, unknown>;
     return {
       ...c,
-      smtpPass: c['smtpPass'] ? this.encryption.decrypt(c['smtpPass'] as string) : null,
+      smtpPass: c['smtpPass'] ? this.encryption.decryptIfNeeded(c['smtpPass'] as string) : null,
     };
   }
 
@@ -972,7 +972,7 @@ export class ConfigurationService {
         dbUser:        row.dbUser,
         service:       row.service,
         subsidiarySid: row.subsidiarySid ?? null,
-        password:      row.password ? this.encryption.decrypt(row.password) : '',
+        password:      row.password ? this.encryption.decryptIfNeeded(row.password) : '',
       };
     }
     // Fall back to env vars as defaults
