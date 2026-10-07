@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { TierBadge } from '@/components/ui/tier-badge';
-import { Plus, Pencil, Trash2, Send, Save, AlertCircle, Wifi } from 'lucide-react';
+import { Plus, Pencil, Trash2, Send, Save, AlertCircle, Wifi, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Tier Management ───────────────────────────────────────────────────────────
@@ -827,6 +827,7 @@ function EmailTab() {
     queryFn: configApi.getEmail,
   });
 
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [form, setForm] = useState({
     smtpHost: '',
     smtpPort: '',
@@ -951,16 +952,22 @@ function EmailTab() {
             </div>
             <div className="space-y-1">
               <Label>SMTP Password</Label>
-              <Input
-                type="text"
-                autoComplete="off"
-                placeholder="Enter SMTP password"
-                value={form.smtpPass === PASS_SAVED ? '●●●●●●●●●●●●' : form.smtpPass}
-                onFocus={() => {
-                  if (form.smtpPass === PASS_SAVED) setForm((f) => ({ ...f, smtpPass: '' }));
-                }}
-                onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
-              />
+              <div className="relative">
+                <Input
+                  type={showSmtpPass ? 'text' : 'password'}
+                  autoComplete="off"
+                  placeholder="Enter SMTP password"
+                  className="pr-10"
+                  value={form.smtpPass === PASS_SAVED ? '●●●●●●●●●●●●' : form.smtpPass}
+                  onFocus={() => {
+                    if (form.smtpPass === PASS_SAVED) setForm((f) => ({ ...f, smtpPass: '' }));
+                  }}
+                  onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
+                />
+                <button type="button" onClick={() => setShowSmtpPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {form.smtpPass === PASS_SAVED && (
                 <p className="text-xs text-green-600">Password saved. Click the field to enter a new one.</p>
               )}
@@ -1144,6 +1151,7 @@ function OracleTab() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [hasPassword, setHasPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     configApi.getOracleConfig().then((data) => {
@@ -1221,7 +1229,12 @@ function OracleTab() {
             </div>
             <div className="space-y-1.5">
               <Label>Password</Label>
-              <Input type="password" placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <div className="relative">
+                <Input type={showPassword ? 'text' : 'password'} placeholder="Enter password (leave blank to keep saved)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="pr-10" />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {hasPassword && !form.password && (
                 <p className="text-xs text-green-600">Password saved. Enter a new value to change it.</p>
               )}
