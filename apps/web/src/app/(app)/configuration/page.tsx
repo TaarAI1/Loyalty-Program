@@ -818,8 +818,6 @@ function SmsTab() {
 
 // ── Email Tab ─────────────────────────────────────────────────────────────────
 
-const PASS_SAVED = '__SAVED__';
-
 function EmailTab() {
   const qc = useQueryClient();
   const { data: config, isLoading } = useQuery({
@@ -860,7 +858,7 @@ function EmailTab() {
         expiryWindowValue: config.expiryWindowValue ? String(config.expiryWindowValue) : '365',
         expiryWindowUnit:  config.expiryWindowUnit  ?? 'days',
         isActive:          config.isActive          ?? true,
-        smtpPass:          config.smtpPass          ? PASS_SAVED : '',
+        smtpPass:          config.smtpPass ?? '',
       }));
     }
   }, [config]);
@@ -871,7 +869,7 @@ function EmailTab() {
       if (form.smtpHost)   payload.smtpHost   = form.smtpHost;
       if (form.smtpPort)   payload.smtpPort   = Number(form.smtpPort);
       if (form.smtpUser)   payload.smtpUser   = form.smtpUser;
-      if (form.smtpPass && form.smtpPass !== PASS_SAVED) payload.smtpPass = form.smtpPass;
+      if (form.smtpPass) payload.smtpPass = form.smtpPass;
       if (form.smtpSecure) payload.smtpSecure = form.smtpSecure;
       if (form.fromEmail)  payload.fromEmail  = form.fromEmail;
       if (form.fromName)   payload.fromName   = form.fromName;
@@ -954,31 +952,17 @@ function EmailTab() {
               <Label>SMTP Password</Label>
               <div className="relative">
                 <Input
-                  type={form.smtpPass === PASS_SAVED ? 'text' : (showSmtpPass ? 'text' : 'password')}
+                  type={showSmtpPass ? 'text' : 'password'}
                   autoComplete="off"
                   placeholder="Enter SMTP password"
-                  className={form.smtpPass === PASS_SAVED ? 'pr-20 bg-muted cursor-default select-none' : 'pr-20'}
-                  value={form.smtpPass === PASS_SAVED ? '●●●●●●●●●●●●' : form.smtpPass}
-                  readOnly={form.smtpPass === PASS_SAVED}
+                  className="pr-10"
+                  value={form.smtpPass}
                   onChange={(e) => setForm((f) => ({ ...f, smtpPass: e.target.value }))}
                 />
-                {form.smtpPass === PASS_SAVED && (
-                  <button
-                    type="button"
-                    title="Clear to enter new password"
-                    onClick={() => { setForm((f) => ({ ...f, smtpPass: '' })); setShowSmtpPass(false); }}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-red-500 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                )}
                 <button type="button" onClick={() => setShowSmtpPass((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {form.smtpPass === PASS_SAVED && (
-                <p className="text-xs text-green-600">Password saved. Click ✕ to enter a new one.</p>
-              )}
             </div>
           </div>
         </div>
@@ -1158,7 +1142,6 @@ function OracleTab() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [hasPassword, setHasPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -1167,10 +1150,9 @@ function OracleTab() {
         host:    data.host    ?? '',
         port:    data.port    ?? 1521,
         dbUser:  data.dbUser  ?? '',
-        password: data.hasPassword ? PASS_SAVED : '',
+        password: data.password ?? '',
         service: data.service ?? '',
       });
-      setHasPassword(data.hasPassword ?? false);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -1181,13 +1163,9 @@ function OracleTab() {
         host:     form.host,
         port:     form.port,
         dbUser:   form.dbUser,
-        password: (form.password && form.password !== PASS_SAVED) ? form.password : undefined,
+        password: form.password || undefined,
         service:  form.service,
       });
-      if (form.password && form.password !== PASS_SAVED) {
-        setHasPassword(true);
-        setForm((f) => ({ ...f, password: PASS_SAVED }));
-      }
       toast.success('Oracle configuration saved and connection pool updated.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save Oracle configuration.');
@@ -1204,7 +1182,7 @@ function OracleTab() {
         host:     form.host,
         port:     form.port,
         dbUser:   form.dbUser,
-        password: (form.password && form.password !== PASS_SAVED) ? form.password : undefined,
+        password: form.password || undefined,
         service:  form.service,
       });
       setTestResult(result);
@@ -1242,23 +1220,12 @@ function OracleTab() {
               <Label>Password</Label>
               <div className="relative">
                 <Input
-                  type={form.password === PASS_SAVED ? 'text' : (showPassword ? 'text' : 'password')}
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Enter password"
-                  value={form.password === PASS_SAVED ? '●●●●●●●●●●●●' : form.password}
-                  readOnly={form.password === PASS_SAVED}
+                  value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={form.password === PASS_SAVED ? 'pr-20 bg-muted cursor-default select-none' : 'pr-20'}
+                  className="pr-10"
                 />
-                {form.password === PASS_SAVED && (
-                  <button
-                    type="button"
-                    title="Clear to enter new password"
-                    onClick={() => { setForm((f) => ({ ...f, password: '' })); setShowPassword(false); }}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-red-500 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
@@ -1267,9 +1234,6 @@ function OracleTab() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {form.password === PASS_SAVED && (
-                <p className="text-xs text-green-600">Password saved. Click ✕ to enter a new one.</p>
-              )}
             </div>
             <div className="space-y-1.5">
               <Label>Service Name</Label>
