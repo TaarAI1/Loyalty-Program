@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   HttpCode,
   Logger,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ZodError } from 'zod';
 import {
@@ -47,5 +49,18 @@ export class WebhooksController {
     this.logger.log({ mobile: body['mobile'] }, 'Webhook customer upsert received');
     const dto = parseBody(WebhookCustomerSchema, body);
     return this.webhooksService.handleCustomerUpsert(dto);
+  }
+
+  @Get('logs')
+  async getWebhookLogs(
+    @Query('page')   page   = '1',
+    @Query('limit')  limit  = '50',
+    @Query('mobile') mobile?: string,
+  ) {
+    return this.webhooksService.getWebhookLogs(
+      Number(page)  || 1,
+      Number(limit) || 50,
+      mobile || undefined,
+    );
   }
 }

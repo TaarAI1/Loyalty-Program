@@ -1,4 +1,5 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from './points.service';
 import { QueueService } from '../queue/queue.service';
@@ -15,6 +16,36 @@ export class WebhooksService {
   ) {}
 
   async handleTransaction(dto: WebhookTransactionDto) {
+    const start = Date.now();
+    let responseData: unknown;
+    let logStatus = 'success';
+    let logError: string | undefined;
+    try {
+      responseData = await this._handleTransaction(dto);
+      return responseData;
+    } catch (err: unknown) {
+      logStatus = 'error';
+      logError = err instanceof Error ? err.message : String(err);
+      throw err;
+    } finally {
+      this.prisma.webhookLog
+        .create({
+          data: {
+            transactionId:  dto.transaction_id ?? null,
+            customerMobile: dto.customer_mobile ?? null,
+            store:          dto.store ?? null,
+            payload:        dto as object,
+            response:       responseData !== undefined ? (responseData as Prisma.InputJsonValue) : undefined,
+            status:         logStatus,
+            errorMessage:   logError ?? null,
+            durationMs:     Date.now() - start,
+          },
+        })
+        .catch((e: unknown) => this.logger.warn({ err: e }, 'Failed to write webhook log'));
+    }
+  }
+
+  private async _handleTransaction(dto: WebhookTransactionDto) {
     const transactionId = dto.transaction_id ?? crypto.randomUUID();
 
     // Check for duplicate transaction_id — skip check for auto-generated UUIDs
@@ -229,6 +260,40 @@ export class WebhooksService {
         spend_from: Number(nextTier.spendFrom),
         spend_to_next: spendToNext,
       } : null,
+    };
+  }
+
+  async getWebhookLogs(page: number, limit: number, mobile?: string) {
+    const where = mobile
+      ? { customerMobile: { contains: mobile } }
+      : {};
+
+    const [total, logs] = await Promise.all([
+      this.prisma.webhookLog.count({ where }),
+      this.prisma.webhookLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      data: logs.map((l) => ({
+        id:             l.id.toString(),
+        transactionId:  l.transactionId,
+        customerMobile: l.customerMobile,
+        store:          l.store,
+        status:         l.status,
+        durationMs:     l.durationMs,
+        errorMessage:   l.errorMessage,
+        payload:        l.payload,
+        response:       l.response,
+        createdAt:      l.createdAt,
+      })),
+      total,
+      page,
+      limit,
     };
   }
 }

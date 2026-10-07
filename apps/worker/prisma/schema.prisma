@@ -300,6 +300,23 @@ model AuditLog {
   @@map("audit_log")
 }
 
+model WebhookLog {
+  id             BigInt   @id @default(autoincrement())
+  transactionId  String?  @map("transaction_id") @db.VarChar(100)
+  customerMobile String?  @map("customer_mobile") @db.VarChar(20)
+  store          String?  @db.VarChar(100)
+  payload        Json?
+  response       Json?
+  status         String   @default("success") @db.VarChar(20)
+  errorMessage   String?  @map("error_message")
+  durationMs     Int?     @map("duration_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([customerMobile])
+  @@index([createdAt])
+  @@map("webhook_logs")
+}
+
 model SurveyQuestion {
   id           Int      @id @default(autoincrement())
   text         String
