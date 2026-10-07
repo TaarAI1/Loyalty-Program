@@ -111,9 +111,9 @@ function AndroidFeedbackTab() {
         filteredRows.map((r) => formsApi.getKioskFeedbackResponse(r.id))
       );
       // Collect all unique question texts across all responses
-      const allQuestions: string[] = [
-        ...new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question))),
-      ];
+      const allQuestions: string[] = Array.from(
+        new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
+      );
       const headers = ['ID', 'Customer', 'Phone', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
@@ -346,9 +346,9 @@ function WebFeedbackTab() {
         filteredRows.map((r) => formsApi.getWebFeedbackResponse(r.id))
       );
       // Collect all unique question texts across all responses
-      const allQuestions: string[] = [
-        ...new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question))),
-      ];
+      const allQuestions: string[] = Array.from(
+        new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
+      );
       const headers = ['ID', 'Customer', 'Phone', 'Form', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
