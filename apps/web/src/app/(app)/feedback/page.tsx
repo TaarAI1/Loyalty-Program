@@ -59,6 +59,7 @@ function AndroidFeedbackTab() {
   const [rows, setRows]       = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [customerSearch, setCustomer] = useState('');
   const [dateFrom, setDateFrom]       = useState('');
@@ -103,22 +104,43 @@ function AndroidFeedbackTab() {
     setApplied(emptyAndroidFilters);
   }
 
-  function exportCsv() {
-    const headers = ['ID', 'Customer', 'Phone', 'Form', 'Device', 'Store', 'Submitted'];
-    const csvRows = [
-      headers.join(','),
-      ...filteredRows.map((r) =>
-        [r.id, r.customerName ?? '', r.customerPhone ?? '', r.formName,
-         r.deviceName, r.store ?? '', new Date(r.submittedAt).toLocaleString()]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(',')
-      ),
-    ];
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'android-feedback.csv'; a.click();
-    URL.revokeObjectURL(url);
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      const details = await Promise.all(
+        filteredRows.map((r) => formsApi.getKioskFeedbackResponse(r.id))
+      );
+      // Collect all unique question texts across all responses
+      const allQuestions: string[] = [
+        ...new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question))),
+      ];
+      const headers = ['ID', 'Customer', 'Phone', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
+      const csvRows = [
+        headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
+        ...details.map((d) => {
+          const answerMap: Record<string, string> = Object.fromEntries(
+            (d.answers ?? []).map((a: { question: string; answer: string }) => [a.question, a.answer])
+          );
+          return [
+            d.id,
+            d.customerName ?? '',
+            d.customerPhone ?? '',
+            d.formName,
+            d.deviceName,
+            d.store ?? '',
+            new Date(d.submittedAt).toLocaleString(),
+            ...allQuestions.map((q) => answerMap[q] ?? ''),
+          ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        }),
+      ];
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'android-feedback.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -180,7 +202,7 @@ function AndroidFeedbackTab() {
                   </span>
                 )}
                 {filteredRows.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={exportCsv}>
+                  <Button variant="outline" size="sm" onClick={exportCsv} loading={exporting}>
                     <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
                   </Button>
                 )}
@@ -276,6 +298,7 @@ function WebFeedbackTab() {
   const [rows, setRows]       = useState<WebFeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [customerSearch, setCustomer] = useState('');
   const [dateFrom, setDateFrom]       = useState('');
@@ -316,21 +339,41 @@ function WebFeedbackTab() {
     setApplied(emptyWebFilters);
   }
 
-  function exportCsv() {
-    const headers = ['ID', 'Customer', 'Phone', 'Form', 'Submitted'];
-    const csvRows = [
-      headers.join(','),
-      ...filteredRows.map((r) =>
-        [r.id, r.customerName ?? '', r.customerPhone ?? '', r.formName, new Date(r.submittedAt).toLocaleString()]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(',')
-      ),
-    ];
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'web-feedback.csv'; a.click();
-    URL.revokeObjectURL(url);
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      const details = await Promise.all(
+        filteredRows.map((r) => formsApi.getWebFeedbackResponse(r.id))
+      );
+      // Collect all unique question texts across all responses
+      const allQuestions: string[] = [
+        ...new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question))),
+      ];
+      const headers = ['ID', 'Customer', 'Phone', 'Form', 'Submitted', ...allQuestions];
+      const csvRows = [
+        headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
+        ...details.map((d) => {
+          const answerMap: Record<string, string> = Object.fromEntries(
+            (d.answers ?? []).map((a: { question: string; answer: string }) => [a.question, a.answer])
+          );
+          return [
+            d.id,
+            d.customerName ?? '',
+            d.customerPhone ?? '',
+            d.formName,
+            new Date(d.submittedAt).toLocaleString(),
+            ...allQuestions.map((q) => answerMap[q] ?? ''),
+          ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        }),
+      ];
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'web-feedback.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -387,7 +430,7 @@ function WebFeedbackTab() {
                   </span>
                 )}
                 {filteredRows.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={exportCsv}>
+                  <Button variant="outline" size="sm" onClick={exportCsv} loading={exporting}>
                     <Download className="h-3.5 w-3.5 mr-1.5" /> CSV
                   </Button>
                 )}
