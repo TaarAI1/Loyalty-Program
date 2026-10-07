@@ -455,7 +455,7 @@ export class ConfigurationService {
     const c = config as Record<string, unknown>;
     return {
       ...c,
-      smtpPass: c['smtpPass'] ? '***' : null,
+      smtpPass: c['smtpPass'] ? this.encryption.decryptIfNeeded(c['smtpPass'] as string) : null,
     };
   }
 
@@ -962,7 +962,7 @@ export class ConfigurationService {
   // ── Oracle — Config ───────────────────────────────────────────────────────────
 
   async getOracleConfig(): Promise<{
-    host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; hasPassword: boolean;
+    host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; password: string;
   }> {
     const row = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
     if (row) {
@@ -972,7 +972,7 @@ export class ConfigurationService {
         dbUser:        row.dbUser,
         service:       row.service,
         subsidiarySid: row.subsidiarySid ?? null,
-        hasPassword:   !!row.password,
+        password:      row.password ? this.encryption.decryptIfNeeded(row.password) : '',
       };
     }
     // Fall back to env vars as defaults
@@ -982,7 +982,7 @@ export class ConfigurationService {
       dbUser:        process.env['ORACLE_USER']     ?? '',
       service:       process.env['ORACLE_SERVICE']  ?? '',
       subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
-      hasPassword:   false,
+      password:      '',
     };
   }
 

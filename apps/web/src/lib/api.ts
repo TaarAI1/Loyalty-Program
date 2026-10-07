@@ -86,7 +86,7 @@ export const configApi = {
     >,
   getOracleConfig: () =>
     api.get('/configuration/oracle').then((r) => r.data) as Promise<{
-      host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; hasPassword: boolean;
+      host: string; port: number; dbUser: string; service: string; subsidiarySid: string | null; password: string;
     }>,
   saveOracleConfig: (data: {
     host: string; port: number; dbUser: string; password?: string; service: string; subsidiarySid?: string;
