@@ -50,6 +50,11 @@ export class CustomersController {
     return this.customersService.findByPhone(phone);
   }
 
+  @Get('meta/stores')
+  getStores() {
+    return this.customersService.getDistinctStores();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.customersService.findOne(id);

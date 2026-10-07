@@ -37,6 +37,8 @@ export const customersApi = {
   getAll: (params: Record<string, unknown>) =>
     api.get('/customers', { params }).then((r) => r.data),
   getOne: (id: string) => api.get(`/customers/${id}`).then((r) => r.data),
+  getStores: (): Promise<string[]> =>
+    api.get('/customers/meta/stores').then((r) => r.data),
   getHistory: (id: string, params: Record<string, unknown>) =>
     api.get(`/customers/${id}/history`, { params }).then((r) => r.data),
   getLedger: (id: string, params: Record<string, unknown>) =>
