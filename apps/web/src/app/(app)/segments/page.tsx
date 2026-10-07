@@ -42,8 +42,9 @@ const RECENCY_OPTIONS = [
 
 const ACTIVE_OPTIONS = [
   { value: '', label: 'All statuses' },
-  { value: 'true', label: 'Active' },
-  { value: 'false', label: 'Inactive' },
+  { value: 'active',   label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'blocked',  label: 'Blocked' },
 ];
 
 interface Filters {
@@ -59,7 +60,7 @@ interface Filters {
   region: string;
   enrolledAfter: string;
   enrolledBefore: string;
-  isActive: string;
+  status: string;
   neverRedeemed: boolean;
 }
 
@@ -76,7 +77,7 @@ const defaultFilters: Filters = {
   region: '',
   enrolledAfter: '',
   enrolledBefore: '',
-  isActive: '',
+  status: '',
   neverRedeemed: false,
 };
 
@@ -95,7 +96,7 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
       region: filters.region || undefined,
       enrolledAfter: filters.enrolledAfter || undefined,
       enrolledBefore: filters.enrolledBefore || undefined,
-      isActive: filters.isActive || undefined,
+      status: filters.status || undefined,
       neverRedeemed: filters.neverRedeemed ? 'true' : undefined,
       page,
       pageSize,
@@ -111,6 +112,7 @@ interface SegmentCustomer {
   mobileNumber: string;
   countryCode: string;
   isActive: boolean;
+  status: string;
   tier: string | null;
   totalPoints: number;
   lastVisitDate: string | null;
@@ -163,7 +165,7 @@ export default function SegmentsPage() {
         'Name': c.name,
         'Email': c.email ?? '',
         'Phone': `+${c.countryCode}${c.mobileNumber}`,
-        'Active': c.isActive ? 'Yes' : 'No',
+        'Status': c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Active',
         'Tier': c.tier ?? '',
         'RFM Segment': c.segment,
         'Points Balance': c.totalPoints,
@@ -338,8 +340,8 @@ export default function SegmentsPage() {
                 <Label>Status</Label>
                 <Select
                   options={ACTIVE_OPTIONS}
-                  value={filters.isActive}
-                  onChange={(e) => setFilters((f) => ({ ...f, isActive: e.target.value }))}
+                  value={filters.status}
+                  onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
                 />
               </div>
 
@@ -426,7 +428,7 @@ export default function SegmentsPage() {
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Name</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Email</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Phone</th>
-                      <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Active</th>
+                      <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Status</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Tier</th>
                       <th className="px-4 py-3 text-left font-semibold text-muted-foreground whitespace-nowrap">Segment</th>
                       <th className="px-4 py-3 text-right font-semibold text-muted-foreground whitespace-nowrap">Points</th>
@@ -461,12 +463,14 @@ export default function SegmentsPage() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              c.isActive
+                              c.status === 'active'
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : c.status === 'blocked'
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}
                           >
-                            {c.isActive ? 'Active' : 'Inactive'}
+                            {c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Active'}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
