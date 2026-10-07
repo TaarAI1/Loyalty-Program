@@ -3,7 +3,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { customersApi, configApi } from '@/lib/api';
+import { customersApi, configApi, formsApi } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,11 @@ export default function CustomersPage() {
   const { data: tiersData } = useQuery({
     queryKey: ['tiers'],
     queryFn: configApi.getTiers,
+  });
+
+  const { data: storesData } = useQuery({
+    queryKey: ['stores'],
+    queryFn: formsApi.getStores,
   });
 
   type CustomerRow = { id: string; name: string; mobileNumber: string; countryCode: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; status: string; isActive: boolean; };
@@ -63,7 +68,13 @@ export default function CustomersPage() {
     exportToCsv(
       allData.data.map((c: Record<string, unknown>) => ({
         Name: c.name,
-        Mobile: c.mobileNumber,
+        Mobile: (() => {
+          const m = String(c.mobileNumber ?? '');
+          const cc = String(c.countryCode ?? '92');
+          if (m.startsWith('+')) return m;
+          if (m.startsWith(cc)) return '+' + m;
+          return `+${cc}${m.replace(/^0/, '')}`;
+        })(),
         Email: c.email ?? '',
         Tier: (c.tier as Record<string, unknown>)?.name ?? '',
         'Total Points': c.totalPoints,
@@ -71,7 +82,9 @@ export default function CustomersPage() {
         'Last Visit': c.lastVisitDate ? formatDate(c.lastVisitDate as string) : '',
         Store: c.store ?? '',
         Region: c.region ?? '',
-        Active: c.isActive ? 'Yes' : 'No',
+        Status: c.status
+          ? String(c.status).charAt(0).toUpperCase() + String(c.status).slice(1)
+          : 'Active',
       })),
       'customers-export',
     );
@@ -82,6 +95,14 @@ export default function CustomersPage() {
     ...(tiersData ?? []).map((t: { id: number; name: string }) => ({
       value: String(t.id),
       label: t.name,
+    })),
+  ];
+
+  const storeOptions = [
+    { value: '', label: 'All Stores' },
+    ...(storesData ?? []).map((s: { store_no: string; store_name: string }) => ({
+      value: s.store_name,
+      label: s.store_name,
     })),
   ];
 
@@ -119,11 +140,11 @@ export default function CustomersPage() {
               onChange={(e) => { setStatus(e.target.value); setPage(1); }}
               className="w-36"
             />
-            <Input
-              placeholder="Store"
-              className="w-28"
+            <Select
+              options={storeOptions}
               value={store}
               onChange={(e) => { setStore(e.target.value); setPage(1); }}
+              className="w-40"
             />
             <Button variant="outline" size="sm" onClick={handleExportCsv}>
               <Download className="w-4 h-4" />
