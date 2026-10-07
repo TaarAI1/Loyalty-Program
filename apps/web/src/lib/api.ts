@@ -167,6 +167,7 @@ export const formsApi = {
   // Web feedback
   getWebFeedback: () => api.get('/forms/web/responses').then((r) => r.data),
   getWebFeedbackResponse: (id: number) => api.get(`/forms/web/responses/${id}`).then((r) => r.data),
+  getKioskFeedbackResponse: (id: number) => api.get(`/forms/kiosk/responses/${id}`).then((r) => r.data),
   // Web forms
   getWebForms: () => api.get('/forms?type=web').then((r) => r.data),
   activateWebForm: (id: number) => api.put(`/forms/${id}/activate-web`).then((r) => r.data),
