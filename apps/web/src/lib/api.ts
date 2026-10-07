@@ -117,6 +117,12 @@ export const notificationsApi = {
   resend: (id: string | number) => api.post(`/notifications/${id}/resend`).then((r) => r.data),
 };
 
+// Webhook Logs
+export const webhookLogsApi = {
+  getLogs: (params: { page?: number; limit?: number; mobile?: string }) =>
+    api.get('/webhooks/logs', { params }).then((r) => r.data),
+};
+
 // Segments
 export const segmentsApi = {
   getCustomers: (params: Record<string, unknown>) =>
