@@ -3,7 +3,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { customersApi, configApi, formsApi } from '@/lib/api';
+import { customersApi, configApi } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,8 +33,8 @@ export default function CustomersPage() {
   });
 
   const { data: storesData } = useQuery({
-    queryKey: ['stores'],
-    queryFn: formsApi.getStores,
+    queryKey: ['customer-stores'],
+    queryFn: customersApi.getStores,
   });
 
   type CustomerRow = { id: string; name: string; mobileNumber: string; countryCode: string; tier: { name: string }; segment?: string; totalPoints: number; lifetimeSale: number; store: string; lastVisitDate: string; status: string; isActive: boolean; };
@@ -100,9 +100,9 @@ export default function CustomersPage() {
 
   const storeOptions = [
     { value: '', label: 'All Stores' },
-    ...(storesData ?? []).map((s: { store_no: string; store_name: string }) => ({
-      value: s.store_name,
-      label: s.store_name,
+    ...(storesData ?? []).map((s: string) => ({
+      value: s,
+      label: s,
     })),
   ];
 

@@ -547,6 +547,16 @@ export class CustomersService {
     };
   }
 
+  async getDistinctStores(): Promise<string[]> {
+    const rows = await this.prisma.customer.findMany({
+      where:   { store: { not: null } },
+      select:  { store: true },
+      distinct: ['store'],
+      orderBy: { store: 'asc' },
+    });
+    return rows.map((r) => r.store!).filter(Boolean);
+  }
+
   async update(id: string, data: Partial<{ name: string; email: string; dateOfBirth: string; gender: string; region: string; store: string; isActive: boolean; status: string; occupation: string | null; preferredChannel: string | null; maritalStatus: string | null; legalName: string | null; preferredName: string | null; nationality: string | null; city: string | null; area: string | null; homeAddress: string | null; deliveryAddress: string | null; alternatePhone: string | null }>) {
     await this.assertExists(id);
     return this.prisma.customer.update({
