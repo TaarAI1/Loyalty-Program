@@ -517,7 +517,7 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
                 <td className="py-2 px-3 text-orange-600">{formatNumber(Number(row.redemption))}</td>
                 <td className="py-2 px-3 font-bold">{formatNumber(Number(row.available_reward))}</td>
                 <td className="py-2 px-3">
-                  <Badge className={statusColor(row.status?.toLowerCase() === 'suspicious' ? 'failed' : 'sent')}>
+                  <Badge className={statusColor(String(row.status ?? '').toLowerCase() === 'suspicious' ? 'failed' : 'sent')}>
                     {String(row.status ?? 'Active')}
                   </Badge>
                 </td>
