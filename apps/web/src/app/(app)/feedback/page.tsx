@@ -11,6 +11,20 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formsApi } from '@/lib/api';
+import { formatDisplayPhone } from '@/lib/utils';
+
+const FEEDBACK_SOURCE_WEB = 'Web';
+const FEEDBACK_SOURCE_ANDROID = 'Android';
+
+function phoneMatchesSearch(phone: string | null | undefined, q: string): boolean {
+  const formatted = formatDisplayPhone(phone);
+  const qDigits = q.replace(/\D/g, '');
+  return (
+    (phone?.includes(q) ?? false) ||
+    formatted.toLowerCase().includes(q.toLowerCase()) ||
+    (qDigits.length > 0 && (phone?.replace(/\D/g, '').includes(qDigits) ?? false))
+  );
+}
 
 interface FeedbackRow {
   id: number;
@@ -88,7 +102,7 @@ function AndroidFeedbackTab() {
     if (applied.dateTo   && new Date(r.submittedAt) > new Date(applied.dateTo + 'T23:59:59')) return false;
     if (applied.customerSearch) {
       const q = applied.customerSearch.toLowerCase();
-      if (!(r.customerName?.toLowerCase().includes(q) || r.customerPhone?.includes(q))) return false;
+      if (!(r.customerName?.toLowerCase().includes(q) || phoneMatchesSearch(r.customerPhone, applied.customerSearch))) return false;
     }
     if (applied.deviceFilter && r.deviceName !== applied.deviceFilter) return false;
     if (applied.storeFilter  && r.store      !== applied.storeFilter)  return false;
@@ -114,7 +128,7 @@ function AndroidFeedbackTab() {
       const allQuestions: string[] = Array.from(
         new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
       );
-      const headers = ['ID', 'Customer', 'Phone', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
+      const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
         ...details.map((d) => {
@@ -124,7 +138,8 @@ function AndroidFeedbackTab() {
           return [
             d.id,
             d.customerName ?? '',
-            d.customerPhone ?? '',
+            formatDisplayPhone(d.customerPhone),
+            FEEDBACK_SOURCE_ANDROID,
             d.formName,
             d.deviceName,
             d.store ?? '',
@@ -225,6 +240,7 @@ function AndroidFeedbackTab() {
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>Form</TableHead>
                     <TableHead>Device</TableHead>
                     <TableHead>Store</TableHead>
@@ -244,9 +260,12 @@ function AndroidFeedbackTab() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {row.customerPhone
-                          ? <span className="inline-flex items-center gap-1.5 text-sm"><Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />{row.customerPhone}</span>
+                        {formatDisplayPhone(row.customerPhone)
+                          ? <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5 flex-shrink-0" />{formatDisplayPhone(row.customerPhone)}</span>
                           : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{FEEDBACK_SOURCE_ANDROID}</span>
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
@@ -324,7 +343,7 @@ function WebFeedbackTab() {
     if (applied.dateTo   && new Date(r.submittedAt) > new Date(applied.dateTo + 'T23:59:59')) return false;
     if (applied.customerSearch) {
       const q = applied.customerSearch.toLowerCase();
-      if (!(r.customerName?.toLowerCase().includes(q) || r.customerPhone?.includes(q))) return false;
+      if (!(r.customerName?.toLowerCase().includes(q) || phoneMatchesSearch(r.customerPhone, applied.customerSearch))) return false;
     }
     if (applied.formFilter && r.formName !== applied.formFilter) return false;
     return true;
@@ -349,7 +368,7 @@ function WebFeedbackTab() {
       const allQuestions: string[] = Array.from(
         new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
       );
-      const headers = ['ID', 'Customer', 'Phone', 'Form', 'Submitted', ...allQuestions];
+      const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
         ...details.map((d) => {
@@ -359,7 +378,8 @@ function WebFeedbackTab() {
           return [
             d.id,
             d.customerName ?? '',
-            d.customerPhone ?? '',
+            formatDisplayPhone(d.customerPhone),
+            FEEDBACK_SOURCE_WEB,
             d.formName,
             new Date(d.submittedAt).toLocaleString(),
             ...allQuestions.map((q) => answerMap[q] ?? ''),
@@ -453,6 +473,7 @@ function WebFeedbackTab() {
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>Form</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -470,9 +491,15 @@ function WebFeedbackTab() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {row.customerPhone
-                          ? <span className="inline-flex items-center gap-1.5 text-sm"><Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />{row.customerPhone}</span>
+                        {formatDisplayPhone(row.customerPhone)
+                          ? <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5 flex-shrink-0" />{formatDisplayPhone(row.customerPhone)}</span>
                           : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5 text-sm">
+                          <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          {FEEDBACK_SOURCE_WEB}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
