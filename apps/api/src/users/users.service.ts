@@ -1,10 +1,14 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionService } from '../configuration/encryption.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly encryption: EncryptionService,
+  ) {}
 
   async findAll() {
     const users = await this.prisma.user.findMany({
@@ -14,12 +18,33 @@ export class UsersService {
     return users;
   }
 
+  async findOneForAdmin(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, username: true, role: true, passwordEncrypted: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      password: user.passwordEncrypted
+        ? this.encryption.decryptIfNeeded(user.passwordEncrypted)
+        : '',
+    };
+  }
+
   async create(username: string, password: string, role: string) {
     const exists = await this.prisma.user.findUnique({ where: { username } });
     if (exists) throw new ConflictException('Username already taken');
     const hash = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
-      data: { username, passwordHash: hash, role },
+      data: {
+        username,
+        passwordHash: hash,
+        passwordEncrypted: this.encryption.encrypt(password),
+        role,
+      },
       select: { id: true, username: true, role: true, isActive: true, createdAt: true },
     });
     return user;
@@ -37,7 +62,10 @@ export class UsersService {
       if (taken) throw new ConflictException('Username already taken');
       data['username'] = dto.username;
     }
-    if (dto.password) data['passwordHash'] = await bcrypt.hash(dto.password, 10);
+    if (dto.password) {
+      data['passwordHash'] = await bcrypt.hash(dto.password, 10);
+      data['passwordEncrypted'] = this.encryption.encrypt(dto.password);
+    }
     if (dto.role) data['role'] = dto.role;
     if (dto.isActive !== undefined) data['isActive'] = dto.isActive;
     return this.prisma.user.update({

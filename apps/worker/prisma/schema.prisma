@@ -273,10 +273,11 @@ model ForensicAlert {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique @db.VarChar(100)
-  passwordHash String   @map("password_hash")
-  role         String   @default("user") @db.VarChar(20)
+  id                Int      @id @default(autoincrement())
+  username          String   @unique @db.VarChar(100)
+  passwordHash      String   @map("password_hash")
+  passwordEncrypted String?  @map("password_encrypted") @db.Text
+  role              String   @default("user") @db.VarChar(20)
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

@@ -30,6 +30,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOneForAdmin(id);
+  }
+
   @Post()
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto.username, dto.password, dto.role);
