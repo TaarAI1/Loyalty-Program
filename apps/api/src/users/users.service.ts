@@ -25,10 +25,18 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, dto: { password?: string; role?: string; isActive?: boolean }) {
+  async update(id: number, dto: { username?: string; password?: string; role?: string; isActive?: boolean }) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
+    if (user.username === 'admin' && dto.username && dto.username !== 'admin') {
+      throw new ConflictException('Cannot rename the default admin user');
+    }
     const data: Record<string, unknown> = {};
+    if (dto.username && dto.username !== user.username) {
+      const taken = await this.prisma.user.findUnique({ where: { username: dto.username } });
+      if (taken) throw new ConflictException('Username already taken');
+      data['username'] = dto.username;
+    }
     if (dto.password) data['passwordHash'] = await bcrypt.hash(dto.password, 10);
     if (dto.role) data['role'] = dto.role;
     if (dto.isActive !== undefined) data['isActive'] = dto.isActive;

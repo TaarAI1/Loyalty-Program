@@ -13,6 +13,7 @@ class CreateUserDto {
 }
 
 class UpdateUserDto {
+  @IsOptional() @IsString() username?: string;
   @IsOptional() @IsString() @MinLength(6) password?: string;
   @IsOptional() @IsIn(['admin', 'user']) role?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
