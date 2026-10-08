@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
+import { formatDisplayPhone } from '@/lib/utils';
 
 interface AnswerRow {
   question: string;
@@ -238,7 +239,7 @@ export default function FeedbackDetailPage() {
               <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
               <div>
                 <dt className="text-xs text-muted-foreground">Phone</dt>
-                <dd className="font-medium">{detail.customerPhone ?? '—'}</dd>
+                <dd className="font-medium">{formatDisplayPhone(detail.customerPhone) || '—'}</dd>
               </div>
             </div>
             <div className="flex items-center gap-2">

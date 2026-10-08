@@ -26,6 +26,19 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date));
 }
 
+/** Matches Customers grid: +92 3204011823 */
+export function formatDisplayPhone(
+  raw: string | null | undefined,
+  countryCode = '92',
+): string {
+  if (!raw?.trim()) return '';
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith(countryCode)) d = d.slice(countryCode.length);
+  if (d.startsWith('0')) d = d.slice(1);
+  if (!d) return '';
+  return `+${countryCode} ${d}`;
+}
+
 export function formatDateTime(date: string | Date): string {
   return new Intl.DateTimeFormat('en-PK', {
     timeZone: 'Asia/Karachi',
