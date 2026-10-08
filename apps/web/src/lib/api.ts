@@ -134,6 +134,13 @@ export const segmentsApi = {
 // Users
 export const usersApi = {
   getAll: () => api.get('/users').then((r) => r.data),
+  getOne: (id: number) =>
+    api.get(`/users/${id}`).then((r) => r.data) as Promise<{
+      id: number;
+      username: string;
+      role: string;
+      password: string;
+    }>,
   create: (data: { username: string; password: string; role: string }) =>
     api.post('/users', data).then((r) => r.data),
   update: (id: number, data: { username?: string; password?: string; role?: string; isActive?: boolean }) =>

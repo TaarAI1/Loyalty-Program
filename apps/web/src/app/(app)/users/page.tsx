@@ -52,6 +52,7 @@ export default function UsersPage() {
   const [editUser, setEditUser] = useState<AppUser | null>(null);
   const [editForm, setEditForm] = useState({ username: '', password: '', role: 'user' });
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const { data: users, isLoading } = useQuery<AppUser[]>({
     queryKey: ['users'],
@@ -109,10 +110,24 @@ export default function UsersPage() {
     createMutation.mutate(form);
   }
 
-  function openEdit(u: AppUser) {
+  async function openEdit(u: AppUser) {
     setEditUser(u);
-    setEditForm({ username: u.username, password: '', role: u.role });
     setShowEditPassword(false);
+    setEditLoading(true);
+    setEditForm({ username: u.username, password: '', role: u.role });
+    try {
+      const detail = await usersApi.getOne(u.id);
+      setEditForm({
+        username: detail.username,
+        password: detail.password ?? '',
+        role: detail.role,
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not load user details.');
+      setEditUser(null);
+    } finally {
+      setEditLoading(false);
+    }
   }
 
   function handleEditSubmit(e: React.FormEvent) {
@@ -346,9 +361,15 @@ export default function UsersPage() {
         onClose={() => {
           setEditUser(null);
           setShowEditPassword(false);
+          setEditLoading(false);
         }}
         title="Edit User"
       >
+        {editLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">Name</label>
@@ -365,15 +386,15 @@ export default function UsersPage() {
             <div className="relative">
               <input
                 type={showEditPassword ? 'text' : 'password'}
-                value={editForm.password}
+                value={editForm.password ?? ''}
                 onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                placeholder="Leave blank to keep current password"
+                placeholder="Enter password"
                 className={`${inputClass} pr-9`}
                 autoComplete="new-password"
               />
               <button
                 type="button"
-                onClick={() => setShowEditPassword(!showEditPassword)}
+                onClick={() => setShowEditPassword((prev) => !prev)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
               >
                 {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -407,6 +428,7 @@ export default function UsersPage() {
             </Button>
           </div>
         </form>
+        )}
       </Dialog>
 
       <Dialog
