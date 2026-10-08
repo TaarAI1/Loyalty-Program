@@ -136,7 +136,7 @@ export const usersApi = {
   getAll: () => api.get('/users').then((r) => r.data),
   create: (data: { username: string; password: string; role: string }) =>
     api.post('/users', data).then((r) => r.data),
-  update: (id: number, data: { password?: string; role?: string; isActive?: boolean }) =>
+  update: (id: number, data: { username?: string; password?: string; role?: string; isActive?: boolean }) =>
     api.patch(`/users/${id}`, data).then((r) => r.data),
   remove: (id: number) => api.delete(`/users/${id}`).then((r) => r.data),
 };
