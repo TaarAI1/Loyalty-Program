@@ -503,7 +503,7 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
       return (
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-muted/50">
-            {['Store','Card No','Customer','Total Earning','Redemption','Available','Status','Alert Date'].map((h) => (
+            {['Store','Customer','Total Earning','Redemption','Available','Status','Alert Date'].map((h) => (
               <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground">{h}</th>
             ))}
           </tr></thead>
@@ -511,7 +511,6 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
             {data.map((row, i) => (
               <tr key={i} className="border-b border-border/50 hover:bg-muted/30 bg-red-50/30">
                 <td className="py-2 px-3">{String(row.store ?? '')}</td>
-                <td className="py-2 px-3 font-mono text-xs">{String(row.card_no ?? '').slice(0, 8)}...</td>
                 <td className="py-2 px-3 font-medium">{String(row.name ?? '')}</td>
                 <td className="py-2 px-3 text-green-600">{formatNumber(Number(row.total_earning))}</td>
                 <td className="py-2 px-3 text-orange-600">{formatNumber(Number(row.redemption))}</td>

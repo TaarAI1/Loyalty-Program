@@ -258,7 +258,6 @@ export class ReportsService {
     const data = await this.prisma.$queryRaw<
       Array<{
         store: string;
-        card_no: string;
         name: string;
         total_earning: number;
         redemption: number;
@@ -269,7 +268,6 @@ export class ReportsService {
     >`
       SELECT 
         COALESCE(t.store, '') as store,
-        c.id::text as card_no,
         c.name,
         COALESCE(SUM(t.points_earned), 0)::int as total_earning,
         COALESCE(SUM(t.points_redeemed), 0)::int as redemption,
