@@ -473,26 +473,29 @@ export default function UsersPage() {
             <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
               <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
               <p className="text-sm">
-                Are you sure you want to deactivate user{' '}
-                <span className="font-semibold">&quot;{toggleActiveUser.username}&quot;</span>? They will
-                not be able to sign in until reactivated.
+                Deactivate{' '}
+                <span className="font-semibold">&quot;{toggleActiveUser.username}&quot;</span>? Sign-in
+                will be disabled.
               </p>
             </div>
           ) : (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
               <p className="text-sm">
-                Are you sure you want to activate user{' '}
-                <span className="font-semibold">&quot;{toggleActiveUser?.username}&quot;</span>? They will
-                be able to sign in again.
+                Activate{' '}
+                <span className="font-semibold">&quot;{toggleActiveUser?.username}&quot;</span>? Sign-in
+                will be enabled.
               </p>
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setToggleActiveUser(null)}>
+              Cancel
+            </Button>
             {toggleActiveUser?.isActive ? (
               <Button
                 variant="destructive"
-                className="flex-1"
+                size="sm"
                 loading={toggleMutation.isPending}
                 onClick={() =>
                   toggleActiveUser &&
@@ -503,7 +506,8 @@ export default function UsersPage() {
               </Button>
             ) : (
               <Button
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 loading={toggleMutation.isPending}
                 onClick={() =>
                   toggleActiveUser &&
@@ -513,9 +517,6 @@ export default function UsersPage() {
                 Activate
               </Button>
             )}
-            <Button variant="outline" onClick={() => setToggleActiveUser(null)}>
-              Cancel
-            </Button>
           </div>
         </div>
       </Dialog>
