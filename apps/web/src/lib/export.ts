@@ -14,7 +14,13 @@ function titleCaseWords(s: string): string {
   });
 }
 
-/** e.g. card_no → Card No, TOTAL_EARNING → Total Earning; leaves "Total Points" unchanged */
+function splitCamelCase(s: string): string {
+  return s
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+}
+
+/** e.g. card_no → Card No, customerName → Customer Name; leaves "Total Points" unchanged */
 export function formatExportHeader(key: string): string {
   const trimmed = key.trim();
   if (!trimmed) return key;
@@ -22,17 +28,30 @@ export function formatExportHeader(key: string): string {
   const bare = trimmed.replace(/[_-]/g, '').replace(/\s/g, '');
   if (bare.toLowerCase() === 'id') return 'ID';
 
+  const hasSpace = /\s/.test(trimmed);
   const hasSep = /[_-]/.test(trimmed);
   const isAllCaps =
     trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed) && trimmed.length > 1;
+  const isCamelCase =
+    !hasSep && !hasSpace && /[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed);
+  const isSingleLower =
+    !hasSep && !hasSpace && trimmed === trimmed.toLowerCase() && /[a-z]/.test(trimmed);
 
-  if (!hasSep && !isAllCaps) return trimmed;
+  if (hasSpace && !hasSep && !isAllCaps) return trimmed;
 
-  let s = trimmed.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-  if (isAllCaps || (s.length > 1 && s === s.toUpperCase() && /[A-Z]/.test(s))) {
-    s = s.toLowerCase();
+  if (hasSep || isAllCaps) {
+    let s = trimmed.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (isAllCaps || (s.length > 1 && s === s.toUpperCase() && /[A-Z]/.test(s))) {
+      s = s.toLowerCase();
+    }
+    return titleCaseWords(s);
   }
-  return titleCaseWords(s);
+
+  if (isCamelCase || isSingleLower) {
+    return titleCaseWords(splitCamelCase(trimmed).toLowerCase());
+  }
+
+  return trimmed;
 }
 
 function mapExportRowKeys(row: Record<string, unknown>): Record<string, unknown> {
