@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formsApi } from '@/lib/api';
+import { formatExportHeader } from '@/lib/export';
 import { formatDisplayPhone, phoneMatchesSearch } from '@/lib/utils';
 
 const FEEDBACK_SOURCE_WEB = 'Web';
@@ -149,7 +150,8 @@ function AndroidFeedbackTab() {
         filteredRows.map((r) => formsApi.getKioskFeedbackResponse(r.id))
       );
       const allQuestions = sortQuestionsByAnswerFrequency(details);
-      const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
+      const headerLabels = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
+      const headers = headerLabels.map(formatExportHeader);
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
         ...details.map((d) => {
@@ -386,7 +388,8 @@ function WebFeedbackTab() {
         filteredRows.map((r) => formsApi.getWebFeedbackResponse(r.id))
       );
       const allQuestions = sortQuestionsByAnswerFrequency(details);
-      const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Submitted', ...allQuestions];
+      const headerLabels = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Submitted', ...allQuestions];
+      const headers = headerLabels.map(formatExportHeader);
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
         ...details.map((d) => {
