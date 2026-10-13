@@ -95,9 +95,7 @@ export class ReportsService {
       return {
         store: customer?.store ?? '',
         customerName: customer?.name ?? '',
-        customerCell: customer?.countryCode
-          ? `+${customer.countryCode}${(customer.mobileNumber ?? '').replace(/^0/, '')}`
-          : (customer?.mobileNumber ?? ''),
+        customerCell: this.formatReportPhone(customer?.countryCode, customer?.mobileNumber),
         tier: customer?.tier?.name ?? '',
         totalTransactions: r._count.id,
         lastVisitDays: daysSinceLastVisit,
@@ -187,14 +185,14 @@ export class ReportsService {
     const customerIds = raw.map((r) => r.customerId);
     const customers = await this.prisma.customer.findMany({
       where: { id: { in: customerIds } },
-      select: { id: true, name: true, mobileNumber: true, tier: { select: { name: true } } },
+      select: { id: true, name: true, mobileNumber: true, countryCode: true, tier: { select: { name: true } } },
     });
 
     const customerMap = new Map(customers.map((c) => [c.id, c]));
 
     const data = raw.map((r) => ({
       customerName: customerMap.get(r.customerId)?.name ?? '',
-      phoneNo: customerMap.get(r.customerId)?.mobileNumber ?? '',
+      phoneNo: this.formatReportPhone(customerMap.get(r.customerId)?.countryCode, customerMap.get(r.customerId)?.mobileNumber),
       tier: customerMap.get(r.customerId)?.tier?.name ?? '',
       netSale: Number(r._sum.saleAmount ?? 0),
     }));
@@ -313,5 +311,15 @@ export class ReportsService {
       stores: stores.map((s) => s.store).filter(Boolean),
       tiers,
     };
+  }
+  /** PCG-9 Cell / TCR18 Phone: +{countryCode}{localDigits} */
+  private formatReportPhone(
+    countryCode: string | null | undefined,
+    mobileNumber: string | null | undefined,
+  ): string {
+    if (countryCode) {
+      return `+${countryCode}${(mobileNumber ?? '').replace(/^0/, '')}`;
+    }
+    return mobileNumber ?? '';
   }
 }
