@@ -16,6 +16,40 @@ import { formatDisplayPhone, phoneMatchesSearch } from '@/lib/utils';
 const FEEDBACK_SOURCE_WEB = 'Web';
 const FEEDBACK_SOURCE_ANDROID = 'Android';
 
+type FeedbackAnswer = { question: string; answer: string };
+
+/** Question columns: most non-empty answers first, then fewer. */
+function sortQuestionsByAnswerFrequency(
+  details: Array<{ answers?: FeedbackAnswer[] }>,
+): string[] {
+  const counts = new Map<string, number>();
+
+  for (const d of details) {
+    for (const a of d.answers ?? []) {
+      const q = a.question?.trim();
+      if (!q) continue;
+      if (!counts.has(q)) counts.set(q, 0);
+    }
+  }
+
+  for (const d of details) {
+    const answeredThisRow = new Set<string>();
+    for (const a of d.answers ?? []) {
+      const q = a.question?.trim();
+      if (!q || answeredThisRow.has(q)) continue;
+      if (String(a.answer ?? '').trim() !== '') {
+        answeredThisRow.add(q);
+        counts.set(q, (counts.get(q) ?? 0) + 1);
+      }
+    }
+  }
+
+  return Array.from(counts.keys()).sort((a, b) => {
+    const diff = (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
+    return diff !== 0 ? diff : a.localeCompare(b);
+  });
+}
+
 interface FeedbackRow {
   id: number;
   customerName: string | null;
@@ -114,10 +148,7 @@ function AndroidFeedbackTab() {
       const details = await Promise.all(
         filteredRows.map((r) => formsApi.getKioskFeedbackResponse(r.id))
       );
-      // Collect all unique question texts across all responses
-      const allQuestions: string[] = Array.from(
-        new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
-      );
+      const allQuestions = sortQuestionsByAnswerFrequency(details);
       const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Device', 'Store', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
@@ -354,10 +385,7 @@ function WebFeedbackTab() {
       const details = await Promise.all(
         filteredRows.map((r) => formsApi.getWebFeedbackResponse(r.id))
       );
-      // Collect all unique question texts across all responses
-      const allQuestions: string[] = Array.from(
-        new Set(details.flatMap((d) => (d.answers ?? []).map((a: { question: string }) => a.question)))
-      );
+      const allQuestions = sortQuestionsByAnswerFrequency(details);
       const headers = ['ID', 'Customer', 'Phone', 'Source', 'Form', 'Submitted', ...allQuestions];
       const csvRows = [
         headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
