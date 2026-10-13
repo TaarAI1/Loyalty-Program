@@ -45,6 +45,15 @@ function mapExportData(data: Record<string, unknown>[]): Record<string, unknown>
   return data.map(mapExportRowKeys);
 }
 
+/** PDF header cells: break at word boundaries, not mid-word. */
+function pdfHeadLabel(label: string): string {
+  const words = label.trim().split(/\s+/);
+  if (words.length <= 1) return label;
+  if (words.length === 2) return words.join('\n');
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')].join('\n');
+}
+
 /**
  * Prefix phone number values with a tab so Excel/Sheets treats them as text,
  * preventing scientific notation (e.g. 9.23E+11).
@@ -122,13 +131,47 @@ export async function exportToPdf(
   const mapped = mapExportData(data);
   const columns = mapped.length > 0 ? Object.keys(mapped[0]) : [];
   const rows = mapped.map((row) => columns.map((col) => String(row[col] ?? '')));
+  const headRow = columns.map(pdfHeadLabel);
+  const wideTable = columns.length > 10;
+
+  const columnStyles: Record<number, { cellWidth?: number }> = {};
+  if (wideTable) {
+    columns.forEach((col, i) => {
+      if (/phone|email|name|store|retailpro/i.test(col)) {
+        columnStyles[i] = { cellWidth: /email|retailpro/i.test(col) ? 28 : 22 };
+      }
+    });
+  }
 
   autoTable(doc, {
-    head: [columns],
+    head: [headRow],
     body: rows,
     startY: 28,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [79, 70, 229] },
+    margin: { left: 10, right: 10 },
+    styles: {
+      fontSize: 7,
+      cellPadding: 1.5,
+      overflow: 'linebreak',
+      valign: 'top',
+    },
+    bodyStyles: { minCellHeight: 8 },
+    headStyles: {
+      fillColor: [79, 70, 229],
+      textColor: 255,
+      fontSize: 7,
+      fontStyle: 'bold',
+      halign: 'center',
+      valign: 'middle',
+      minCellHeight: 14,
+      cellPadding: 2,
+    },
+    ...(wideTable
+      ? {
+          horizontalPageBreak: true,
+          horizontalPageBreakRepeat: 0,
+          ...(Object.keys(columnStyles).length > 0 ? { columnStyles } : {}),
+        }
+      : {}),
   });
 
   doc.save(`${filename}.pdf`);
