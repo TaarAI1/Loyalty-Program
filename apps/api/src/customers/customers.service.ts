@@ -35,6 +35,37 @@ export class CustomersService {
     ];
   }
 
+  private expiryDayKey(d: Date, timeZone = 'Asia/Karachi'): string {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  }
+
+  /** Sum all points expiring on the earliest upcoming expiry calendar day. */
+  private async getNextExpirySummary(
+    customerId: string,
+  ): Promise<{ expiryDate: Date; pointsRemaining: number } | null> {
+    const batches = await this.prisma.pointsExpiry.findMany({
+      where: { customerId, isExpired: false, pointsRemaining: { gt: 0 } },
+      orderBy: { expiryDate: 'asc' },
+      select: { expiryDate: true, pointsRemaining: true },
+    });
+    if (batches.length === 0) return null;
+
+    const firstDay = this.expiryDayKey(batches[0].expiryDate);
+    let pointsRemaining = 0;
+    let expiryDate = batches[0].expiryDate;
+    for (const b of batches) {
+      if (this.expiryDayKey(b.expiryDate) !== firstDay) break;
+      pointsRemaining += b.pointsRemaining;
+      if (b.expiryDate.getTime() < expiryDate.getTime()) expiryDate = b.expiryDate;
+    }
+    return { expiryDate, pointsRemaining };
+  }
+
   async findByPhone(phone: string) {
     // Normalize the input: strip spaces, dashes, parentheses
     const raw = phone.replace(/[\s\-().]/g, '');
@@ -223,12 +254,7 @@ export class CustomersService {
     });
     const preferredStore = storeCounts[0]?.store ?? customer.store ?? null;
 
-    // Next expiry
-    const nextExpiry = await this.prisma.pointsExpiry.findFirst({
-      where: { customerId: id, isExpired: false, pointsRemaining: { gt: 0 } },
-      orderBy: { expiryDate: 'asc' },
-      select: { expiryDate: true, pointsRemaining: true },
-    });
+    const nextExpiry = await this.getNextExpirySummary(id);
 
     // Age + generation from DOB
     let age: number | null = null;
@@ -627,11 +653,7 @@ export class CustomersService {
       this.prisma.transaction.count({ where: { customerId } }),
     ]);
 
-    const nextExpiry = await this.prisma.pointsExpiry.findFirst({
-      where: { customerId, isExpired: false, pointsRemaining: { gt: 0 } },
-      orderBy: { expiryDate: 'asc' },
-      select: { expiryDate: true, pointsRemaining: true },
-    });
+    const nextExpiry = await this.getNextExpirySummary(customerId);
 
     const now = Date.now();
     const lastVisitMs = customer.lastVisitDate ? customer.lastVisitDate.getTime() : 0;
