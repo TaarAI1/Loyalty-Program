@@ -49,7 +49,7 @@ export default function UsersPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [deleteUser, setDeleteUser] = useState<AppUser | null>(null);
-  const [deactivateUser, setDeactivateUser] = useState<AppUser | null>(null);
+  const [toggleActiveUser, setToggleActiveUser] = useState<AppUser | null>(null);
   const [editUser, setEditUser] = useState<AppUser | null>(null);
   const [editForm, setEditForm] = useState({ username: '', password: '', role: 'user' });
   const [showEditPassword, setShowEditPassword] = useState(false);
@@ -78,7 +78,7 @@ export default function UsersPage() {
     onSuccess: (_data, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(isActive ? 'User activated' : 'User deactivated');
-      setDeactivateUser(null);
+      setToggleActiveUser(null);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -316,11 +316,7 @@ export default function UsersPage() {
                             <>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  u.isActive
-                                    ? setDeactivateUser(u)
-                                    : toggleMutation.mutate({ id: u.id, isActive: true })
-                                }
+                                onClick={() => setToggleActiveUser(u)}
                                 disabled={toggleMutation.isPending}
                                 className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${
                                   u.isActive
@@ -468,30 +464,56 @@ export default function UsersPage() {
       </Dialog>
 
       <Dialog
-        open={deactivateUser !== null}
-        onClose={() => setDeactivateUser(null)}
-        title="Deactivate User"
+        open={toggleActiveUser !== null}
+        onClose={() => setToggleActiveUser(null)}
+        title={toggleActiveUser?.isActive ? 'Deactivate User' : 'Activate User'}
       >
         <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm">
-              Are you sure you want to deactivate user{' '}
-              <span className="font-semibold">&quot;{deactivateUser?.username}&quot;</span>? They will
-              not be able to sign in until reactivated.
-            </p>
-          </div>
+          {toggleActiveUser?.isActive ? (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+              <p className="text-sm">
+                Are you sure you want to deactivate user{' '}
+                <span className="font-semibold">&quot;{toggleActiveUser.username}&quot;</span>? They will
+                not be able to sign in until reactivated.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <p className="text-sm">
+                Are you sure you want to activate user{' '}
+                <span className="font-semibold">&quot;{toggleActiveUser?.username}&quot;</span>? They will
+                be able to sign in again.
+              </p>
+            </div>
+          )}
           <div className="flex gap-2">
-            <Button
-              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-              loading={toggleMutation.isPending}
-              onClick={() =>
-                deactivateUser && toggleMutation.mutate({ id: deactivateUser.id, isActive: false })
-              }
-            >
-              Yes, Deactivate
-            </Button>
-            <Button variant="outline" onClick={() => setDeactivateUser(null)}>
+            {toggleActiveUser?.isActive ? (
+              <Button
+                variant="destructive"
+                className="flex-1"
+                loading={toggleMutation.isPending}
+                onClick={() =>
+                  toggleActiveUser &&
+                  toggleMutation.mutate({ id: toggleActiveUser.id, isActive: false })
+                }
+              >
+                Deactivate
+              </Button>
+            ) : (
+              <Button
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                loading={toggleMutation.isPending}
+                onClick={() =>
+                  toggleActiveUser &&
+                  toggleMutation.mutate({ id: toggleActiveUser.id, isActive: true })
+                }
+              >
+                Activate
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setToggleActiveUser(null)}>
               Cancel
             </Button>
           </div>
