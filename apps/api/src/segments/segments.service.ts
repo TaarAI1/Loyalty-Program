@@ -22,6 +22,24 @@ export interface SegmentFilters {
   pageSize?: number;
 }
 
+function inclusiveCalendarDays(from: Date, to: Date, timeZone = 'Asia/Karachi'): number {
+  const dayKey = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  const toUtcMidnight = (key: string) => {
+    const [y, m, day] = key.split('-').map(Number);
+    return Date.UTC(y, m - 1, day);
+  };
+  const start = toUtcMidnight(dayKey(from));
+  const end = toUtcMidnight(dayKey(to));
+  if (end < start) return 0;
+  return Math.floor((end - start) / 86400000) + 1;
+}
+
 @Injectable()
 export class SegmentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -142,8 +160,6 @@ export class SegmentsService {
       redemptions.map((r) => [r.customerId, r._sum.pointsRedeemed ?? 0]),
     );
 
-    const nowMs = Date.now();
-
     const data = filtered.map((c) => ({
       id: c.id,
       retailproId: c.retailproId,
@@ -167,7 +183,9 @@ export class SegmentsService {
           ? Number(c.lifetimeSale) / c._count.transactions
           : 0,
       totalPointsRedeemed: redemptionMap[c.id] ?? 0,
-      tenureDays: Math.floor((nowMs - new Date(c.createdAt).getTime()) / 86400000),
+      tenureDays: c.lastVisitDate
+        ? inclusiveCalendarDays(new Date(c.createdAt), new Date(c.lastVisitDate))
+        : 0,
     }));
 
     return { data, total, page, pageSize };
