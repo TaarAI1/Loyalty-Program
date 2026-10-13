@@ -11,20 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formsApi } from '@/lib/api';
-import { formatDisplayPhone } from '@/lib/utils';
+import { formatDisplayPhone, phoneMatchesSearch } from '@/lib/utils';
 
 const FEEDBACK_SOURCE_WEB = 'Web';
 const FEEDBACK_SOURCE_ANDROID = 'Android';
-
-function phoneMatchesSearch(phone: string | null | undefined, q: string): boolean {
-  const formatted = formatDisplayPhone(phone);
-  const qDigits = q.replace(/\D/g, '');
-  return (
-    (phone?.includes(q) ?? false) ||
-    formatted.toLowerCase().includes(q.toLowerCase()) ||
-    (qDigits.length > 0 && (phone?.replace(/\D/g, '').includes(qDigits) ?? false))
-  );
-}
 
 interface FeedbackRow {
   id: number;

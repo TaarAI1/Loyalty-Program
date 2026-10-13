@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { normalizeLocalPhone } from '@loyalty/shared';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,6 +38,27 @@ export function formatDisplayPhone(
   if (d.startsWith('0')) d = d.slice(1);
   if (!d) return '';
   return `+${countryCode} ${d}`;
+}
+
+/** Match phone filter across 0 / +92 / spaces and partial local digits. */
+export function phoneMatchesSearch(
+  phone: string | null | undefined,
+  query: string,
+  countryCode = '92',
+): boolean {
+  const q = query.trim();
+  if (!q || !phone?.trim()) return false;
+
+  const qLocal = normalizeLocalPhone(q, countryCode);
+  if (qLocal.length > 0) {
+    const phoneLocal = normalizeLocalPhone(phone, countryCode);
+    if (phoneLocal.includes(qLocal)) return true;
+  }
+
+  const formatted = formatDisplayPhone(phone, countryCode);
+  if (formatted.toLowerCase().includes(q.toLowerCase())) return true;
+
+  return phone.includes(q);
 }
 
 export function formatDateTime(date: string | Date): string {
