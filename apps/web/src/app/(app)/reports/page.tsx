@@ -25,7 +25,6 @@ import {
 
 const REPORTS = [
   { value: 'PCG-9', label: 'PCG-9 — Customer Tier Wise' },
-  { value: 'BRR7', label: 'BRR7 — Birthday Response' },
   { value: 'TCR18', label: 'TCR18 — Top Customers' },
   { value: 'LSD6', label: 'LSD6 — Loyalty Sales Detail' },
   { value: 'SSFR8', label: 'SSFR8 — Forensic Report' },
@@ -138,7 +137,6 @@ export default function ReportsPage() {
     queryFn: () => {
       switch (selectedReport) {
         case 'PCG-9': return reportsApi.customerTierWise(params);
-        case 'BRR7': return reportsApi.birthdayResponse(params);
         case 'TCR18': return reportsApi.topCustomers(params);
         case 'LSD6': return reportsApi.loyaltySalesDetail(params);
         case 'SSFR8': return reportsApi.forensicReport(params);
@@ -165,7 +163,6 @@ export default function ReportsPage() {
       const allParams = buildParams(appliedFilters, 1, 5000);
       switch (selectedReport) {
         case 'PCG-9': allData = await reportsApi.customerTierWise(allParams); break;
-        case 'BRR7': allData = await reportsApi.birthdayResponse(allParams); break;
         case 'TCR18': allData = await reportsApi.topCustomers(allParams); break;
         case 'LSD6': allData = await reportsApi.loyaltySalesDetail(allParams); break;
         case 'SSFR8': allData = await reportsApi.forensicReport(allParams); break;
@@ -421,30 +418,6 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
                 <td className="py-2 px-3 text-green-600">{formatNumber(Number(row.totalPoints))}</td>
                 <td className="py-2 px-3 text-orange-600">{formatNumber(Number(row.rewardsUsed))}</td>
                 <td className="py-2 px-3 font-bold text-indigo-600">{formatNumber(Number(row.availableRewards))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-
-    case 'BRR7':
-      return (
-        <table className="w-full text-sm">
-          <thead><tr className="border-b bg-muted/50">
-            {['Region','Store','Outlet','Date','Receipt','Customer','Net Sale'].map((h) => (
-              <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground">{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {data.map((row, i) => (
-              <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
-                <td className="py-2 px-3">{String(row.region ?? '')}</td>
-                <td className="py-2 px-3">{String(row.store ?? '')}</td>
-                <td className="py-2 px-3">{String(row.outlet ?? '—')}</td>
-                <td className="py-2 px-3">{row.date ? formatDate(String(row.date)) : '—'}</td>
-                <td className="py-2 px-3 text-muted-foreground">{String(row.receipt_no ?? '—')}</td>
-                <td className="py-2 px-3 font-medium">{String(row.customer_name ?? '')}</td>
-                <td className="py-2 px-3 font-medium">{formatCurrency(Number(row.net_sale))}</td>
               </tr>
             ))}
           </tbody>
