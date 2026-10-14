@@ -130,7 +130,11 @@ export class SegmentsService {
           store: true,
           createdAt: true,
           tier: { select: { name: true } },
-          _count: { select: { transactions: true } },
+          _count: {
+            select: {
+              transactions: { where: { status: 'completed' } },
+            },
+          },
         },
       }),
       this.prisma.customer.count({ where }),

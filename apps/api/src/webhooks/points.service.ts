@@ -2,7 +2,8 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 import { calculatePoints, formatPhoneNumber, TransactionItemDto } from '@loyalty/shared';
-import { LoyaltyTier, Customer } from '@prisma/client';
+import { LoyaltyTier, Customer, Prisma } from '@prisma/client';
+import { SegmentationService } from '../segmentation/segmentation.service';
 
 export interface ProcessTransactionResult {
   success: boolean;
@@ -24,6 +25,7 @@ export class PointsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: QueueService,
+    private readonly segmentationService: SegmentationService,
   ) {}
 
   /**
@@ -132,7 +134,9 @@ export class PointsService {
       const rewardPct = Number(c.tier?.rewardPercentage ?? 0);
 
       // Count prior transactions — used for enrollment discount and engagement score
-      const txCount = await tx.transaction.count({ where: { customerId: c.id } });
+      const txCount = await tx.transaction.count({
+        where: { customerId: c.id, status: 'completed' },
+      });
 
       // Apply enrollment bonus on first purchase (txCount === 0), regardless of how customer was created
       const enrollmentBonusPct = (txCount === 0 && (emailCfg?.enrollmentDiscountPct ?? 0) > 0)
@@ -179,17 +183,7 @@ export class PointsService {
         },
       });
 
-      // Compute engagement score (simple: 1–100 based on recency + frequency)
-      const daysSinceLast = c.lastVisitDate
-        ? Math.floor((params.transactionDate.getTime() - c.lastVisitDate.getTime()) / 86400000)
-        : 999;
-      const recencyScore = Math.max(0, 100 - daysSinceLast);
-      const newEngagementScore = Math.min(100, Math.round(recencyScore * 0.7 + Math.min(txCount + 1, 30) * 1));
-
-      // Determine segment
-      const segment = this.computeSegment(txCount + 1, daysSinceLast, newLifetimeSale);
-
-      // Update customer (use any cast for new fields until Prisma regenerates)
+      // Update customer (segment recalculated after transaction is persisted)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (tx.customer.update as any)({
         where: { id: c.id },
@@ -200,12 +194,15 @@ export class PointsService {
           tierId: newTier.id,
           lastVisitDate: params.transactionDate,
           name: customerName,
-          engagementScore: newEngagementScore,
-          segment,
           ...(params.region ? { region: params.region } : {}),
           ...(params.store  ? { store:  params.store  } : {}),
         },
       });
+
+      await this.segmentationService.updateCustomerSegment(
+        c.id,
+        tx as unknown as Prisma.TransactionClient,
+      );
 
       // Save line items if provided
       if (params.items && params.items.length > 0) {
@@ -485,17 +482,6 @@ export class PointsService {
         'FIFO consumption: could not fully account for redeemed points across expiry batches',
       );
     }
-  }
-
-  /** RFM-based segmentation */
-  private computeSegment(txCount: number, daysSinceLast: number, lifetimeSale: number): string {
-    if (txCount >= 8 && daysSinceLast <= 30 && lifetimeSale >= 50000) return 'champion';
-    if (txCount >= 4 && daysSinceLast <= 60) return 'loyal';
-    if (txCount >= 2 && daysSinceLast <= 30) return 'potential';
-    if (txCount === 1 || daysSinceLast <= 30) return 'new';
-    if (daysSinceLast > 180) return 'dormant';
-    if (daysSinceLast > 90) return 'at_risk';
-    return 'new';
   }
 
   private async getDefaultTier(tx: typeof this.prisma): Promise<LoyaltyTier> {
