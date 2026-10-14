@@ -19,6 +19,7 @@ export interface ReportFilters {
   customerName?: string;
   windowSaleMin?: number;
   windowSaleMax?: number;
+  outlet?: string;
 }
 
 @Injectable()
@@ -198,7 +199,8 @@ export class ReportsService {
    * LSD6: Loyalty Sales Detail
    */
   async loyaltySalesDetail(filters: ReportFilters) {
-    const { region, store, dateFrom, dateTo, page = 1, pageSize = 50 } = filters;
+    const { region, store, outlet, dateFrom, dateTo, page = 1, pageSize = 50 } = filters;
+    const outletQuery = outlet?.trim();
 
     const startDate = dateFrom ? new Date(dateFrom) : new Date(new Date().setDate(1));
     const endDate = dateTo ? new Date(dateTo) : new Date();
@@ -231,6 +233,7 @@ export class ReportsService {
       WHERE t.transaction_date BETWEEN ${startDate} AND ${endDate}
         ${region ? Prisma.sql`AND t.region = ${region}` : Prisma.empty}
         ${store ? Prisma.sql`AND t.store = ${store}` : Prisma.empty}
+        ${outletQuery ? Prisma.sql`AND t.outlet ILIKE ${`%${outletQuery}%`}` : Prisma.empty}
       GROUP BY t.region, t.store, t.outlet
       ORDER BY t.region, t.store
       LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}

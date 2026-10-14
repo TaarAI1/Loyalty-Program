@@ -76,12 +76,21 @@ export class ReportsController {
   loyaltySalesDetail(
     @Query('region') region?: string,
     @Query('store') store?: string,
+    @Query('outlet') outlet?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize = 50,
   ) {
-    return this.reportsService.loyaltySalesDetail({ region, store, dateFrom, dateTo, page, pageSize });
+    return this.reportsService.loyaltySalesDetail({
+      region,
+      store,
+      outlet: outlet?.trim() || undefined,
+      dateFrom,
+      dateTo,
+      page,
+      pageSize,
+    });
   }
 
   @Get('forensic')

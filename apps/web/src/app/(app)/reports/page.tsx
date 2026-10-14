@@ -72,6 +72,7 @@ interface Filters {
   customerName: string;
   windowSaleMin: string;
   windowSaleMax: string;
+  outlet: string;
 }
 
 const defaultFilters: Filters = {
@@ -88,6 +89,7 @@ const defaultFilters: Filters = {
   customerName: '',
   windowSaleMin: '',
   windowSaleMax: '',
+  outlet: '',
 };
 
 function buildParams(filters: Filters, page: number, pageSize: number) {
@@ -106,6 +108,7 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
     Object.entries({
       region: filters.region || undefined,
       store: filters.store || undefined,
+      outlet: filters.outlet.trim() || undefined,
       tierId: filters.tierId || undefined,
       gender: filters.gender || undefined,
       dateFrom: filters.dateFrom || undefined,
@@ -229,6 +232,16 @@ export default function ReportsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-0 text-sm">
+              {selectedReport === 'LSD6' && (
+                <div className="space-y-1">
+                  <Label>Region</Label>
+                  <Select
+                    options={regionOptions}
+                    value={filters.region}
+                    onChange={(e) => setFilters((f) => ({ ...f, region: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="space-y-1">
                 <Label>Store</Label>
                 <Select
@@ -237,6 +250,17 @@ export default function ReportsPage() {
                   onChange={(e) => setFilters((f) => ({ ...f, store: e.target.value }))}
                 />
               </div>
+              {selectedReport === 'LSD6' && (
+                <div className="space-y-1">
+                  <Label>Outlet</Label>
+                  <Input
+                    type="text"
+                    placeholder="Search outlet…"
+                    value={filters.outlet}
+                    onChange={(e) => setFilters((f) => ({ ...f, outlet: e.target.value }))}
+                  />
+                </div>
+              )}
               {selectedReport === 'SSFR8' && (
                 <>
                   <div className="space-y-1">
@@ -270,7 +294,7 @@ export default function ReportsPage() {
                   </div>
                 </>
               )}
-              {selectedReport !== 'SSFR8' && (
+              {selectedReport !== 'SSFR8' && selectedReport !== 'LSD6' && (
                 <>
                   <div className="space-y-1">
                     <Label>Tier</Label>
@@ -299,7 +323,13 @@ export default function ReportsPage() {
                 </>
               )}
               <div className="space-y-1">
-                <Label>{selectedReport === 'SSFR8' ? 'Alert Date From' : 'Date From'}</Label>
+                <Label>
+                  {selectedReport === 'SSFR8'
+                    ? 'Alert Date From'
+                    : selectedReport === 'LSD6'
+                      ? 'Transaction Date From'
+                      : 'Date From'}
+                </Label>
                 <Input
                   type="date"
                   value={filters.dateFrom}
@@ -307,14 +337,20 @@ export default function ReportsPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>{selectedReport === 'SSFR8' ? 'Alert Date To' : 'Date To'}</Label>
+                <Label>
+                  {selectedReport === 'SSFR8'
+                    ? 'Alert Date To'
+                    : selectedReport === 'LSD6'
+                      ? 'Transaction Date To'
+                      : 'Date To'}
+                </Label>
                 <Input
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
                 />
               </div>
-              {selectedReport !== 'SSFR8' && (
+              {selectedReport !== 'SSFR8' && selectedReport !== 'LSD6' && (
                 <>
                   <div className="space-y-1">
                     <Label>Month</Label>
