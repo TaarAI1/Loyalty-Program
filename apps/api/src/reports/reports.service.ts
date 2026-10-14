@@ -85,26 +85,9 @@ export class ReportsService {
     const customerMap = new Map(customers.map((c) => [c.id, c]));
     const now = new Date();
 
-    const data = raw.map((r) => {
-      const customer = customerMap.get(r.customerId);
-      const lastVisit = r._max.transactionDate;
-      const daysSinceLastVisit = lastVisit
-        ? Math.floor((now.getTime() - lastVisit.getTime()) / 86400000)
-        : null;
-
-      return {
-        store: customer?.store ?? '',
-        customerName: customer?.name ?? '',
-        customerCell: this.formatReportPhone(customer?.countryCode, customer?.mobileNumber),
-        tier: customer?.tier?.name ?? '',
-        totalTransactions: r._count.id,
-        lastVisitDays: daysSinceLastVisit,
-        netSale: Number(r._sum.saleAmount ?? 0),
-        totalPoints: r._sum.pointsEarned ?? 0,
-        rewardsUsed: r._sum.pointsRedeemed ?? 0,
-        availableRewards: (r._sum.pointsEarned ?? 0) - (r._sum.pointsRedeemed ?? 0),
-      };
-    });
+    const data = raw.map((r) =>
+      this.mapCustomerTierAggregateRow(r, customerMap.get(r.customerId), now),
+    );
 
     this.logger.log({ report: 'PCG-9', filters, count: data.length }, 'Report generated');
     return { data, filters };
@@ -177,7 +160,9 @@ export class ReportsService {
     const raw = await this.prisma.transaction.groupBy({
       by: ['customerId'],
       where,
-      _sum: { saleAmount: true },
+      _sum: { saleAmount: true, pointsEarned: true, pointsRedeemed: true },
+      _count: { id: true },
+      _max: { transactionDate: true },
       orderBy: { _sum: { saleAmount: 'desc' } },
       take: limit,
     });
@@ -185,17 +170,22 @@ export class ReportsService {
     const customerIds = raw.map((r) => r.customerId);
     const customers = await this.prisma.customer.findMany({
       where: { id: { in: customerIds } },
-      select: { id: true, name: true, mobileNumber: true, countryCode: true, tier: { select: { name: true } } },
+      select: {
+        id: true,
+        name: true,
+        mobileNumber: true,
+        countryCode: true,
+        store: true,
+        tier: { select: { name: true } },
+      },
     });
 
     const customerMap = new Map(customers.map((c) => [c.id, c]));
+    const now = new Date();
 
-    const data = raw.map((r) => ({
-      customerName: customerMap.get(r.customerId)?.name ?? '',
-      phoneNo: this.formatReportPhone(customerMap.get(r.customerId)?.countryCode, customerMap.get(r.customerId)?.mobileNumber),
-      tier: customerMap.get(r.customerId)?.tier?.name ?? '',
-      netSale: Number(r._sum.saleAmount ?? 0),
-    }));
+    const data = raw.map((r) =>
+      this.mapCustomerTierAggregateRow(r, customerMap.get(r.customerId), now),
+    );
 
     this.logger.log({ report: 'TCR18', limit, count: data.length }, 'Report generated');
     return { data, filters };
@@ -312,6 +302,48 @@ export class ReportsService {
       tiers,
     };
   }
+  private mapCustomerTierAggregateRow(
+    r: {
+      _sum: {
+        saleAmount: Prisma.Decimal | number | null;
+        pointsEarned: number | null;
+        pointsRedeemed: number | null;
+      };
+      _count: { id: number };
+      _max: { transactionDate: Date | null };
+    },
+    customer:
+      | {
+          store?: string | null;
+          name?: string | null;
+          countryCode?: string | null;
+          mobileNumber?: string | null;
+          tier?: { name: string } | null;
+        }
+      | undefined,
+    now: Date,
+  ) {
+    const lastVisit = r._max.transactionDate;
+    const daysSinceLastVisit = lastVisit
+      ? Math.floor((now.getTime() - lastVisit.getTime()) / 86400000)
+      : null;
+    const pointsEarned = r._sum.pointsEarned ?? 0;
+    const pointsRedeemed = r._sum.pointsRedeemed ?? 0;
+
+    return {
+      store: customer?.store ?? '',
+      customerName: customer?.name ?? '',
+      customerCell: this.formatReportPhone(customer?.countryCode, customer?.mobileNumber),
+      tier: customer?.tier?.name ?? '',
+      totalTransactions: r._count.id,
+      lastVisitDays: daysSinceLastVisit,
+      netSale: Number(r._sum.saleAmount ?? 0),
+      totalPoints: pointsEarned,
+      rewardsUsed: pointsRedeemed,
+      availableRewards: pointsEarned - pointsRedeemed,
+    };
+  }
+
   /** PCG-9 Cell / TCR18 Phone: +{countryCode}{localDigits} */
   private formatReportPhone(
     countryCode: string | null | undefined,
