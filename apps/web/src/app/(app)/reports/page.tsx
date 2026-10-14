@@ -69,6 +69,9 @@ interface Filters {
   month: string;
   year: string;
   limit: string;
+  customerName: string;
+  windowSaleMin: string;
+  windowSaleMax: string;
 }
 
 const defaultFilters: Filters = {
@@ -82,6 +85,9 @@ const defaultFilters: Filters = {
   month: '',
   year: '',
   limit: '100',
+  customerName: '',
+  windowSaleMin: '',
+  windowSaleMax: '',
 };
 
 function buildParams(filters: Filters, page: number, pageSize: number) {
@@ -93,6 +99,8 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
     '55+': { ageFrom: '55' },
   };
   const age = ageMap[filters.ageBracket] ?? {};
+  const windowSaleMin = filters.windowSaleMin.trim();
+  const windowSaleMax = filters.windowSaleMax.trim();
 
   return Object.fromEntries(
     Object.entries({
@@ -105,6 +113,9 @@ function buildParams(filters: Filters, page: number, pageSize: number) {
       month: filters.month || undefined,
       year: filters.year || undefined,
       limit: filters.limit,
+      customerName: filters.customerName.trim() || undefined,
+      windowSaleMin: windowSaleMin && !Number.isNaN(Number(windowSaleMin)) ? Number(windowSaleMin) : undefined,
+      windowSaleMax: windowSaleMax && !Number.isNaN(Number(windowSaleMax)) ? Number(windowSaleMax) : undefined,
       page,
       pageSize,
       ...age,
@@ -226,6 +237,39 @@ export default function ReportsPage() {
                   onChange={(e) => setFilters((f) => ({ ...f, store: e.target.value }))}
                 />
               </div>
+              {selectedReport === 'SSFR8' && (
+                <>
+                  <div className="space-y-1">
+                    <Label>Customer name</Label>
+                    <Input
+                      type="text"
+                      placeholder="Search name…"
+                      value={filters.customerName}
+                      onChange={(e) => setFilters((f) => ({ ...f, customerName: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Window Sale Min (Rs)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Any"
+                      value={filters.windowSaleMin}
+                      onChange={(e) => setFilters((f) => ({ ...f, windowSaleMin: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Window Sale Max (Rs)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Any"
+                      value={filters.windowSaleMax}
+                      onChange={(e) => setFilters((f) => ({ ...f, windowSaleMax: e.target.value }))}
+                    />
+                  </div>
+                </>
+              )}
               {selectedReport !== 'SSFR8' && (
                 <>
                   <div className="space-y-1">
