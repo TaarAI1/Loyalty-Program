@@ -428,18 +428,24 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
       return (
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-muted/50">
-            {['Rank','Customer Name','Phone','Tier','Net Sale'].map((h) => (
-              <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground">{h}</th>
+            {['Rank','Store','Customer','Cell','Tier','Transactions','Last Visit (days)','Net Sale','Points','Used','Available'].map((h) => (
+              <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
             ))}
           </tr></thead>
           <tbody>
             {data.map((row, i) => (
               <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
                 <td className="py-2 px-3 text-muted-foreground font-medium">#{i + 1}</td>
+                <td className="py-2 px-3">{String(row.store ?? '')}</td>
                 <td className="py-2 px-3 font-medium">{String(row.customerName ?? '')}</td>
-                <td className="py-2 px-3 text-muted-foreground">{String(row.phoneNo ?? '')}</td>
+                <td className="py-2 px-3 text-muted-foreground">{String(row.customerCell ?? '')}</td>
                 <td className="py-2 px-3"><TierBadge name={String(row.tier ?? '')} /></td>
-                <td className="py-2 px-3 font-bold">{formatCurrency(Number(row.netSale))}</td>
+                <td className="py-2 px-3">{formatNumber(Number(row.totalTransactions))}</td>
+                <td className="py-2 px-3">{row.lastVisitDays != null ? `${row.lastVisitDays}d` : '—'}</td>
+                <td className="py-2 px-3 font-medium">{formatCurrency(Number(row.netSale))}</td>
+                <td className="py-2 px-3 text-green-600">{formatNumber(Number(row.totalPoints))}</td>
+                <td className="py-2 px-3 text-orange-600">{formatNumber(Number(row.rewardsUsed))}</td>
+                <td className="py-2 px-3 font-bold text-indigo-600">{formatNumber(Number(row.availableRewards))}</td>
               </tr>
             ))}
           </tbody>
