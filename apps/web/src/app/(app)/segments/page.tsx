@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { segmentsApi, configApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  RefreshCw,
 } from 'lucide-react';
 
 const SEGMENT_COLORS: Record<string, string> = {
@@ -127,11 +129,20 @@ interface SegmentCustomer {
 }
 
 export default function SegmentsPage() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState<Filters>(defaultFilters);
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const recalcMutation = useMutation({
+    mutationFn: () => segmentsApi.recalculate(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['segments'] });
+    },
+  });
 
   const { data: tiers } = useQuery({
     queryKey: ['tiers'],
@@ -389,6 +400,17 @@ export default function SegmentsPage() {
                 </span>
               </div>
               <div className="ml-auto flex gap-2">
+                {user?.role === 'admin' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={recalcMutation.isPending}
+                    onClick={() => recalcMutation.mutate()}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-1 ${recalcMutation.isPending ? 'animate-spin' : ''}`} />
+                    Recalculate segments
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
                   <FileDown className="w-4 h-4 mr-1" />
                   CSV

@@ -14,6 +14,39 @@ config({ path: resolve(__dirname, '../apps/api/.env.local') });
 
 const require = createRequire(import.meta.url);
 
+async function loadBenchmarks(prisma) {
+  const [spendRows, visitRows] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT
+        percentile_cont(0.95) WITHIN GROUP (ORDER BY lifetime_sale)::float AS spend_p95,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY lifetime_sale)::float AS spend_median,
+        percentile_cont(0.75) WITHIN GROUP (ORDER BY lifetime_sale)::float AS spend_p75
+      FROM customers
+      WHERE lifetime_sale > 0
+    `,
+    prisma.$queryRaw`
+      SELECT
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY cnt)::float AS visit_median,
+        percentile_cont(0.75) WITHIN GROUP (ORDER BY cnt)::float AS visit_p75
+      FROM (
+        SELECT COUNT(*)::float AS cnt
+        FROM transactions
+        WHERE status = 'completed'
+        GROUP BY customer_id
+      ) visit_counts
+    `,
+  ]);
+  const spend = spendRows[0];
+  const visits = visitRows[0];
+  return {
+    spendP95: spend?.spend_p95 ?? undefined,
+    spendMedian: spend?.spend_median ?? undefined,
+    spendP75: spend?.spend_p75 ?? undefined,
+    visitMedian: visits?.visit_median ?? undefined,
+    visitP75: visits?.visit_p75 ?? undefined,
+  };
+}
+
 async function main() {
   const { PrismaClient } = require('@prisma/client');
   const {
@@ -23,11 +56,7 @@ async function main() {
 
   const prisma = new PrismaClient();
   try {
-    const benchRows = await prisma.$queryRaw`
-      SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY lifetime_sale)::float AS spend_p95
-      FROM customers WHERE lifetime_sale > 0
-    `;
-    const spendP95 = benchRows[0]?.spend_p95 ?? undefined;
+    const benchmarks = await loadBenchmarks(prisma);
 
     const customers = await prisma.customer.findMany({ select: { id: true } });
     let updated = 0;
@@ -59,7 +88,7 @@ async function main() {
           asOfDate: new Date(),
         },
         DEFAULT_SEGMENT_CONFIG,
-        { spendP95 },
+        benchmarks,
       );
 
       await prisma.customer.update({

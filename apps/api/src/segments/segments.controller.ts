@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Query, Param, ParseUUIDPipe, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Query, Param, ParseUUIDPipe, DefaultValuePipe, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { SegmentsService } from './segments.service';
 import { SegmentationService } from '../segmentation/segmentation.service';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('segments')
 export class SegmentsController {
@@ -56,6 +58,8 @@ export class SegmentsController {
   }
 
   @Post('recalculate')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   async recalculate(@Query('customerId') customerId?: string) {
     if (customerId) {
       const explain = await this.segmentationService.updateCustomerSegment(customerId);
