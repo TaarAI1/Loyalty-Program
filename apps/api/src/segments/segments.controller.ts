@@ -1,9 +1,13 @@
-import { Controller, Get, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Query, Param, ParseUUIDPipe, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { SegmentsService } from './segments.service';
+import { SegmentationService } from '../segmentation/segmentation.service';
 
 @Controller('segments')
 export class SegmentsController {
-  constructor(private readonly segmentsService: SegmentsService) {}
+  constructor(
+    private readonly segmentsService: SegmentsService,
+    private readonly segmentationService: SegmentationService,
+  ) {}
 
   @Get('customers')
   getCustomers(
@@ -44,5 +48,19 @@ export class SegmentsController {
       page,
       pageSize,
     });
+  }
+
+  @Get('customers/:id/segment-explain')
+  explainSegment(@Param('id', ParseUUIDPipe) id: string) {
+    return this.segmentationService.explainForCustomer(id);
+  }
+
+  @Post('recalculate')
+  async recalculate(@Query('customerId') customerId?: string) {
+    if (customerId) {
+      const explain = await this.segmentationService.updateCustomerSegment(customerId);
+      return { updated: 1, explain };
+    }
+    return this.segmentationService.recalculateAll();
   }
 }
