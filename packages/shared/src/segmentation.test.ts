@@ -6,6 +6,13 @@ const cfg = DEFAULT_SEGMENT_CONFIG;
 const recent = new Date('2026-10-01T12:00:00Z');
 const asOf = new Date('2026-10-10T12:00:00Z');
 
+/** Typical population bars for demo-sized DB tests */
+const pop = {
+  spendMedian: 50_000,
+  visitMedian: 5,
+  spendP95: 2_000_000,
+};
+
 describe('computeCustomerSegment', () => {
   it('high spend diamond with few txs is not potential', () => {
     const r = computeCustomerSegment(
@@ -18,6 +25,7 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.notEqual(r.segment, 'potential');
     assert.equal(r.segment, 'champion');
@@ -33,23 +41,28 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.notEqual(r.segment, 'loyal');
+    assert.equal(r.segment, 'potential');
+    assert.equal(r.rule, 'potential_lower_spend');
   });
 
-  it('high spend frequent recent gets strong classification', () => {
+  it('high spend and high visits is loyal', () => {
     const r = computeCustomerSegment(
       {
         completedTxCount: 12,
-        lifetimeSale: 800_000,
+        lifetimeSale: 400_000,
         lastVisitDate: recent,
         firstVisitDate: new Date('2026-01-01'),
         tierName: 'Gold',
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
-    assert.ok(r.segment === 'champion' || r.segment === 'loyal');
+    assert.equal(r.segment, 'loyal');
+    assert.equal(r.rule, 'loyal_high_spend_and_visits');
   });
 
   it('high historical spend but long inactivity is at_risk', () => {
@@ -62,6 +75,7 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.equal(r.segment, 'at_risk');
   });
@@ -76,6 +90,7 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.equal(r.segment, 'new');
   });
@@ -90,6 +105,7 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.notEqual(r.segment, 'loyal');
   });
@@ -105,6 +121,7 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.equal(r.segment, 'champion');
   });
@@ -119,7 +136,39 @@ describe('computeCustomerSegment', () => {
         asOfDate: asOf,
       },
       cfg,
+      pop,
     );
     assert.equal(r.segment, 'dormant');
+  });
+
+  it('many visits but below median spend is potential not loyal', () => {
+    const r = computeCustomerSegment(
+      {
+        completedTxCount: 8,
+        lifetimeSale: 15_000,
+        lastVisitDate: recent,
+        firstVisitDate: new Date('2026-01-01'),
+        asOfDate: asOf,
+      },
+      cfg,
+      pop,
+    );
+    assert.equal(r.segment, 'potential');
+    assert.equal(r.rule, 'potential_lower_spend');
+  });
+
+  it('top spend with top visits is loyal not potential', () => {
+    const r = computeCustomerSegment(
+      {
+        completedTxCount: 10,
+        lifetimeSale: 300_000,
+        lastVisitDate: recent,
+        firstVisitDate: new Date('2026-01-01'),
+        asOfDate: asOf,
+      },
+      cfg,
+      pop,
+    );
+    assert.equal(r.segment, 'loyal');
   });
 });

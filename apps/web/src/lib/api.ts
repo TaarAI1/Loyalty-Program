@@ -129,6 +129,8 @@ export const webhookLogsApi = {
 export const segmentsApi = {
   getCustomers: (params: Record<string, unknown>) =>
     api.get('/segments/customers', { params }).then((r) => r.data),
+  recalculate: () =>
+    api.post('/segments/recalculate').then((r) => r.data) as Promise<{ updated: number }>,
 };
 
 // Users
