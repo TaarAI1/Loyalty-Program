@@ -1,4 +1,4 @@
-import { Controller, Get, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Query, DefaultValuePipe, ParseFloatPipe, ParseIntPipe } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 
 @Controller('reports')
@@ -90,9 +90,22 @@ export class ReportsController {
     @Query('store') store?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
+    @Query('customerName') customerName?: string,
+    @Query('windowSaleMin', new DefaultValuePipe(0), ParseFloatPipe) windowSaleMin?: number,
+    @Query('windowSaleMax', new DefaultValuePipe(0), ParseFloatPipe) windowSaleMax?: number,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize = 50,
   ) {
-    return this.reportsService.forensicReport({ region, store, dateFrom, dateTo, page, pageSize });
+    return this.reportsService.forensicReport({
+      region,
+      store,
+      dateFrom,
+      dateTo,
+      customerName: customerName?.trim() || undefined,
+      windowSaleMin: windowSaleMin ? windowSaleMin : undefined,
+      windowSaleMax: windowSaleMax ? windowSaleMax : undefined,
+      page,
+      pageSize,
+    });
   }
 }

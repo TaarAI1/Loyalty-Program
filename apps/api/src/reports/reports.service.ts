@@ -16,6 +16,9 @@ export interface ReportFilters {
   limit?: number;
   page?: number;
   pageSize?: number;
+  customerName?: string;
+  windowSaleMin?: number;
+  windowSaleMax?: number;
 }
 
 @Injectable()
@@ -241,7 +244,11 @@ export class ReportsService {
    * SSFR8: Forensic Report
    */
   async forensicReport(filters: ReportFilters) {
-    const { region, store, dateFrom, dateTo, page = 1, pageSize = 50 } = filters;
+    const {
+      region, store, dateFrom, dateTo, page = 1, pageSize = 50,
+      customerName, windowSaleMin, windowSaleMax,
+    } = filters;
+    const nameQuery = customerName?.trim();
 
     const data = await this.prisma.$queryRaw<
       Array<{
@@ -288,6 +295,9 @@ export class ReportsService {
           ${dateFrom ? Prisma.sql`AND fa.alert_date >= ${new Date(dateFrom)}` : Prisma.empty}
           ${dateTo ? Prisma.sql`AND fa.alert_date <= ${new Date(dateTo)}` : Prisma.empty}
           ${store ? Prisma.sql`AND ${store} = ANY(fa.stores)` : Prisma.empty}
+          ${nameQuery ? Prisma.sql`AND c.name ILIKE ${`%${nameQuery}%`}` : Prisma.empty}
+          ${windowSaleMin != null ? Prisma.sql`AND fa.total_amount >= ${windowSaleMin}` : Prisma.empty}
+          ${windowSaleMax != null ? Prisma.sql`AND fa.total_amount <= ${windowSaleMax}` : Prisma.empty}
           ${region
             ? Prisma.sql`AND EXISTS (
                 SELECT 1 FROM transactions t
