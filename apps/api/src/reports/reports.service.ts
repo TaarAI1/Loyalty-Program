@@ -247,6 +247,8 @@ export class ReportsService {
       Array<{
         store: string;
         name: string;
+        alert_tx_count: number;
+        alert_sale_amount: number;
         total_earning: number;
         redemption: number;
         available_reward: number;
@@ -254,26 +256,50 @@ export class ReportsService {
         action_date: Date;
       }>
     >`
-      SELECT 
-        COALESCE(t.store, '') as store,
-        c.name,
-        COALESCE(SUM(t.points_earned), 0)::int as total_earning,
-        COALESCE(SUM(t.points_redeemed), 0)::int as redemption,
-        (COALESCE(SUM(t.points_earned), 0) - COALESCE(SUM(t.points_redeemed), 0))::int as available_reward,
-        CASE WHEN fa.email_sent = true THEN 'Suspicious' ELSE 'Active' END as status,
-        fa.alert_date as action_date
-      FROM forensic_alerts fa
-      JOIN customers c 
-        ON ('+' || c.country_code || c.mobile_number) = fa.mobile_number
-        OR (c.country_code || c.mobile_number) = fa.mobile_number
-      LEFT JOIN transactions t ON c.id = t.customer_id
-      WHERE 1=1
-        ${dateFrom ? Prisma.sql`AND fa.alert_date >= ${new Date(dateFrom)}` : Prisma.empty}
-        ${dateTo ? Prisma.sql`AND fa.alert_date <= ${new Date(dateTo)}` : Prisma.empty}
-        ${store ? Prisma.sql`AND t.store = ${store}` : Prisma.empty}
-        ${region ? Prisma.sql`AND t.region = ${region}` : Prisma.empty}
-      GROUP BY t.store, c.id, c.name, fa.alert_date, fa.email_sent
-      ORDER BY fa.alert_date DESC
+      SELECT store, name, alert_tx_count, alert_sale_amount, total_earning, redemption, available_reward, status, action_date
+      FROM (
+        SELECT DISTINCT ON (fa.id)
+          COALESCE(fa.stores[1], '') AS store,
+          c.name,
+          fa.transaction_count::int AS alert_tx_count,
+          fa.total_amount::float AS alert_sale_amount,
+          (
+            SELECT COALESCE(SUM(t.points_earned), 0)::int
+            FROM transactions t
+            WHERE t.customer_id = c.id
+          ) AS total_earning,
+          (
+            SELECT COALESCE(SUM(t.points_redeemed), 0)::int
+            FROM transactions t
+            WHERE t.customer_id = c.id
+          ) AS redemption,
+          (
+            SELECT COALESCE(SUM(t.points_earned - t.points_redeemed), 0)::int
+            FROM transactions t
+            WHERE t.customer_id = c.id
+          ) AS available_reward,
+          CASE WHEN fa.email_sent = true THEN 'Suspicious' ELSE 'Active' END AS status,
+          fa.alert_date AS action_date
+        FROM forensic_alerts fa
+        JOIN customers c
+          ON ('+' || c.country_code || c.mobile_number) = fa.mobile_number
+          OR (c.country_code || c.mobile_number) = fa.mobile_number
+        WHERE 1=1
+          ${dateFrom ? Prisma.sql`AND fa.alert_date >= ${new Date(dateFrom)}` : Prisma.empty}
+          ${dateTo ? Prisma.sql`AND fa.alert_date <= ${new Date(dateTo)}` : Prisma.empty}
+          ${store ? Prisma.sql`AND ${store} = ANY(fa.stores)` : Prisma.empty}
+          ${region
+            ? Prisma.sql`AND EXISTS (
+                SELECT 1 FROM transactions t
+                WHERE t.customer_id = c.id
+                  AND t.region = ${region}
+                  AND t.transaction_date >= fa.first_transaction_date
+                  AND t.transaction_date <= fa.last_transaction_date
+              )`
+            : Prisma.empty}
+        ORDER BY fa.id, fa.alert_date DESC
+      ) alert_rows
+      ORDER BY action_date DESC
       LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
     `;
 

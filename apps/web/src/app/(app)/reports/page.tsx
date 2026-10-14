@@ -226,32 +226,36 @@ export default function ReportsPage() {
                   onChange={(e) => setFilters((f) => ({ ...f, store: e.target.value }))}
                 />
               </div>
+              {selectedReport !== 'SSFR8' && (
+                <>
+                  <div className="space-y-1">
+                    <Label>Tier</Label>
+                    <Select
+                      options={tierOptions}
+                      value={filters.tierId}
+                      onChange={(e) => setFilters((f) => ({ ...f, tierId: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Gender</Label>
+                    <Select
+                      options={GENDER_OPTIONS}
+                      value={filters.gender}
+                      onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Age Bracket</Label>
+                    <Select
+                      options={AGE_BRACKETS}
+                      value={filters.ageBracket}
+                      onChange={(e) => setFilters((f) => ({ ...f, ageBracket: e.target.value }))}
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-1">
-                <Label>Tier</Label>
-                <Select
-                  options={tierOptions}
-                  value={filters.tierId}
-                  onChange={(e) => setFilters((f) => ({ ...f, tierId: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Gender</Label>
-                <Select
-                  options={GENDER_OPTIONS}
-                  value={filters.gender}
-                  onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Age Bracket</Label>
-                <Select
-                  options={AGE_BRACKETS}
-                  value={filters.ageBracket}
-                  onChange={(e) => setFilters((f) => ({ ...f, ageBracket: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Date From</Label>
+                <Label>{selectedReport === 'SSFR8' ? 'Alert Date From' : 'Date From'}</Label>
                 <Input
                   type="date"
                   value={filters.dateFrom}
@@ -259,29 +263,33 @@ export default function ReportsPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Date To</Label>
+                <Label>{selectedReport === 'SSFR8' ? 'Alert Date To' : 'Date To'}</Label>
                 <Input
                   type="date"
                   value={filters.dateTo}
                   onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>Month</Label>
-                <Select
-                  options={MONTHS}
-                  value={filters.month}
-                  onChange={(e) => setFilters((f) => ({ ...f, month: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Year</Label>
-                <Select
-                  options={[{ value: '', label: 'Any year' }, ...YEARS]}
-                  value={filters.year}
-                  onChange={(e) => setFilters((f) => ({ ...f, year: e.target.value }))}
-                />
-              </div>
+              {selectedReport !== 'SSFR8' && (
+                <>
+                  <div className="space-y-1">
+                    <Label>Month</Label>
+                    <Select
+                      options={MONTHS}
+                      value={filters.month}
+                      onChange={(e) => setFilters((f) => ({ ...f, month: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Year</Label>
+                    <Select
+                      options={[{ value: '', label: 'Any year' }, ...YEARS]}
+                      value={filters.year}
+                      onChange={(e) => setFilters((f) => ({ ...f, year: e.target.value }))}
+                    />
+                  </div>
+                </>
+              )}
               {selectedReport === 'TCR18' && (
                 <div className="space-y-1">
                   <Label>Limit (Top N)</Label>
@@ -482,8 +490,8 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
       return (
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-muted/50">
-            {['Store','Customer','Total Earning','Redemption','Available','Status','Alert Date'].map((h) => (
-              <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground">{h}</th>
+            {['Store','Customer','Alert Tx (3d)','Window Sale','Lifetime Earned','Lifetime Redeemed','Lifetime Available','Status','Alert Date'].map((h) => (
+              <th key={h} className="text-left py-3 px-3 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
             ))}
           </tr></thead>
           <tbody>
@@ -491,6 +499,8 @@ function ReportTable({ reportType, data }: { reportType: string; data: Record<st
               <tr key={i} className="border-b border-border/50 hover:bg-muted/30 bg-red-50/30">
                 <td className="py-2 px-3">{String(row.store ?? '')}</td>
                 <td className="py-2 px-3 font-medium">{String(row.name ?? '')}</td>
+                <td className="py-2 px-3 font-semibold">{formatNumber(Number(row.alert_tx_count))}</td>
+                <td className="py-2 px-3">{formatCurrency(Number(row.alert_sale_amount))}</td>
                 <td className="py-2 px-3 text-green-600">{formatNumber(Number(row.total_earning))}</td>
                 <td className="py-2 px-3 text-orange-600">{formatNumber(Number(row.redemption))}</td>
                 <td className="py-2 px-3 font-bold">{formatNumber(Number(row.available_reward))}</td>
