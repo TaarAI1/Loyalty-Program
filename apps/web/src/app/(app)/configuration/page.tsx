@@ -1137,7 +1137,14 @@ function TestSmtpButton() {
 // ── Oracle DB Tab ─────────────────────────────────────────────────────────────
 
 function OracleTab() {
-  const [form, setForm] = useState({ host: '', port: 1521, dbUser: '', password: '', service: '' });
+  const [form, setForm] = useState({
+    host: '',
+    port: 1521,
+    dbUser: '',
+    password: '',
+    service: '',
+    subsidiarySid: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -1152,6 +1159,7 @@ function OracleTab() {
         dbUser:  data.dbUser  ?? '',
         password: data.password ?? '',
         service: data.service ?? '',
+        subsidiarySid: data.subsidiarySid ?? '',
       });
     }).catch((err: unknown) => {
       toast.error(err instanceof Error ? err.message : 'Could not load Oracle configuration.');
@@ -1167,6 +1175,7 @@ function OracleTab() {
         dbUser:   form.dbUser,
         password: form.password || undefined,
         service:  form.service,
+        subsidiarySid: form.subsidiarySid.trim() || undefined,
       });
       toast.success('Oracle configuration saved and connection pool updated.');
     } catch (err) {
@@ -1241,6 +1250,17 @@ function OracleTab() {
             <div className="space-y-1.5">
               <Label>Service Name</Label>
               <Input placeholder="e.g. ORCL or RPROODS" value={form.service} onChange={(e) => setForm({ ...form, service: e.target.value })} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Subsidiary SID (SBS_SID)</Label>
+              <Input
+                placeholder="Retail Pro subsidiary SID for store lookup"
+                value={form.subsidiarySid}
+                onChange={(e) => setForm({ ...form, subsidiarySid: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Used when loading stores from Oracle (e.g. form store assignment). Saved here instead of relying only on server environment variables.
+              </p>
             </div>
           </div>
 
