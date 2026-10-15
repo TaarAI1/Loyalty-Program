@@ -994,10 +994,15 @@ export class ConfigurationService {
       ? this.encryption.encrypt(data.password)
       : (existing?.password ?? '');
 
+    const subsidiarySid =
+      data.subsidiarySid !== undefined
+        ? (data.subsidiarySid.trim() || null)
+        : (existing?.subsidiarySid ?? null);
+
     await this.prisma.oracleConfig.upsert({
       where:  { id: 1 },
-      update: { host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
-      create: { id: 1, host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid: data.subsidiarySid ?? null },
+      update: { host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid },
+      create: { id: 1, host: data.host, port: data.port, dbUser: data.dbUser, password, service: data.service, subsidiarySid },
     });
 
     // Reinitialize Oracle pool with new credentials
@@ -1035,12 +1040,19 @@ export class ConfigurationService {
     }
   }
 
+  /** Retail Pro SBS_SID: saved Oracle config first, then RETAILPRO_SUBSIDIARY_SID env. */
+  private async resolveSubsidiarySid(): Promise<string | null> {
+    const dbConfig = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
+    const fromDb = dbConfig?.subsidiarySid?.trim();
+    if (fromDb) return fromDb;
+    const fromEnv = process.env['RETAILPRO_SUBSIDIARY_SID']?.trim();
+    return fromEnv || null;
+  }
+
   // ── Oracle — Stores ──────────────────────────────────────────────────────────
 
   async getStoresFromOracle(): Promise<{ store_no: string; store_name: string }[]> {
-    // Prefer subsidiary SID from DB config, fall back to env var
-    const dbConfig = await this.prisma.oracleConfig.findFirst({ where: { id: 1 } });
-    const subsidiarySid = dbConfig?.subsidiarySid ?? process.env['RETAILPRO_SUBSIDIARY_SID'];
+    const subsidiarySid = await this.resolveSubsidiarySid();
 
     if (!subsidiarySid) {
       this.logger.warn('Subsidiary SID not configured — cannot fetch stores');
@@ -1061,11 +1073,11 @@ export class ConfigurationService {
     }
   }
 
-  getOracleStatus(): { connected: boolean; lastError: string | null; subsidiarySid: string | null } {
+  async getOracleStatus(): Promise<{ connected: boolean; lastError: string | null; subsidiarySid: string | null }> {
     const status = this.oracle.getStatus();
     return {
       ...status,
-      subsidiarySid: process.env['RETAILPRO_SUBSIDIARY_SID'] ?? null,
+      subsidiarySid: await this.resolveSubsidiarySid(),
     };
   }
 
@@ -1073,7 +1085,7 @@ export class ConfigurationService {
 
   async getRetailProStores(): Promise<{ sid: string; store_name: string; store_number: string; store_code: string }[]> {
     const baseUrl = process.env['RETAILPRO_BASE_URL'];
-    const subsidiarySid = process.env['RETAILPRO_SUBSIDIARY_SID'];
+    const subsidiarySid = await this.resolveSubsidiarySid();
 
     if (!baseUrl) {
       this.logger.warn('RETAILPRO_BASE_URL not configured — returning empty store list');
