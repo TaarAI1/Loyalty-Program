@@ -57,7 +57,20 @@ export default function CustomerDetailPage() {
   const [historyPage, setHistoryPage] = useState(1);
   const [ledgerPage, setLedgerPage] = useState(1);
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
-  const [txItems, setTxItems] = useState<Record<string, { id: string; sku: string; description: string; qty: number; unitPrice: number; totalPrice: number }[]>>({});
+  const [txItems, setTxItems] = useState<
+    Record<
+      string,
+      {
+        id: string;
+        sku: string;
+        description: string;
+        qty: number;
+        unitPrice: number;
+        itemDiscount?: number | null;
+        totalPrice: number;
+      }[]
+    >
+  >({});
   const [personaOpen, setPersonaOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
 
