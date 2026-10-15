@@ -583,7 +583,8 @@ export default function CustomerDetailPage() {
                         <span className="ml-1 text-[10px] font-normal text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">pts base</span>
                       </th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Tax Amount</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">Gross Amount</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground whitespace-nowrap">Gross Amount</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground whitespace-nowrap">Txn Discount</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Earned</th>
                       <th className="text-right py-3 px-2 font-medium text-muted-foreground">Pts Redeemed</th>
                       <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
@@ -599,6 +600,7 @@ export default function CustomerDetailPage() {
                         saleAmount: number;
                         taxAmount: number | null;
                         grossAmount: number | null;
+                        totalDiscount: number | null;
                         pointsEarned: number;
                         pointsRedeemed: number;
                         status: string;
@@ -642,8 +644,17 @@ export default function CustomerDetailPage() {
                               <td className="py-2 px-2 text-right text-slate-500 text-sm">
                                 {tx.taxAmount != null ? formatCurrency(Number(tx.taxAmount)) : '—'}
                               </td>
-                              <td className="py-2 px-2 text-right font-medium text-sm text-slate-700">
+                              <td className="py-2 px-2 text-right font-medium text-sm text-slate-700 tabular-nums">
                                 {tx.grossAmount != null ? formatCurrency(Number(tx.grossAmount)) : '—'}
+                              </td>
+                              <td className="py-2 px-2 text-right text-sm tabular-nums">
+                                {tx.totalDiscount != null && Number(tx.totalDiscount) > 0 ? (
+                                  <span className="text-amber-700 dark:text-amber-500/90">
+                                    {formatCurrency(Number(tx.totalDiscount))}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
                               </td>
                               <td className="py-2 px-2 text-right text-green-600 text-sm font-semibold">
                                 +{formatNumber(tx.pointsEarned)}
@@ -659,7 +670,7 @@ export default function CustomerDetailPage() {
                             </tr>
                             {isExpanded && (
                               <tr className="bg-[#fffde8]/60 border-b border-[#FFD000]/20">
-                                <td colSpan={10} className="px-4 py-3">
+                                <td colSpan={11} className="px-4 py-3">
                                   {!items ? (
                                     <p className="text-xs text-slate-400">Loading items…</p>
                                   ) : items.length === 0 ? (
@@ -678,8 +689,9 @@ export default function CustomerDetailPage() {
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">SKU</th>
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">Description</th>
                                             <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Qty</th>
-                                            <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Unit Price</th>
-                                            <th className="text-right py-1.5 font-semibold text-slate-500">Total</th>
+                                            <th className="text-right py-1.5 pr-3 font-semibold text-slate-500 whitespace-nowrap">Unit Price</th>
+                                            <th className="text-right py-1.5 pr-3 font-semibold text-slate-500 whitespace-nowrap">Item Discount</th>
+                                            <th className="text-right py-1.5 font-semibold text-slate-500 whitespace-nowrap">Total</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -689,6 +701,15 @@ export default function CustomerDetailPage() {
                                               <td className="py-1.5 pr-3 text-slate-700">{item.description || '—'}</td>
                                               <td className="py-1.5 pr-3 text-right tabular-nums">{Number(item.qty)}</td>
                                               <td className="py-1.5 pr-3 text-right tabular-nums">{formatCurrency(Number(item.unitPrice))}</td>
+                                              <td className="py-1.5 pr-3 text-right tabular-nums">
+                                                {item.itemDiscount != null && Number(item.itemDiscount) > 0 ? (
+                                                  <span className="text-amber-700 dark:text-amber-500/90">
+                                                    {formatCurrency(Number(item.itemDiscount))}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-slate-400">—</span>
+                                                )}
+                                              </td>
                                               <td className="py-1.5 text-right font-semibold tabular-nums">{formatCurrency(Number(item.totalPrice))}</td>
                                             </tr>
                                           ))}
