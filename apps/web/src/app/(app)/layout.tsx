@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F8F8F8]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#D0F878]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#B9EB32]" />
       </div>
     );
   }

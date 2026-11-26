@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Settings, BarChart3, Bell,
-  Gift, UserCog, LogOut, ChevronLeft, ChevronRight, Filter, ClipboardList, MessageSquare,
+  UserCog, LogOut, ChevronLeft, ChevronRight, Filter, ClipboardList, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -37,31 +38,37 @@ export function Sidebar() {
   return (
     <aside className={cn(
       'relative flex flex-col bg-[#000820] transition-all duration-300 ease-in-out shrink-0',
-      collapsed ? 'w-[70px]' : 'w-[240px]',
+      collapsed ? 'w-[72px]' : 'w-[248px]',
     )}>
-      {/* Lime brand accent bar */}
-      <div className="h-[3px] w-full bg-[#D0F878]" />
+      <div className="h-[3px] w-full bg-[#B9EB32]" />
 
       {/* Logo */}
       <div className={cn(
-        'flex items-center gap-3 px-5 py-5 border-b border-white/5',
-        collapsed && 'justify-center px-4',
+        'flex items-center px-4 py-5 border-b border-white/10',
+        collapsed ? 'justify-center px-3' : 'px-5',
       )}>
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#D0F878] flex items-center justify-center">
-          <Gift className="w-4 h-4 text-[#000820]" />
-        </div>
-        {!collapsed && (
-          <div>
-            <p className="font-black text-[15px] text-white leading-none tracking-tight">LoyaltyPlus</p>
-            <p className="text-[#666] text-[11px] mt-0.5 font-medium">Management System</p>
+        {collapsed ? (
+          <div className="w-9 h-9 rounded-lg bg-[#B9EB32] flex items-center justify-center">
+            <span className="text-[#000820] font-black text-lg leading-none">+</span>
           </div>
+        ) : (
+          <Image
+            src="/brand/logo-white.png"
+            alt="Loyalty Plus"
+            width={160}
+            height={40}
+            className="h-8 w-auto object-contain object-left"
+            priority
+          />
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 px-2.5 space-y-0.5">
+      <nav className="flex-1 py-4 px-2.5 space-y-0.5 overflow-y-auto">
         {!collapsed && (
-          <p className="text-[10px] font-black text-[#333] uppercase tracking-widest px-3 mb-3">Menu</p>
+          <p className="text-[10px] font-bold text-[#6B8FA8] uppercase tracking-[0.14em] px-3 mb-3">
+            Menu
+          </p>
         )}
         {navItems.map((item) => {
           const active = pathname.startsWith(item.href);
@@ -73,18 +80,18 @@ export function Sidebar() {
               className={cn(
                 'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all',
                 active
-                  ? 'bg-[#D0F878] text-[#000820]'
-                  : 'text-[#777] hover:bg-white/5 hover:text-white',
-                collapsed && 'justify-center',
+                  ? 'bg-[#B9EB32] text-[#000820] shadow-sm'
+                  : 'text-[#C5D0DC] hover:bg-white/8 hover:text-white',
+                collapsed && 'justify-center px-0',
               )}
             >
               <item.icon className={cn(
                 'w-[18px] h-[18px] flex-shrink-0',
-                active ? 'text-[#000820]' : 'text-[#555] group-hover:text-white',
+                active ? 'text-[#000820]' : 'text-[#8FA3B8] group-hover:text-white',
               )} />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span className="truncate">{item.label}</span>}
               {!collapsed && active && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#000820]/40" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#000820]/35" />
               )}
             </Link>
           );
@@ -92,15 +99,15 @@ export function Sidebar() {
       </nav>
 
       {/* User + logout */}
-      <div className={cn('border-t border-white/5 p-3', collapsed && 'flex flex-col items-center gap-2')}>
+      <div className={cn('border-t border-white/10 p-3', collapsed && 'flex flex-col items-center gap-2')}>
         {!collapsed && user && (
           <div className="flex items-center gap-2.5 px-2 py-2 mb-1">
-            <div className="w-7 h-7 rounded-full bg-[#D0F878] flex items-center justify-center text-xs font-black text-[#000820] flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#B9EB32] flex items-center justify-center text-xs font-black text-[#000820] flex-shrink-0">
               {user.username[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-bold text-white truncate">{user.username}</p>
-              <p className="text-[11px] text-[#555] capitalize">{user.role}</p>
+              <p className="text-[11px] text-[#8FA3B8] capitalize">{user.role}</p>
             </div>
           </div>
         )}
@@ -108,7 +115,7 @@ export function Sidebar() {
           onClick={handleLogout}
           title={collapsed ? 'Sign out' : undefined}
           className={cn(
-            'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#555] hover:bg-white/5 hover:text-red-400 transition-all',
+            'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#8FA3B8] hover:bg-white/8 hover:text-red-400 transition-all',
             collapsed && 'justify-center w-10 h-10',
           )}
         >
@@ -117,14 +124,14 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#000820] border border-[#333] flex items-center justify-center hover:bg-[#222] transition-colors z-10 shadow-md"
+        className="absolute -right-3 top-[68px] w-6 h-6 rounded-full bg-[#000820] border border-[#2A3A50] flex items-center justify-center hover:border-[#B9EB32] hover:bg-[#001020] transition-colors z-10 shadow-md"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed
-          ? <ChevronRight className="w-3 h-3 text-[#D0F878]" />
-          : <ChevronLeft className="w-3 h-3 text-[#D0F878]" />}
+          ? <ChevronRight className="w-3 h-3 text-[#B9EB32]" />
+          : <ChevronLeft className="w-3 h-3 text-[#B9EB32]" />}
       </button>
     </aside>
   );

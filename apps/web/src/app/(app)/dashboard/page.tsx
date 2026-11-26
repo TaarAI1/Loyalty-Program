@@ -78,7 +78,7 @@ export default function DashboardPage() {
       value: metrics ? formatNumber(metrics.totalCustomers) : '—',
       sub: `${metrics?.activeCustomers ?? '—'} active`,
       icon: Users,
-      accent: '#D0F878',
+      accent: '#B9EB32',
       bg: 'bg-[#F4FCE3]',
       color: 'text-[#3F5A10]',
     },
@@ -105,7 +105,7 @@ export default function DashboardPage() {
       value: metrics ? formatCurrency(metrics.avgTransactionValue ?? 0) : '—',
       sub: 'Per sale',
       icon: BarChart2,
-      accent: '#D0F878',
+      accent: '#B9EB32',
       bg: 'bg-[#F4FCE3]',
       color: 'text-[#3F5A10]',
     },
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Points Activity</CardTitle>
-              <span className="text-[11px] font-black text-[#000820] bg-[#F4FCE3] px-2.5 py-1 rounded-full border border-[#D0F878]/40">Last 30 days</span>
+              <span className="text-[11px] font-black text-[#000820] bg-[#F4FCE3] px-2.5 py-1 rounded-full border border-[#B9EB32]/40">Last 30 days</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -178,8 +178,8 @@ export default function DashboardPage() {
                 <AreaChart data={trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="earnGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D0F878" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#D0F878" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#B9EB32" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#B9EB32" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="redeemGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
@@ -193,13 +193,13 @@ export default function DashboardPage() {
                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px' }}
                     formatter={(value: number, name: string) => [formatNumber(value), name === 'pointsEarned' ? 'Points Earned' : 'Points Redeemed']}
                   />
-                  <Area type="monotone" dataKey="pointsEarned" stroke="#D0F878" strokeWidth={2.5} fill="url(#earnGrad)" dot={false} />
+                  <Area type="monotone" dataKey="pointsEarned" stroke="#B9EB32" strokeWidth={2.5} fill="url(#earnGrad)" dot={false} />
                   <Area type="monotone" dataKey="pointsRedeemed" stroke="#f59e0b" strokeWidth={2} fill="url(#redeemGrad)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
             <div className="flex items-center gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-[#666]"><span className="w-2.5 h-2.5 rounded-full bg-[#D0F878] inline-block" /> Earned</span>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#487898]"><span className="w-2.5 h-2.5 rounded-full bg-[#B9EB32] inline-block" /> Earned</span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Redeemed</span>
             </div>
           </CardContent>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-[#D0F878]" />
+                <Trophy className="w-4 h-4 text-[#B9EB32]" />
                 <CardTitle>Top Customers</CardTitle>
               </div>
               <Link href="/customers" className="text-[11px] text-slate-500 hover:text-[#000820] flex items-center gap-1">
@@ -280,7 +280,7 @@ export default function DashboardPage() {
                         <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
                           <td className="py-3 px-6">
                             {idx < 3 ? (
-                              <span className={`font-black text-sm ${idx === 0 ? 'text-[#D0F878]' : idx === 1 ? 'text-slate-400' : 'text-amber-600'}`}>
+                              <span className={`font-black text-sm ${idx === 0 ? 'text-[#B9EB32]' : idx === 1 ? 'text-slate-400' : 'text-amber-600'}`}>
                                 #{idx + 1}
                               </span>
                             ) : (

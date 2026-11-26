@@ -101,7 +101,7 @@ function QuestionInput({
             onClick={() => onPick(String(star))}
             style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`text-5xl transition-all duration-200 hover:scale-110 drop-shadow-sm ${
-              Number(value) >= star ? 'text-[#D0F878]' : 'text-gray-300'
+              Number(value) >= star ? 'text-[#B9EB32]' : 'text-gray-300'
             }`}
           >
             ★
@@ -122,7 +122,7 @@ function QuestionInput({
             style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-200 ${
               value === e.label
-                ? 'bg-[#F4FCE3]/80 ring-2 ring-[#D0F878] scale-110 shadow-md'
+                ? 'bg-[#F4FCE3]/80 ring-2 ring-[#B9EB32] scale-110 shadow-md'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
             }`}
           >
@@ -147,7 +147,7 @@ function QuestionInput({
             }}
             className={`flex-1 py-3.5 rounded-2xl text-base font-bold transition-all duration-200 border-2 ${
               value === opt
-                ? 'bg-[#D0F878] border-[#D0F878] text-[#000820] shadow-lg scale-[1.02]'
+                ? 'bg-[#B9EB32] border-[#B9EB32] text-[#000820] shadow-lg scale-[1.02]'
                 : 'bg-white/50 border-white/70 text-gray-700 hover:bg-[#F4FCE3]/60 backdrop-blur-sm'
             }`}
           >
@@ -171,7 +171,7 @@ function QuestionInput({
             }}
             className={`w-full py-3 px-4 rounded-2xl text-left text-sm font-semibold border-2 transition-all duration-200 ${
               value === opt
-                ? 'bg-[#D0F878] border-[#D0F878] text-[#000820] shadow-md'
+                ? 'bg-[#B9EB32] border-[#B9EB32] text-[#000820] shadow-md'
                 : 'bg-white/50 border-white/70 text-gray-700 hover:bg-[#F4FCE3]/60 backdrop-blur-sm'
             }`}
           >
@@ -190,7 +190,7 @@ function QuestionInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Type your answer here…"
         style={{ animation: 'cascadeIn 0.3s ease-out 0.18s both' }}
-        className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D0F878]"
+        className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#B9EB32]"
       />
     );
   }
@@ -202,8 +202,8 @@ function QuestionInput({
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50">
-      <div className="w-10 h-10 border-4 border-[#F4FCE3] border-t-[#D0F878] rounded-full animate-spin" />
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8]">
+      <div className="w-10 h-10 border-4 border-[#F4FCE3] border-t-[#B9EB32] rounded-full animate-spin" />
     </div>
   );
 }
@@ -370,17 +370,17 @@ function SurveyContent() {
   // ── Render: already submitted ─────────────────────────────────────────────────
   if (blocked === 'already_submitted') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8] flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
         <div
           className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
           style={{ animation: 'fadeIn 0.4s ease-out' }}
         >
           <div
-            className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-[#D0F878] flex items-center justify-center mx-auto mb-6"
+            className="w-20 h-20 rounded-full bg-[#F4FCE3] border-4 border-[#B9EB32] flex items-center justify-center mx-auto mb-6"
             style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
           >
-            <span className="text-4xl text-yellow-500 font-bold">✓</span>
+            <span className="text-4xl text-[#B9EB32] font-bold">✓</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Already Submitted</h2>
           <p className="text-gray-500 text-sm">You have already submitted feedback for this visit. Thank you!</p>
@@ -392,7 +392,7 @@ function SurveyContent() {
   // ── Render: blocked ───────────────────────────────────────────────────────────
   if (blocked) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8] flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
         <div
           className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
@@ -409,7 +409,7 @@ function SurveyContent() {
   // ── Render: no active form ────────────────────────────────────────────────────
   if (noForm || !form) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8] flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
         <div
           className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
@@ -426,7 +426,7 @@ function SurveyContent() {
   // ── Render: thank you ─────────────────────────────────────────────────────────
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8] flex items-center justify-center p-6">
         <style>{SURVEY_STYLES}</style>
         <div
           className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-10 text-center max-w-sm w-full"
@@ -445,7 +445,7 @@ function SurveyContent() {
               <circle
                 cx="56" cy="56" r="50"
                 fill="none"
-                stroke="#D0F878"
+                stroke="#B9EB32"
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={RING_CIRC}
@@ -455,10 +455,10 @@ function SurveyContent() {
             </svg>
             {/* Checkmark disc */}
             <div
-              className="absolute inset-0 rounded-full bg-yellow-50 flex items-center justify-center m-2"
+              className="absolute inset-0 rounded-full bg-[#F4FCE3] flex items-center justify-center m-2"
               style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
             >
-              <span className="text-4xl text-yellow-500 font-bold leading-none">✓</span>
+              <span className="text-4xl text-[#B9EB32] font-bold leading-none">✓</span>
             </div>
           </div>
 
@@ -488,11 +488,11 @@ function SurveyContent() {
   const progress = ((currentIdx + 1) / totalQuestions) * 100;
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50 flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#F8F8F8] via-[#F4FCE3] to-[#EAF6C8] flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
       <style>{SURVEY_STYLES}</style>
 
       {/* Decorative blobs for glass depth */}
-      <div className="absolute top-[-100px] right-[-80px] w-80 h-80 rounded-full bg-yellow-200/30 blur-3xl pointer-events-none" />
+      <div className="absolute top-[-100px] right-[-80px] w-80 h-80 rounded-full bg-[#B9EB32]/25 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
 
       {/* Back button */}
@@ -508,7 +508,7 @@ function SurveyContent() {
       <div className="w-full max-w-sm relative z-10">
         {/* Header */}
         <div className="text-center mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#F4FCE3] border border-[#D0F878]/40 mb-3 shadow-md">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#F4FCE3] border border-[#B9EB32]/40 mb-3 shadow-md">
             <span className="text-2xl">📝</span>
           </div>
           <h1 className="text-xl font-bold text-gray-800">Your Feedback Matters to Us</h1>
@@ -523,7 +523,7 @@ function SurveyContent() {
         </p>
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-5">
           <div
-            className="bg-[#D0F878] rounded-full h-1.5 transition-all duration-500"
+            className="bg-[#B9EB32] rounded-full h-1.5 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -558,7 +558,7 @@ function SurveyContent() {
                 type="button"
                 disabled={!canSubmitOrNext || submitting}
                 onClick={isLast ? handleSubmit : goNext}
-                className="w-full py-3.5 rounded-2xl bg-[#D0F878] text-[#000820] font-bold text-base shadow-lg hover:bg-[#B9EB32] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-2xl bg-[#B9EB32] text-[#000820] font-bold text-base shadow-lg hover:bg-[#B9EB32] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting…' : isLast ? 'Submit Feedback' : 'Next →'}
               </button>

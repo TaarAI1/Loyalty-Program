@@ -305,7 +305,7 @@ function TiersTab() {
                 step="0.5"
                 value={form.rewardPercentage}
                 onChange={(e) => setForm((f) => ({ ...f, rewardPercentage: e.target.value }))}
-                className="w-full accent-[#D0F878]"
+                className="w-full accent-[#B9EB32]"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1%</span>

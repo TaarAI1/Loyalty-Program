@@ -85,7 +85,7 @@ const TYPE_LABEL: Record<string, string> = {
 // icon + colour per question type
 const TYPE_META: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
   text:     { icon: <AlignLeft   className="h-4 w-4" />, bg: 'bg-blue-100',   text: 'text-blue-600' },
-  textarea: { icon: <Smile       className="h-4 w-4" />, bg: 'bg-yellow-100', text: 'text-yellow-600' },
+  textarea: { icon: <Smile       className="h-4 w-4" />, bg: 'bg-[#F4FCE3]', text: 'text-[#5A7A12]' },
   rating:   { icon: <Star        className="h-4 w-4" />, bg: 'bg-amber-100',  text: 'text-amber-600' },
   boolean:  { icon: <ToggleLeft  className="h-4 w-4" />, bg: 'bg-green-100',  text: 'text-green-600' },
   select:   { icon: <List        className="h-4 w-4" />, bg: 'bg-purple-100', text: 'text-purple-600' },
@@ -204,7 +204,7 @@ function QuestionPreview({ question }: { question: Question }) {
             <button key={n} type="button" onClick={() => setRating(n)}
               onMouseEnter={() => setHoverRating(n)} onMouseLeave={() => setHoverRating(0)}
               className="transition-transform hover:scale-110">
-              <Star className={`h-8 w-8 transition-colors ${n <= (hoverRating || rating) ? 'fill-[#D0F878] text-[#D0F878]' : 'text-muted-foreground/30'}`} />
+              <Star className={`h-8 w-8 transition-colors ${n <= (hoverRating || rating) ? 'fill-[#B9EB32] text-[#B9EB32]' : 'text-muted-foreground/30'}`} />
             </button>
           ))}
         </div>
@@ -1404,7 +1404,7 @@ function WebFormTab() {
   const dotColors: Record<string, string> = {
     text:     'bg-blue-100 text-blue-700 border-blue-200',
     textarea: 'bg-orange-100 text-orange-700 border-orange-200',
-    rating:   'bg-yellow-100 text-yellow-700 border-yellow-200',
+    rating:   'bg-[#F4FCE3] text-[#3F5A10] border-[#B9EB32]/40',
     boolean:  'bg-green-100 text-green-700 border-green-200',
     select:   'bg-purple-100 text-purple-700 border-purple-200',
   };

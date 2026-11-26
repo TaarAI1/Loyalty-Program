@@ -6,31 +6,30 @@
 
 @layer base {
   :root {
-    /* Loyalty Plus branding — navy + lime */
-    --background: 0 0% 97%;
+    /* Loyalty Plus — navy + logo lime */
+    --background: 210 20% 97%;
     --foreground: 225 100% 6%;
     --card: 0 0% 100%;
     --card-foreground: 225 100% 6%;
-    --primary: 79 90% 72%;
+    --primary: 76 83% 56%;
     --primary-foreground: 225 100% 6%;
-    --secondary: 210 40% 96%;
+    --secondary: 210 30% 96%;
     --secondary-foreground: 225 100% 6%;
-    --muted: 210 30% 95%;
-    --muted-foreground: 204 36% 40%;
-    --accent: 79 90% 72%;
+    --muted: 210 25% 95%;
+    --muted-foreground: 204 36% 44%;
+    --accent: 76 83% 56%;
     --accent-foreground: 225 100% 6%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 204 25% 88%;
     --input: 204 25% 88%;
-    --ring: 79 90% 72%;
+    --ring: 76 83% 56%;
     --radius: 0.75rem;
 
-    /* Brand raw hex (for reference / inline use) */
     --brand-navy: #000820;
     --brand-navy-secondary: #001020;
-    --brand-lime: #D0F878;
-    --brand-lime-logo: #B9EB32;
+    --brand-lime: #B9EB32;
+    --brand-lime-soft: #D0F878;
     --brand-electric: #88C8FF;
     --brand-muted-blue: #487898;
     --brand-warm-white: #F8F8F8;

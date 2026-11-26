@@ -263,7 +263,7 @@ export default function CustomerDetailPage() {
       label: 'Total Spent',
       value: formatCurrency(stats.totalSpent ?? 0),
       icon: ShoppingBag,
-      accent: '#D0F878',
+      accent: '#B9EB32',
       bg: 'bg-[#F4FCE3]',
       iconColor: 'text-[#3F5A10]',
       sub: `${formatNumber(stats.totalTransactions ?? 0)} transactions`,
@@ -436,7 +436,7 @@ export default function CustomerDetailPage() {
                     <div className="absolute inset-0 bg-muted rounded-full" />
                     <div
                       className="absolute top-0 left-0 h-2 rounded-full transition-all duration-700"
-                      style={{ width: `${overallPct}%`, background: '#D0F878' }}
+                      style={{ width: `${overallPct}%`, background: '#B9EB32' }}
                     />
                     {/* Drop-marker below the fill end */}
                     {overallPct > 0 && overallPct < 100 && (
@@ -444,8 +444,8 @@ export default function CustomerDetailPage() {
                         className="absolute top-3 -translate-x-1/2 flex flex-col items-center"
                         style={{ left: `${overallPct}%` }}
                       >
-                        <div className="w-px h-2 bg-[#D0F878]" />
-                        <div className="bg-[#D0F878] text-[#2A4508] text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+                        <div className="w-px h-2 bg-[#B9EB32]" />
+                        <div className="bg-[#B9EB32] text-[#2A4508] text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
                           {Math.round(tierProgressPct)}%
                         </div>
                       </div>
@@ -457,7 +457,7 @@ export default function CustomerDetailPage() {
                         <div
                           key={i}
                           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
-                          style={{ left: `${pos}%`, background: isPast ? '#D0F878' : '#cbd5e1' }}
+                          style={{ left: `${pos}%`, background: isPast ? '#B9EB32' : '#cbd5e1' }}
                         />
                       );
                     })}
@@ -482,7 +482,7 @@ export default function CustomerDetailPage() {
                   <p className="text-center text-xs text-muted-foreground pt-0.5">
                     {nextTier
                       ? <><span className="font-semibold text-slate-700">{formatCurrency(nextTier.spendFrom - Number(customer.lifetimeSale))}</span> to {nextTier.name}</>
-                      : <span className="text-yellow-600 font-semibold">Maximum tier reached</span>
+                      : <span className="text-[#3F5A10] font-semibold">Maximum tier reached</span>
                     }
                   </p>
                 </div>
@@ -495,10 +495,10 @@ export default function CustomerDetailPage() {
                   {/* Engagement */}
                   <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="w-7 h-7 rounded-lg bg-yellow-50 flex items-center justify-center">
-                        <Zap className="w-3.5 h-3.5 text-yellow-600" />
+                      <div className="w-7 h-7 rounded-lg bg-[#F4FCE3] flex items-center justify-center">
+                        <Zap className="w-3.5 h-3.5 text-[#5A7A12]" />
                       </div>
-                      <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded-full border border-yellow-200">
+                      <span className="text-[10px] font-semibold text-[#3F5A10] bg-[#F4FCE3] px-1.5 py-0.5 rounded-full border border-[#B9EB32]/40">
                         {customer.engagementScore ?? 0}/100
                       </span>
                     </div>
@@ -507,7 +507,7 @@ export default function CustomerDetailPage() {
                       <p className="text-[11px] text-muted-foreground">Engagement Score</p>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                      <div className="h-full rounded-full bg-[#D0F878] transition-all duration-700" style={{ width: `${customer.engagementScore ?? 0}%` }} />
+                      <div className="h-full rounded-full bg-[#B9EB32] transition-all duration-700" style={{ width: `${customer.engagementScore ?? 0}%` }} />
                     </div>
                   </div>
 
@@ -682,7 +682,7 @@ export default function CustomerDetailPage() {
                               </td>
                             </tr>
                             {isExpanded && (
-                              <tr className="bg-[#F4FCE3]/60 border-b border-[#D0F878]/20">
+                              <tr className="bg-[#F4FCE3]/60 border-b border-[#B9EB32]/20">
                                 <td colSpan={11} className="px-4 py-3">
                                   {!items ? (
                                     <p className="text-xs text-slate-400">Loading items…</p>
@@ -698,7 +698,7 @@ export default function CustomerDetailPage() {
                                       </div>
                                       <table className="w-full text-xs">
                                         <thead>
-                                          <tr className="border-b border-[#D0F878]/30">
+                                          <tr className="border-b border-[#B9EB32]/30">
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">SKU</th>
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">Description</th>
                                             <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Qty</th>
@@ -709,7 +709,7 @@ export default function CustomerDetailPage() {
                                         </thead>
                                         <tbody>
                                           {items.map((item, idx) => (
-                                            <tr key={idx} className="border-b border-[#D0F878]/10 last:border-0">
+                                            <tr key={idx} className="border-b border-[#B9EB32]/10 last:border-0">
                                               <td className="py-1.5 pr-3 font-mono text-slate-500">{item.sku || '—'}</td>
                                               <td className="py-1.5 pr-3 text-slate-700">{item.description || '—'}</td>
                                               <td className="py-1.5 pr-3 text-right tabular-nums">{Number(item.qty)}</td>
@@ -918,10 +918,10 @@ export default function CustomerDetailPage() {
           className="w-full flex items-center justify-between px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <Users className="w-4 h-4 text-[#D0F878]" />
+            <Users className="w-4 h-4 text-[#B9EB32]" />
             <span className="font-bold text-[14px]">Customer Persona</span>
             {customer?.persona && (
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#D0F878]/20 text-[#5A7A12]">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#B9EB32]/20 text-[#5A7A12]">
                 {customer.persona.label}
               </span>
             )}
@@ -1035,7 +1035,7 @@ export default function CustomerDetailPage() {
                 nextExpiryDate: string | null; nextExpiryPoints: number | null;
               };
               const badgeConfig: Record<string, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
-                'Champion':    { icon: <Trophy className="w-5 h-5" />,        color: 'text-yellow-700', bg: 'bg-yellow-50',  border: 'border-yellow-200' },
+                'Champion':    { icon: <Trophy className="w-5 h-5" />,        color: 'text-[#3F5A10]', bg: 'bg-[#F4FCE3]',  border: 'border-[#B9EB32]/40' },
                 'Loyal':       { icon: <UserCheck className="w-5 h-5" />,     color: 'text-green-700',  bg: 'bg-green-50',   border: 'border-green-200' },
                 'Promising':   { icon: <Sparkles className="w-5 h-5" />,      color: 'text-blue-700',   bg: 'bg-blue-50',    border: 'border-blue-200' },
                 'At Risk':     { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-orange-700', bg: 'bg-orange-50',  border: 'border-orange-200' },
@@ -1178,7 +1178,7 @@ export default function CustomerDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-1">Behaviors:</span>
               {((customer.persona as { behaviors?: string[] }).behaviors ?? []).map((b: string, i: number) => (
-                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#D0F878]/15 text-[#3F5A10] border border-[#D0F878]/40">
+                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#B9EB32]/15 text-[#3F5A10] border border-[#B9EB32]/40">
                   {b}
                 </span>
               ))}
@@ -1276,7 +1276,7 @@ export default function CustomerDetailPage() {
                             {[1, 2, 3, 4, 5].map((n) => (
                               <div
                                 key={n}
-                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#D0F878]' : 'bg-muted'}`}
+                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#B9EB32]' : 'bg-muted'}`}
                               />
                             ))}
                           </div>
@@ -1317,7 +1317,7 @@ export default function CustomerDetailPage() {
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Bar dataKey="spend" name="Spend" fill="#D0F878" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="spend" name="Spend" fill="#B9EB32" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1361,7 +1361,7 @@ export default function CustomerDetailPage() {
                             );
                           }}
                         />
-                        <Radar name="RFM" dataKey="value" stroke="#D0F878" fill="#D0F878" fillOpacity={0.35} dot />
+                        <Radar name="RFM" dataKey="value" stroke="#B9EB32" fill="#B9EB32" fillOpacity={0.35} dot />
                       </RadarChart>
                     </ResponsiveContainer>
                   );
@@ -1450,7 +1450,7 @@ export default function CustomerDetailPage() {
                     />
                     <Scatter
                       data={activityData.transactions}
-                      fill="#D0F878"
+                      fill="#B9EB32"
                       fillOpacity={0.75}
                       stroke="#B9EB32"
                       strokeWidth={1}
@@ -1466,7 +1466,7 @@ export default function CustomerDetailPage() {
               </p>
               <div className="space-y-2">
                 <textarea
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#D0F878]/50"
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#B9EB32]/50"
                   rows={3}
                   placeholder="Add a note about this customer..."
                   value={noteText}

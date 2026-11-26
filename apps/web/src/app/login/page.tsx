@@ -3,17 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Gift, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [username, setUsername]         = useState('');
-  const [password, setPassword]         = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]           = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,141 +30,142 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-
-      {/* ── Left panel (Loyalty Plus navy + lime) ── */}
+    <div className="min-h-screen flex bg-[#F8F8F8]">
+      {/* Left brand panel */}
       <div
-        className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #000820 0%, #001020 55%, #000820 100%)' }}
+        className="hidden lg:flex lg:w-[52%] flex-col justify-between p-10 xl:p-14 relative overflow-hidden"
+        style={{ background: 'linear-gradient(165deg, #000820 0%, #001020 50%, #000820 100%)' }}
       >
-        {/* Soft electric-blue glow */}
         <div
-          className="absolute -right-24 top-1/3 w-[420px] h-[420px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(136,200,255,0.22) 0%, transparent 70%)' }}
+          className="absolute -right-20 top-[20%] w-[480px] h-[480px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(136,200,255,0.18) 0%, transparent 68%)' }}
+        />
+        <div
+          className="absolute -left-16 bottom-0 w-[360px] h-[360px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(185,235,50,0.12) 0%, transparent 70%)' }}
         />
 
-        {/* Logo */}
-        <div className="relative flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-xl bg-[#D0F878] flex items-center justify-center shadow-md">
-            <Gift className="w-5 h-5 text-[#000820]" />
-          </div>
-          <div>
-            <p className="text-[#F8F8F8] font-black text-lg leading-none tracking-tight">LoyaltyPlus</p>
-            <p className="text-[#88C8FF]/80 text-[11px] font-medium mt-0.5">Management System</p>
-          </div>
-        </div>
-
-        {/* ── Illustration image ── */}
-        <div className="relative z-10 flex items-center justify-center flex-1 py-4">
+        <div className="relative z-10">
           <Image
-            src="/login-illustration.png"
-            alt="Loyalty rewards illustration"
-            width={460}
-            height={360}
-            className="w-full max-w-[460px] object-contain"
+            src="/brand/logo-white.png"
+            alt="Loyalty Plus"
+            width={220}
+            height={56}
+            className="h-11 w-auto object-contain object-left"
             priority
           />
         </div>
 
-        {/* Text below illustration */}
-        <div className="relative z-10 text-center pb-2">
-          <div className="w-8 h-1 bg-[#D0F878] rounded-full mx-auto mb-4" />
-          <h1 className="text-2xl font-black text-[#F8F8F8] leading-tight tracking-tight mb-2">
-            Loyalty that <span className="text-[#D0F878] italic">pays off.</span>
-          </h1>
-          <p className="text-[#88C8FF]/90 text-sm leading-relaxed max-w-xs mx-auto">
-            Manage tiers, track points, and drive customer retention with a unified loyalty management platform.
-          </p>
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center py-10">
+          <Image
+            src="/brand/logo-white.png"
+            alt="Loyalty Plus"
+            width={480}
+            height={120}
+            className="w-full max-w-[420px] h-auto object-contain drop-shadow-lg"
+            priority
+          />
+          <div className="mt-10 text-center max-w-md">
+            <div className="w-10 h-1 bg-[#B9EB32] rounded-full mx-auto mb-5" />
+            <h1 className="text-[28px] font-black text-[#F8F8F8] leading-tight tracking-tight mb-3">
+              One loyalty experience.{' '}
+              <span className="text-[#B9EB32]">Online and in store.</span>
+            </h1>
+            <p className="text-[#88C8FF]/85 text-[15px] leading-relaxed">
+              Unified loyalty for e‑commerce and POS — manage tiers, points, and retention in one place.
+            </p>
+          </div>
         </div>
+
+        <p className="relative z-10 text-[#487898] text-xs font-medium tracking-wide">
+          © {new Date().getFullYear()} Loyalty Plus
+        </p>
       </div>
 
-      {/* ── Right panel — login form ── */}
-      <div className="flex-1 flex items-center justify-center bg-white px-6 relative">
-        {/* Subtle border separator */}
-        <div className="absolute left-0 top-[10%] bottom-[10%] w-px bg-[#f0f0f0]" />
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center px-6 py-10 relative bg-white">
+        <div className="absolute left-0 top-[8%] bottom-[8%] w-px bg-[#E8EEF3] hidden lg:block" />
 
         <div className="w-full max-w-[400px]">
-
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-3 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-[#D0F878] flex items-center justify-center">
-              <Gift className="w-4 h-4 text-[#000820]" />
-            </div>
-            <p className="font-black text-[#000820] text-lg tracking-tight">LoyaltyPlus</p>
+          <div className="mb-10">
+            <Image
+              src="/brand/logo-navy.png"
+              alt="Loyalty Plus"
+              width={200}
+              height={48}
+              className="h-10 w-auto object-contain object-left"
+              priority
+            />
           </div>
 
-          <h2 className="text-3xl font-black text-[#000820] mb-1.5 tracking-tight">
+          <h2 className="text-[28px] font-black text-[#000820] mb-1.5 tracking-tight">
             Welcome back
           </h2>
-          <p className="text-[#aaa] text-sm mb-8">Sign in to continue and manage your loyalty program.</p>
+          <p className="text-[#487898] text-sm mb-8">
+            Sign in to manage your loyalty program.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Username */}
             <div>
-              <label className="block text-[11px] font-bold text-[#999] mb-2 uppercase tracking-widest">
+              <label className="block text-[11px] font-bold text-[#487898] mb-2 uppercase tracking-widest">
                 Username
               </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ccc]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3,7 12,13 21,7"/></svg>
-                </span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#D0DCE6] bg-[#fafafa] text-[#000820] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#D0F878] focus:ring-2 focus:ring-[#D0F878]/20 focus:bg-white transition-all"
-                  autoFocus
-                  autoComplete="username"
-                />
-              </div>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                className="w-full h-12 px-4 rounded-xl border border-[#D0DCE6] bg-[#F5F7FA] text-[#000820] placeholder-[#A0AEC0] text-sm font-medium focus:outline-none focus:border-[#B9EB32] focus:ring-2 focus:ring-[#B9EB32]/25 focus:bg-white transition-all"
+                autoFocus
+                autoComplete="username"
+              />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-[11px] font-bold text-[#999] mb-2 uppercase tracking-widest">
+              <label className="block text-[11px] font-bold text-[#487898] mb-2 uppercase tracking-widest">
                 Password
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ccc]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </span>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full h-12 pl-10 pr-12 rounded-xl border border-[#D0DCE6] bg-[#fafafa] text-[#000820] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#D0F878] focus:ring-2 focus:ring-[#D0F878]/20 focus:bg-white transition-all"
+                  className="w-full h-12 pl-4 pr-12 rounded-xl border border-[#D0DCE6] bg-[#F5F7FA] text-[#000820] placeholder-[#A0AEC0] text-sm font-medium focus:outline-none focus:border-[#B9EB32] focus:ring-2 focus:ring-[#B9EB32]/25 focus:bg-white transition-all"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#ccc] hover:text-[#999] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#A0AEC0] hover:text-[#487898] transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading || !username || !password}
-              className="w-full h-12 bg-[#D0F878] hover:bg-[#B9EB32] disabled:opacity-40 text-[#000820] font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-1 shadow-sm"
+              className="w-full h-12 mt-2 bg-[#B9EB32] hover:bg-[#A6D42A] active:bg-[#95C220] disabled:opacity-40 disabled:cursor-not-allowed text-[#000820] font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(0,8,32,0.08)]"
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Signing in…</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing in…
+                </>
               ) : (
-                <>Sign in <ArrowRight className="w-4 h-4" /></>
+                <>
+                  Sign in
+                  <ArrowRight className="w-4 h-4" />
+                </>
               )}
             </button>
           </form>
 
-
-          <p className="text-center text-[#ccc] text-xs mt-6">
-            © {new Date().getFullYear()} LoyaltyPlus · All rights reserved
+          <p className="text-center text-[#A0AEC0] text-xs mt-8">
+            © {new Date().getFullYear()} Loyalty Plus · All rights reserved
           </p>
         </div>
       </div>
