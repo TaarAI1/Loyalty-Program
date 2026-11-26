@@ -3,7 +3,7 @@ builder = "nixpacks"
 installCmd = "pnpm install --no-frozen-lockfile"
 
 [deploy]
-startCommand = "node dist/main"
+startCommand = "sh start.sh"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
