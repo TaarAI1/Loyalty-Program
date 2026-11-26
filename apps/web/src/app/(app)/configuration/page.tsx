@@ -197,7 +197,7 @@ function TiersTab() {
                     <div className="flex items-center gap-3 flex-wrap">
                       <TierBadge name={String(tier.name)} />
                       <div className="text-sm flex items-center flex-wrap gap-x-1">
-                        <span className="font-bold text-[#a07800]">{Number(tier.rewardPercentage)}% reward</span>
+                        <span className="font-bold text-[#3F5A10]">{Number(tier.rewardPercentage)}% reward</span>
                         <span className="text-muted-foreground mx-1">·</span>
                         <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-xs border border-emerald-200">
                           1 pt = PKR {Number(tier.redeemValue ?? 1)}
@@ -305,7 +305,7 @@ function TiersTab() {
                 step="0.5"
                 value={form.rewardPercentage}
                 onChange={(e) => setForm((f) => ({ ...f, rewardPercentage: e.target.value }))}
-                className="w-full accent-[#FFD000]"
+                className="w-full accent-[#D0F878]"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1%</span>

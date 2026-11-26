@@ -32,18 +32,25 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-white">
 
-      {/* ── Left panel ── */}
-      <div className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 relative overflow-hidden"
-        style={{ background: '#ffffff' }}>
+      {/* ── Left panel (Loyalty Plus navy + lime) ── */}
+      <div
+        className="hidden lg:flex lg:w-[55%] flex-col justify-between p-10 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #000820 0%, #001020 55%, #000820 100%)' }}
+      >
+        {/* Soft electric-blue glow */}
+        <div
+          className="absolute -right-24 top-1/3 w-[420px] h-[420px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(136,200,255,0.22) 0%, transparent 70%)' }}
+        />
 
         {/* Logo */}
         <div className="relative flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-xl bg-[#FFD000] flex items-center justify-center shadow-md">
-            <Gift className="w-5 h-5 text-[#111]" />
+          <div className="w-10 h-10 rounded-xl bg-[#D0F878] flex items-center justify-center shadow-md">
+            <Gift className="w-5 h-5 text-[#000820]" />
           </div>
           <div>
-            <p className="text-[#111] font-black text-lg leading-none tracking-tight">LoyaltyPlus</p>
-            <p className="text-[#aaa] text-[11px] font-medium mt-0.5">Management System</p>
+            <p className="text-[#F8F8F8] font-black text-lg leading-none tracking-tight">LoyaltyPlus</p>
+            <p className="text-[#88C8FF]/80 text-[11px] font-medium mt-0.5">Management System</p>
           </div>
         </div>
 
@@ -61,11 +68,11 @@ export default function LoginPage() {
 
         {/* Text below illustration */}
         <div className="relative z-10 text-center pb-2">
-          <div className="w-8 h-1 bg-[#FFD000] rounded-full mx-auto mb-4" />
-          <h1 className="text-2xl font-black text-[#111] leading-tight tracking-tight mb-2">
-            Loyalty that <span className="text-[#FFD000]">pays off.</span>
+          <div className="w-8 h-1 bg-[#D0F878] rounded-full mx-auto mb-4" />
+          <h1 className="text-2xl font-black text-[#F8F8F8] leading-tight tracking-tight mb-2">
+            Loyalty that <span className="text-[#D0F878] italic">pays off.</span>
           </h1>
-          <p className="text-[#888] text-sm leading-relaxed max-w-xs mx-auto">
+          <p className="text-[#88C8FF]/90 text-sm leading-relaxed max-w-xs mx-auto">
             Manage tiers, track points, and drive customer retention with a unified loyalty management platform.
           </p>
         </div>
@@ -80,13 +87,13 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-[#FFD000] flex items-center justify-center">
-              <Gift className="w-4 h-4 text-[#111]" />
+            <div className="w-9 h-9 rounded-xl bg-[#D0F878] flex items-center justify-center">
+              <Gift className="w-4 h-4 text-[#000820]" />
             </div>
-            <p className="font-black text-[#111] text-lg tracking-tight">LoyaltyPlus</p>
+            <p className="font-black text-[#000820] text-lg tracking-tight">LoyaltyPlus</p>
           </div>
 
-          <h2 className="text-3xl font-black text-[#111] mb-1.5 tracking-tight">
+          <h2 className="text-3xl font-black text-[#000820] mb-1.5 tracking-tight">
             Welcome back
           </h2>
           <p className="text-[#aaa] text-sm mb-8">Sign in to continue and manage your loyalty program.</p>
@@ -107,7 +114,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#e8e8e8] bg-[#fafafa] text-[#111] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#FFD000] focus:ring-2 focus:ring-[#FFD000]/20 focus:bg-white transition-all"
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#D0DCE6] bg-[#fafafa] text-[#000820] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#D0F878] focus:ring-2 focus:ring-[#D0F878]/20 focus:bg-white transition-all"
                   autoFocus
                   autoComplete="username"
                 />
@@ -128,7 +135,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full h-12 pl-10 pr-12 rounded-xl border border-[#e8e8e8] bg-[#fafafa] text-[#111] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#FFD000] focus:ring-2 focus:ring-[#FFD000]/20 focus:bg-white transition-all"
+                  className="w-full h-12 pl-10 pr-12 rounded-xl border border-[#D0DCE6] bg-[#fafafa] text-[#000820] placeholder-[#ccc] text-sm font-medium focus:outline-none focus:border-[#D0F878] focus:ring-2 focus:ring-[#D0F878]/20 focus:bg-white transition-all"
                   autoComplete="current-password"
                 />
                 <button
@@ -145,7 +152,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !username || !password}
-              className="w-full h-12 bg-[#FFD000] hover:bg-[#e6bb00] disabled:opacity-40 text-[#111] font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-1 shadow-sm"
+              className="w-full h-12 bg-[#D0F878] hover:bg-[#B9EB32] disabled:opacity-40 text-[#000820] font-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-1 shadow-sm"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Signing in…</>

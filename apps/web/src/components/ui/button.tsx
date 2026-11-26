@@ -14,13 +14,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] disabled:pointer-events-none disabled:opacity-40',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D0F878] disabled:pointer-events-none disabled:opacity-40',
         {
-          'bg-[#FFD000] text-[#111111] hover:bg-[#e6bb00]': variant === 'default',
-          'border-2 border-[#e8e8e8] bg-white text-[#111111] hover:border-[#FFD000] hover:bg-[#fffde8]': variant === 'outline',
-          'text-[#666] hover:bg-[#f5f5f5] hover:text-[#111111]': variant === 'ghost',
+          'bg-[#D0F878] text-[#000820] hover:bg-[#B9EB32]': variant === 'default',
+          'border-2 border-[#D0DCE6] bg-white text-[#000820] hover:border-[#D0F878] hover:bg-[#F4FCE3]': variant === 'outline',
+          'text-[#666] hover:bg-[#F8F8F8] hover:text-[#000820]': variant === 'ghost',
           'bg-red-500 text-white hover:bg-red-600': variant === 'destructive',
-          'bg-[#f5f5f5] text-[#111111] hover:bg-[#ebebeb]': variant === 'secondary',
+          'bg-[#F8F8F8] text-[#000820] hover:bg-[#E2EAF0]': variant === 'secondary',
         },
         {
           'h-9 px-4 text-sm': size === 'default',

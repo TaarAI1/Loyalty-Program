@@ -36,19 +36,19 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      'relative flex flex-col bg-[#111111] transition-all duration-300 ease-in-out shrink-0',
+      'relative flex flex-col bg-[#000820] transition-all duration-300 ease-in-out shrink-0',
       collapsed ? 'w-[70px]' : 'w-[240px]',
     )}>
-      {/* Yellow accent bar */}
-      <div className="h-[3px] w-full bg-[#FFD000]" />
+      {/* Lime brand accent bar */}
+      <div className="h-[3px] w-full bg-[#D0F878]" />
 
       {/* Logo */}
       <div className={cn(
         'flex items-center gap-3 px-5 py-5 border-b border-white/5',
         collapsed && 'justify-center px-4',
       )}>
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#FFD000] flex items-center justify-center">
-          <Gift className="w-4 h-4 text-[#111111]" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#D0F878] flex items-center justify-center">
+          <Gift className="w-4 h-4 text-[#000820]" />
         </div>
         {!collapsed && (
           <div>
@@ -73,18 +73,18 @@ export function Sidebar() {
               className={cn(
                 'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all',
                 active
-                  ? 'bg-[#FFD000] text-[#111111]'
+                  ? 'bg-[#D0F878] text-[#000820]'
                   : 'text-[#777] hover:bg-white/5 hover:text-white',
                 collapsed && 'justify-center',
               )}
             >
               <item.icon className={cn(
                 'w-[18px] h-[18px] flex-shrink-0',
-                active ? 'text-[#111111]' : 'text-[#555] group-hover:text-white',
+                active ? 'text-[#000820]' : 'text-[#555] group-hover:text-white',
               )} />
               {!collapsed && <span>{item.label}</span>}
               {!collapsed && active && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#111111]/40" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#000820]/40" />
               )}
             </Link>
           );
@@ -95,7 +95,7 @@ export function Sidebar() {
       <div className={cn('border-t border-white/5 p-3', collapsed && 'flex flex-col items-center gap-2')}>
         {!collapsed && user && (
           <div className="flex items-center gap-2.5 px-2 py-2 mb-1">
-            <div className="w-7 h-7 rounded-full bg-[#FFD000] flex items-center justify-center text-xs font-black text-[#111111] flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-[#D0F878] flex items-center justify-center text-xs font-black text-[#000820] flex-shrink-0">
               {user.username[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
@@ -120,11 +120,11 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#111111] border border-[#333] flex items-center justify-center hover:bg-[#222] transition-colors z-10 shadow-md"
+        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#000820] border border-[#333] flex items-center justify-center hover:bg-[#222] transition-colors z-10 shadow-md"
       >
         {collapsed
-          ? <ChevronRight className="w-3 h-3 text-[#FFD000]" />
-          : <ChevronLeft className="w-3 h-3 text-[#FFD000]" />}
+          ? <ChevronRight className="w-3 h-3 text-[#D0F878]" />
+          : <ChevronLeft className="w-3 h-3 text-[#D0F878]" />}
       </button>
     </aside>
   );

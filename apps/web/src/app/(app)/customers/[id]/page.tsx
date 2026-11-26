@@ -263,9 +263,9 @@ export default function CustomerDetailPage() {
       label: 'Total Spent',
       value: formatCurrency(stats.totalSpent ?? 0),
       icon: ShoppingBag,
-      accent: '#FFD000',
-      bg: 'bg-[#fffde8]',
-      iconColor: 'text-[#a07800]',
+      accent: '#D0F878',
+      bg: 'bg-[#F4FCE3]',
+      iconColor: 'text-[#3F5A10]',
       sub: `${formatNumber(stats.totalTransactions ?? 0)} transactions`,
     },
     {
@@ -299,8 +299,8 @@ export default function CustomerDetailPage() {
       label: 'Avg Visits / Month',
       value: String(stats.avgVisitsPerMonth ?? 0),
       icon: Calendar,
-      accent: '#111111',
-      bg: 'bg-[#f5f5f5]',
+      accent: '#000820',
+      bg: 'bg-[#F8F8F8]',
       iconColor: 'text-[#444]',
       sub: 'Visit frequency',
     },
@@ -351,7 +351,7 @@ export default function CustomerDetailPage() {
                 <card.icon className={`w-4 h-4 ${card.iconColor}`} />
               </div>
               <div>
-                <p className="text-[19px] font-black text-[#111] tabular-nums leading-tight">{card.value}</p>
+                <p className="text-[19px] font-black text-[#000820] tabular-nums leading-tight">{card.value}</p>
                 <p className="text-[11px] font-semibold text-slate-500 mt-0.5">{card.label}</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">{card.sub}</p>
               </div>
@@ -422,7 +422,7 @@ export default function CustomerDetailPage() {
                       const isPast = i <= currentIdx;
                       return (
                         <div key={t.id} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
-                          <span className={`text-[11px] font-bold ${isActive ? 'text-[#a07800]' : 'text-muted-foreground'}`}>
+                          <span className={`text-[11px] font-bold ${isActive ? 'text-[#3F5A10]' : 'text-muted-foreground'}`}>
                             {Number(t.rewardPercentage)}%
                           </span>
                           <TierBadge name={t.name} />
@@ -436,7 +436,7 @@ export default function CustomerDetailPage() {
                     <div className="absolute inset-0 bg-muted rounded-full" />
                     <div
                       className="absolute top-0 left-0 h-2 rounded-full transition-all duration-700"
-                      style={{ width: `${overallPct}%`, background: '#FFD000' }}
+                      style={{ width: `${overallPct}%`, background: '#D0F878' }}
                     />
                     {/* Drop-marker below the fill end */}
                     {overallPct > 0 && overallPct < 100 && (
@@ -444,8 +444,8 @@ export default function CustomerDetailPage() {
                         className="absolute top-3 -translate-x-1/2 flex flex-col items-center"
                         style={{ left: `${overallPct}%` }}
                       >
-                        <div className="w-px h-2 bg-[#FFD000]" />
-                        <div className="bg-[#FFD000] text-[#7a5c00] text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+                        <div className="w-px h-2 bg-[#D0F878]" />
+                        <div className="bg-[#D0F878] text-[#2A4508] text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
                           {Math.round(tierProgressPct)}%
                         </div>
                       </div>
@@ -457,7 +457,7 @@ export default function CustomerDetailPage() {
                         <div
                           key={i}
                           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
-                          style={{ left: `${pos}%`, background: isPast ? '#FFD000' : '#cbd5e1' }}
+                          style={{ left: `${pos}%`, background: isPast ? '#D0F878' : '#cbd5e1' }}
                         />
                       );
                     })}
@@ -507,7 +507,7 @@ export default function CustomerDetailPage() {
                       <p className="text-[11px] text-muted-foreground">Engagement Score</p>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                      <div className="h-full rounded-full bg-[#FFD000] transition-all duration-700" style={{ width: `${customer.engagementScore ?? 0}%` }} />
+                      <div className="h-full rounded-full bg-[#D0F878] transition-all duration-700" style={{ width: `${customer.engagementScore ?? 0}%` }} />
                     </div>
                   </div>
 
@@ -682,7 +682,7 @@ export default function CustomerDetailPage() {
                               </td>
                             </tr>
                             {isExpanded && (
-                              <tr className="bg-[#fffde8]/60 border-b border-[#FFD000]/20">
+                              <tr className="bg-[#F4FCE3]/60 border-b border-[#D0F878]/20">
                                 <td colSpan={11} className="px-4 py-3">
                                   {!items ? (
                                     <p className="text-xs text-slate-400">Loading items…</p>
@@ -691,14 +691,14 @@ export default function CustomerDetailPage() {
                                   ) : (
                                     <>
                                       <div className="flex items-center gap-1.5 mb-2">
-                                        <Package className="w-3.5 h-3.5 text-[#a07800]" />
-                                        <span className="text-[11px] font-black text-[#a07800] uppercase tracking-wide">
+                                        <Package className="w-3.5 h-3.5 text-[#3F5A10]" />
+                                        <span className="text-[11px] font-black text-[#3F5A10] uppercase tracking-wide">
                                           {items.length} Item{items.length !== 1 ? 's' : ''}
                                         </span>
                                       </div>
                                       <table className="w-full text-xs">
                                         <thead>
-                                          <tr className="border-b border-[#FFD000]/30">
+                                          <tr className="border-b border-[#D0F878]/30">
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">SKU</th>
                                             <th className="text-left py-1.5 pr-3 font-semibold text-slate-500">Description</th>
                                             <th className="text-right py-1.5 pr-3 font-semibold text-slate-500">Qty</th>
@@ -709,7 +709,7 @@ export default function CustomerDetailPage() {
                                         </thead>
                                         <tbody>
                                           {items.map((item, idx) => (
-                                            <tr key={idx} className="border-b border-[#FFD000]/10 last:border-0">
+                                            <tr key={idx} className="border-b border-[#D0F878]/10 last:border-0">
                                               <td className="py-1.5 pr-3 font-mono text-slate-500">{item.sku || '—'}</td>
                                               <td className="py-1.5 pr-3 text-slate-700">{item.description || '—'}</td>
                                               <td className="py-1.5 pr-3 text-right tabular-nums">{Number(item.qty)}</td>
@@ -918,10 +918,10 @@ export default function CustomerDetailPage() {
           className="w-full flex items-center justify-between px-5 py-4 bg-muted/30 hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <Users className="w-4 h-4 text-[#FFD000]" />
+            <Users className="w-4 h-4 text-[#D0F878]" />
             <span className="font-bold text-[14px]">Customer Persona</span>
             {customer?.persona && (
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FFD000]/20 text-[#b89b00]">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#D0F878]/20 text-[#5A7A12]">
                 {customer.persona.label}
               </span>
             )}
@@ -1178,7 +1178,7 @@ export default function CustomerDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-1">Behaviors:</span>
               {((customer.persona as { behaviors?: string[] }).behaviors ?? []).map((b: string, i: number) => (
-                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#FFD000]/15 text-[#856b00] border border-[#FFD000]/40">
+                <span key={i} className="text-xs font-semibold px-3 py-1 rounded-full bg-[#D0F878]/15 text-[#3F5A10] border border-[#D0F878]/40">
                   {b}
                 </span>
               ))}
@@ -1276,7 +1276,7 @@ export default function CustomerDetailPage() {
                             {[1, 2, 3, 4, 5].map((n) => (
                               <div
                                 key={n}
-                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#FFD000]' : 'bg-muted'}`}
+                                className={`h-2 flex-1 rounded-full ${n <= score ? 'bg-[#D0F878]' : 'bg-muted'}`}
                               />
                             ))}
                           </div>
@@ -1317,7 +1317,7 @@ export default function CustomerDetailPage() {
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Bar dataKey="spend" name="Spend" fill="#FFD000" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="spend" name="Spend" fill="#D0F878" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1361,7 +1361,7 @@ export default function CustomerDetailPage() {
                             );
                           }}
                         />
-                        <Radar name="RFM" dataKey="value" stroke="#FFD000" fill="#FFD000" fillOpacity={0.35} dot />
+                        <Radar name="RFM" dataKey="value" stroke="#D0F878" fill="#D0F878" fillOpacity={0.35} dot />
                       </RadarChart>
                     </ResponsiveContainer>
                   );
@@ -1450,9 +1450,9 @@ export default function CustomerDetailPage() {
                     />
                     <Scatter
                       data={activityData.transactions}
-                      fill="#FFD000"
+                      fill="#D0F878"
                       fillOpacity={0.75}
-                      stroke="#d4a000"
+                      stroke="#B9EB32"
                       strokeWidth={1}
                     />
                   </ScatterChart>
@@ -1466,7 +1466,7 @@ export default function CustomerDetailPage() {
               </p>
               <div className="space-y-2">
                 <textarea
-                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#FFD000]/50"
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[#D0F878]/50"
                   rows={3}
                   placeholder="Add a note about this customer..."
                   value={noteText}

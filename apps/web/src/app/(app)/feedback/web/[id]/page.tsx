@@ -67,7 +67,7 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
       {Array.from({ length: max }).map((_, i) => (
         <Star
           key={i}
-          className={`h-5 w-5 ${i < Math.round(value) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
+          className={`h-5 w-5 ${i < Math.round(value) ? 'fill-[#D0F878] text-[#D0F878]' : 'text-muted-foreground/30'}`}
         />
       ))}
       <span className="ml-2 text-sm font-bold tabular-nums">{value.toFixed(1)}</span>
@@ -91,7 +91,7 @@ function AnswerDisplay({ answer, type }: { answer: string; type: string }) {
           {Array.from({ length: 5 }).map((_, i) => (
             <Star
               key={i}
-              className={`h-4 w-4 ${i < n ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
+              className={`h-4 w-4 ${i < n ? 'fill-[#D0F878] text-[#D0F878]' : 'text-muted-foreground/30'}`}
             />
           ))}
           <span className="ml-1 text-sm font-semibold">{n} / 5</span>
@@ -165,7 +165,7 @@ export default function WebFeedbackDetailPage() {
         <p className="text-sm text-destructive">{error ?? 'Not found.'}</p>
         <button
           onClick={() => router.back()}
-          className="inline-flex items-center gap-2 rounded-xl border-2 border-[#e8e8e8] bg-white px-4 py-2 text-sm font-bold text-[#111111] hover:border-[#FFD000] transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-[#D0DCE6] bg-white px-4 py-2 text-sm font-bold text-[#000820] hover:border-[#D0F878] transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Go back
         </button>
@@ -180,7 +180,7 @@ export default function WebFeedbackDetailPage() {
       {/* Back */}
       <button
         onClick={() => router.push('/feedback')}
-        className="inline-flex items-center gap-2 -ml-2 w-fit rounded-lg px-3 py-1.5 text-sm font-bold text-[#666] hover:bg-[#f5f5f5] hover:text-[#111111] transition-colors"
+        className="inline-flex items-center gap-2 -ml-2 w-fit rounded-lg px-3 py-1.5 text-sm font-bold text-[#666] hover:bg-[#F8F8F8] hover:text-[#000820] transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Feedback

@@ -204,7 +204,7 @@ function QuestionPreview({ question }: { question: Question }) {
             <button key={n} type="button" onClick={() => setRating(n)}
               onMouseEnter={() => setHoverRating(n)} onMouseLeave={() => setHoverRating(0)}
               className="transition-transform hover:scale-110">
-              <Star className={`h-8 w-8 transition-colors ${n <= (hoverRating || rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+              <Star className={`h-8 w-8 transition-colors ${n <= (hoverRating || rating) ? 'fill-[#D0F878] text-[#D0F878]' : 'text-muted-foreground/30'}`} />
             </button>
           ))}
         </div>

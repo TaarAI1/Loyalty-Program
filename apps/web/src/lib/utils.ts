@@ -97,7 +97,7 @@ export function tierStyle(tier: string): React.CSSProperties {
     case 'silver':
       return { background: '#C0C0C0', color: '#2a2a2a', border: '1px solid #9a9a9a', fontWeight: 700 };
     case 'gold':
-      return { background: '#D4AF37', color: '#3a2000', border: '1px solid #a07800', fontWeight: 700 };
+      return { background: '#D4AF37', color: '#3a2000', border: '1px solid #3F5A10', fontWeight: 700 };
     case 'platinum':
       return { background: '#7a7a7a', color: '#f0f0f0', border: '1px solid #555555', fontWeight: 700 };
     case 'diamond':

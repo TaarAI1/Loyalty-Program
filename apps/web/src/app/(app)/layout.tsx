@@ -19,8 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <div className="flex h-screen items-center justify-center bg-[#F8F8F8]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#D0F878]" />
       </div>
     );
   }
@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f5f5f5]">
+    <div className="flex h-screen overflow-hidden bg-[#F8F8F8]">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />

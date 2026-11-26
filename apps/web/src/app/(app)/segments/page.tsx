@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 const SEGMENT_COLORS: Record<string, string> = {
-  champion:  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  champion:  'bg-[#F4FCE3] text-[#3F5A10] dark:bg-[#D0F878]/20 dark:text-[#D0F878]',
   loyal:     'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   potential: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   new:       'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
@@ -363,7 +363,7 @@ export default function SegmentsPage() {
                   type="checkbox"
                   checked={filters.neverRedeemed}
                   onChange={(e) => setFilters((f) => ({ ...f, neverRedeemed: e.target.checked }))}
-                  className="h-4 w-4 rounded border-gray-300 accent-yellow-500"
+                  className="h-4 w-4 rounded border-gray-300 accent-[#D0F878]"
                 />
                 <span className="text-sm">Never redeemed points</span>
               </label>

@@ -201,7 +201,7 @@ export default function CustomersPage() {
                           <td className="py-3 px-4">
                             <TierBadge name={c.tier?.name} />
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-[#a07800]">
+                          <td className="py-3 px-4 text-right font-medium text-[#3F5A10]">
                             {formatNumber(c.totalPoints)}
                           </td>
                           <td className="py-3 px-4 text-right">

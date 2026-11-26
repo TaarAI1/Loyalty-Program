@@ -101,7 +101,7 @@ function QuestionInput({
             onClick={() => onPick(String(star))}
             style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`text-5xl transition-all duration-200 hover:scale-110 drop-shadow-sm ${
-              Number(value) >= star ? 'text-yellow-400' : 'text-gray-300'
+              Number(value) >= star ? 'text-[#D0F878]' : 'text-gray-300'
             }`}
           >
             ★
@@ -122,7 +122,7 @@ function QuestionInput({
             style={{ animation: 'cascadeIn 0.3s ease-out both', animationDelay: `${0.18 + i * 0.07}s` }}
             className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-200 ${
               value === e.label
-                ? 'bg-yellow-50/80 ring-2 ring-yellow-400 scale-110 shadow-md'
+                ? 'bg-[#F4FCE3]/80 ring-2 ring-[#D0F878] scale-110 shadow-md'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
             }`}
           >
@@ -147,8 +147,8 @@ function QuestionInput({
             }}
             className={`flex-1 py-3.5 rounded-2xl text-base font-bold transition-all duration-200 border-2 ${
               value === opt
-                ? 'bg-yellow-400 border-yellow-400 text-white shadow-lg scale-[1.02]'
-                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-yellow-50/60 backdrop-blur-sm'
+                ? 'bg-[#D0F878] border-[#D0F878] text-[#000820] shadow-lg scale-[1.02]'
+                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-[#F4FCE3]/60 backdrop-blur-sm'
             }`}
           >
             {opt}
@@ -171,8 +171,8 @@ function QuestionInput({
             }}
             className={`w-full py-3 px-4 rounded-2xl text-left text-sm font-semibold border-2 transition-all duration-200 ${
               value === opt
-                ? 'bg-yellow-400 border-yellow-400 text-white shadow-md'
-                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-yellow-50/60 backdrop-blur-sm'
+                ? 'bg-[#D0F878] border-[#D0F878] text-[#000820] shadow-md'
+                : 'bg-white/50 border-white/70 text-gray-700 hover:bg-[#F4FCE3]/60 backdrop-blur-sm'
             }`}
           >
             {opt}
@@ -190,7 +190,7 @@ function QuestionInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Type your answer here…"
         style={{ animation: 'cascadeIn 0.3s ease-out 0.18s both' }}
-        className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        className="w-full rounded-2xl border-2 border-white/60 bg-white/80 backdrop-blur-sm px-4 py-3 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#D0F878]"
       />
     );
   }
@@ -203,7 +203,7 @@ function QuestionInput({
 function Spinner() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-yellow-50 to-amber-50">
-      <div className="w-10 h-10 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-[#F4FCE3] border-t-[#D0F878] rounded-full animate-spin" />
     </div>
   );
 }
@@ -377,7 +377,7 @@ function SurveyContent() {
           style={{ animation: 'fadeIn 0.4s ease-out' }}
         >
           <div
-            className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-yellow-400 flex items-center justify-center mx-auto mb-6"
+            className="w-20 h-20 rounded-full bg-yellow-50 border-4 border-[#D0F878] flex items-center justify-center mx-auto mb-6"
             style={{ animation: 'bounceIn 0.6s ease-out 0.2s both' }}
           >
             <span className="text-4xl text-yellow-500 font-bold">✓</span>
@@ -440,12 +440,12 @@ function SurveyContent() {
               viewBox="0 0 112 112"
             >
               {/* Track */}
-              <circle cx="56" cy="56" r="50" fill="none" stroke="#fef9c3" strokeWidth="5" />
+              <circle cx="56" cy="56" r="50" fill="none" stroke="#F4FCE3" strokeWidth="5" />
               {/* Countdown arc */}
               <circle
                 cx="56" cy="56" r="50"
                 fill="none"
-                stroke="#eab308"
+                stroke="#D0F878"
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={RING_CIRC}
@@ -508,7 +508,7 @@ function SurveyContent() {
       <div className="w-full max-w-sm relative z-10">
         {/* Header */}
         <div className="text-center mb-6" style={{ animation: 'fadeIn 0.5s ease-out' }}>
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-50 border border-yellow-200 mb-3 shadow-md">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#F4FCE3] border border-[#D0F878]/40 mb-3 shadow-md">
             <span className="text-2xl">📝</span>
           </div>
           <h1 className="text-xl font-bold text-gray-800">Your Feedback Matters to Us</h1>
@@ -523,7 +523,7 @@ function SurveyContent() {
         </p>
         <div className="w-full bg-gray-200 rounded-full h-1.5 mb-5">
           <div
-            className="bg-yellow-400 rounded-full h-1.5 transition-all duration-500"
+            className="bg-[#D0F878] rounded-full h-1.5 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -558,7 +558,7 @@ function SurveyContent() {
                 type="button"
                 disabled={!canSubmitOrNext || submitting}
                 onClick={isLast ? handleSubmit : goNext}
-                className="w-full py-3.5 rounded-2xl bg-yellow-400 text-white font-bold text-base shadow-lg hover:bg-yellow-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-2xl bg-[#D0F878] text-[#000820] font-bold text-base shadow-lg hover:bg-[#B9EB32] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting…' : isLast ? 'Submit Feedback' : 'Next →'}
               </button>

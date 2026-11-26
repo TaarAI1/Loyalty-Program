@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,35 +6,45 @@
 
 @layer base {
   :root {
+    /* Loyalty Plus branding — navy + lime */
     --background: 0 0% 97%;
-    --foreground: 0 0% 7%;
+    --foreground: 225 100% 6%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
-    --primary: 47 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 7%;
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 47 100% 50%;
-    --accent-foreground: 0 0% 0%;
+    --card-foreground: 225 100% 6%;
+    --primary: 79 90% 72%;
+    --primary-foreground: 225 100% 6%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 225 100% 6%;
+    --muted: 210 30% 95%;
+    --muted-foreground: 204 36% 40%;
+    --accent: 79 90% 72%;
+    --accent-foreground: 225 100% 6%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 47 100% 50%;
+    --border: 204 25% 88%;
+    --input: 204 25% 88%;
+    --ring: 79 90% 72%;
     --radius: 0.75rem;
+
+    /* Brand raw hex (for reference / inline use) */
+    --brand-navy: #000820;
+    --brand-navy-secondary: #001020;
+    --brand-lime: #D0F878;
+    --brand-lime-logo: #B9EB32;
+    --brand-electric: #88C8FF;
+    --brand-muted-blue: #487898;
+    --brand-warm-white: #F8F8F8;
   }
 }
 
 @layer base {
   * { @apply border-border; }
-  html { font-family: 'Inter', -apple-system, sans-serif; }
-  body { @apply bg-[#f5f5f5] text-[#111111] antialiased; }
+  html { font-family: 'DM Sans', 'Inter', -apple-system, sans-serif; }
+  body { @apply bg-[#F8F8F8] text-[#000820] antialiased; }
 }
 
 @layer components {
-  .page-title   { @apply text-xl font-black text-[#111111] tracking-tight; }
-  .section-label{ @apply text-[11px] font-black text-[#999] uppercase tracking-widest; }
-  .table-header { @apply text-[11px] font-black text-[#999] uppercase tracking-wider; }
+  .page-title   { @apply text-xl font-black text-[#000820] tracking-tight; }
+  .section-label{ @apply text-[11px] font-black text-[#487898] uppercase tracking-widest; }
+  .table-header { @apply text-[11px] font-black text-[#487898] uppercase tracking-wider; }
 }
