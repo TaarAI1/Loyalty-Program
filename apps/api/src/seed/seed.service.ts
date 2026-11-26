@@ -104,21 +104,67 @@ const DEFAULT_TIERS = [
 @Injectable()
 export class SeedService {
   private readonly logger = new Logger(SeedService.name);
+  lastSeedError: string | null = null;
+  lastSeedAt: string | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
 
   async seedIfEmpty() {
-    if (process.env.SKIP_DEMO_SEED === '1') {
-      this.logger.log('SKIP_DEMO_SEED=1 — skipping demo customer seed');
-      return;
+    const force = process.env.FORCE_DEMO_SEED === '1';
+    if (process.env.SKIP_DEMO_SEED === '1' && !force) {
+      const existing = await this.prisma.customer.count();
+      if (existing > 0) {
+        this.logger.log('SKIP_DEMO_SEED=1 — skipping demo customer seed');
+        return;
+      }
+      // Empty DB: still seed so new environments (e.g. AKMAL-DEV) get demo data
+      this.logger.warn('SKIP_DEMO_SEED=1 but customers=0 — seeding demo data anyway');
     }
     try {
       await this.ensureTiers();
-      await this.doSeedIfEmpty();
+      await this.doSeedIfEmpty(force);
+      this.lastSeedError = null;
+      this.lastSeedAt = new Date().toISOString();
     } catch (err) {
       // Never crash the API on seed failure — just log and continue
+      this.lastSeedError = err instanceof Error ? err.message : String(err);
+      this.lastSeedAt = new Date().toISOString();
       this.logger.error({ err }, 'seedIfEmpty failed — skipping seed');
     }
+  }
+
+  /** Admin-triggered full demo reseed. Throws on failure so the API can return the error. */
+  async forceSeedDemo() {
+    await this.ensureTiers();
+    await this.doSeedIfEmpty(true);
+    this.lastSeedError = null;
+    this.lastSeedAt = new Date().toISOString();
+    const customers = await this.prisma.customer.count({
+      where: { retailproId: { startsWith: 'RP-' } },
+    });
+    const transactions = await this.prisma.transaction.count({
+      where: { retailproTransactionId: { startsWith: 'SEED-' } },
+    });
+    return { ok: true, customers, transactions, seededAt: this.lastSeedAt };
+  }
+
+  async getStatus() {
+    const [customers, demoCustomers, tiers, transactions] = await Promise.all([
+      this.prisma.customer.count(),
+      this.prisma.customer.count({ where: { retailproId: { startsWith: 'RP-' } } }),
+      this.prisma.loyaltyTier.count(),
+      this.prisma.transaction.count(),
+    ]);
+    return {
+      customers,
+      demoCustomers,
+      tiers,
+      transactions,
+      lastSeedAt: this.lastSeedAt,
+      lastSeedError: this.lastSeedError,
+      skipDemoSeed: process.env.SKIP_DEMO_SEED === '1',
+      forceDemoSeed: process.env.FORCE_DEMO_SEED === '1',
+    };
   }
 
   private async ensureTiers() {
@@ -159,7 +205,7 @@ export class SeedService {
     });
   }
 
-  private async doSeedIfEmpty() {
+  private async doSeedIfEmpty(force = process.env.FORCE_DEMO_SEED === '1') {
     // Detect old seed data (transactions using the old 'TXN-' prefix) and clean up
     const oldSeedTx = await this.prisma.transaction.findFirst({
       where: { retailproTransactionId: { startsWith: 'TXN-' } },
@@ -174,7 +220,6 @@ export class SeedService {
       });
     }
 
-    const force = process.env.FORCE_DEMO_SEED === '1';
     const demoCustomerCount = await this.prisma.customer.count({
       where: { retailproId: { startsWith: 'RP-' } },
     });
