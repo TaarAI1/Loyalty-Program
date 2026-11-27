@@ -44,20 +44,20 @@ export function Sidebar() {
 
       {/* Logo */}
       <div className={cn(
-        'flex items-center px-4 py-5 border-b border-white/10',
-        collapsed ? 'justify-center px-3' : 'px-5',
+        'flex items-center border-b border-white/10',
+        collapsed ? 'justify-center px-3 py-4' : 'px-4 py-4',
       )}>
         {collapsed ? (
-          <div className="w-9 h-9 rounded-lg bg-[#B9EB32] flex items-center justify-center">
-            <span className="text-[#000820] font-black text-lg leading-none">+</span>
+          <div className="w-10 h-10 rounded-xl bg-[#B9EB32] flex items-center justify-center">
+            <span className="text-[#000820] font-black text-xl leading-none">+</span>
           </div>
         ) : (
           <Image
             src="/brand/logo-white.png"
             alt="Loyalty Plus"
-            width={160}
-            height={40}
-            className="h-8 w-auto object-contain object-left"
+            width={240}
+            height={64}
+            className="h-11 w-auto max-w-full object-contain object-left"
             priority
           />
         )}
@@ -126,7 +126,7 @@ export function Sidebar() {
 
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[68px] w-6 h-6 rounded-full bg-[#000820] border border-[#2A3A50] flex items-center justify-center hover:border-[#B9EB32] hover:bg-[#001020] transition-colors z-10 shadow-md"
+        className="absolute -right-3 top-[78px] w-6 h-6 rounded-full bg-[#000820] border border-[#2A3A50] flex items-center justify-center hover:border-[#B9EB32] hover:bg-[#001020] transition-colors z-10 shadow-md"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed

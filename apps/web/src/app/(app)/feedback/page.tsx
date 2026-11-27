@@ -567,9 +567,9 @@ export default function FeedbackPage() {
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <MessageSquare className="h-7 w-7 text-primary" />
+        <MessageSquare className="h-7 w-7 text-[#000820]" />
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Customer Feedback</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#000820]">Customer Feedback</h1>
           <p className="text-sm text-muted-foreground">
             Form submissions received from kiosk devices and web forms
           </p>
@@ -587,10 +587,10 @@ export default function FeedbackPage() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  ? 'border-[#B9EB32] text-[#000820]'
+                  : 'border-transparent text-[#487898] hover:text-[#000820] hover:border-[#D0DCE6]'
               }`}
             >
               {tab.icon}{tab.label}

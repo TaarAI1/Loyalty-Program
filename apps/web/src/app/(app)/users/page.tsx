@@ -33,7 +33,7 @@ interface AppUser {
 }
 
 const inputClass =
-  'w-full h-9 px-3 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent';
+  'w-full h-9 px-3 text-sm rounded-lg border border-[#D0DCE6] bg-white focus:outline-none focus:ring-2 focus:ring-[#B9EB32]/40 focus:border-[#B9EB32]';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -162,7 +162,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
+          className="flex items-center gap-2 h-9 px-4 bg-[#B9EB32] hover:bg-[#A6D42A] text-[#000820] text-sm font-bold rounded-xl transition-colors shrink-0"
         >
           <UserPlus className="w-4 h-4" />
           Add User
@@ -220,7 +220,7 @@ export default function UsersPage() {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || !form.username || form.password.length < 6}
-                  className="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2"
+                  className="h-9 px-5 bg-[#B9EB32] hover:bg-[#A6D42A] disabled:opacity-40 text-[#000820] text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
                 >
                   {createMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Create User
@@ -264,7 +264,7 @@ export default function UsersPage() {
                     <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-6">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                          <div className="w-8 h-8 rounded-full bg-[#F4FCE3] flex items-center justify-center text-[#3F5A10] font-bold text-xs">
                             {u.username[0].toUpperCase()}
                           </div>
                           <div>
@@ -329,7 +329,7 @@ export default function UsersPage() {
                               <button
                                 type="button"
                                 onClick={() => openEdit(u)}
-                                className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg text-[#3F5A10] hover:bg-[#F4FCE3] transition-colors"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                                 Edit
