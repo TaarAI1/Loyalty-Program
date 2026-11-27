@@ -42,10 +42,10 @@ export function Sidebar() {
     )}>
       <div className="h-[3px] w-full bg-[#B9EB32]" />
 
-      {/* Logo */}
+      {/* Logo — left edge aligns with nav item text (px-2.5 + px-3) */}
       <div className={cn(
         'flex items-center border-b border-white/10',
-        collapsed ? 'justify-center px-3 py-4' : 'px-4 py-4',
+        collapsed ? 'justify-center px-3 py-4' : 'px-2.5 py-4',
       )}>
         {collapsed ? (
           <div className="w-10 h-10 rounded-xl bg-[#B9EB32] flex items-center justify-center">
@@ -55,9 +55,9 @@ export function Sidebar() {
           <Image
             src="/brand/logo-white.png"
             alt="Loyalty Plus"
-            width={240}
-            height={64}
-            className="h-11 w-auto max-w-full object-contain object-left"
+            width={220}
+            height={40}
+            className="ml-3 h-9 w-auto max-w-[200px] object-contain object-left"
             priority
           />
         )}
@@ -126,7 +126,7 @@ export function Sidebar() {
 
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[78px] w-6 h-6 rounded-full bg-[#000820] border border-[#2A3A50] flex items-center justify-center hover:border-[#B9EB32] hover:bg-[#001020] transition-colors z-10 shadow-md"
+        className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#000820] border border-[#2A3A50] flex items-center justify-center hover:border-[#B9EB32] hover:bg-[#001020] transition-colors z-10 shadow-md"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed

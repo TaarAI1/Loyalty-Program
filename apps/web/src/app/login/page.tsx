@@ -49,9 +49,9 @@ export default function LoginPage() {
           <Image
             src="/brand/logo-white.png"
             alt="Loyalty Plus"
-            width={220}
-            height={56}
-            className="h-11 w-auto object-contain object-left"
+            width={240}
+            height={44}
+            className="h-10 w-auto object-contain object-left"
             priority
           />
         </div>
@@ -60,9 +60,9 @@ export default function LoginPage() {
           <Image
             src="/brand/logo-white.png"
             alt="Loyalty Plus"
-            width={480}
-            height={120}
-            className="w-full max-w-[420px] h-auto object-contain drop-shadow-lg"
+            width={560}
+            height={102}
+            className="w-full max-w-[440px] h-auto object-contain drop-shadow-lg"
             priority
           />
           <div className="mt-10 text-center max-w-md">
